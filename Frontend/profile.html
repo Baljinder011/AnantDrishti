@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="./index.css">
+
+<script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+    <style>
+      
+
+
+
+        /* Account Container */
+        .account-container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 50px 20px;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        /* Account Card Styling */
+        .account-card {
+            text-align: center;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            width: 220px;
+            background: linear-gradient(to bottom, #ffffff, #f7f7f7);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .account-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .account-card img {
+            width: 60px;
+            height: auto;
+            margin-bottom: 15px;
+            transition: transform 0.3s ease;
+        }
+
+        .account-card:hover img {
+            transform: rotate(-5deg) scale(1.1);
+        }
+
+        .account-card h3 {
+            font-size: 20px;
+            margin: 10px 0 5px;
+        }
+
+        .account-card h3:hover {
+            text-decoration: underline;
+        }
+
+        .account-card p {
+            font-size: 15px;
+            color: #555;
+        }
+
+        .account-card:hover p {
+            color: #333;
+        }
+
+        .account-card i {
+            font-size: 30px;
+            color: #007bff;
+            margin-bottom: 15px;
+        }
+
+         a{
+            text-decoration: none;
+            color:black
+        }
+
+        
+
+        /* Responsive Design */
+        @media (max-width: 668px) {
+            .account-container {
+                /* flex-direction: column; */
+                align-items: center;
+            }
+
+            
+
+            .account-card h3 {
+                font-size: 18px;
+            }
+
+            .account-card p {
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .account-card {
+                padding: 15px;
+            }
+
+            .account-card h3 {
+                font-size: 16px;
+            }
+
+            .account-card p {
+                font-size: 12px;
+            }
+        }
+    </style>
+
+
+</head>
+
+<body>
+    <div id="nav-placeholder">
+
+    </div>
+    
+    <script>
+        $(function(){
+          $("#nav-placeholder").load("profileNav.html" , function () {
+            updateCartCounter(); // Ensure counter updates after loading nav
+          });
+        });
+    </script>
+
+
+<center>
+<div class="account-container">
+    <a href="./myProfile.html">
+    <div class="account-card">
+        <i class="fa-solid fa-user"></i>
+        <h3 style="margin-top:25px">My Profile</h3>
+        <p>Edit Your Profile</p>
+    </div>
+</a>
+<a href="./orders.html">
+    <div class="account-card">
+        <img src="https://m.media-amazon.com/images/G/31/x-locale/cs/ya/images/Box._CB485927553_.png" alt="Your Orders">
+       <h3>My Orders</h3>
+        <p>Check Your Orders</p>
+    </div>
+    </a>
+    <a href="./savedAddresses.html">  
+    <div class="account-card">
+        <img src="https://m.media-amazon.com/images/G/31/x-locale/cs/ya/images/address-map-pin._CB485934183_.png" alt="Login & Security">
+    <h3 style="margin-top:2px">My Addresses</h3>
+        <p >Edit Addresses for orders</p>
+    </div>
+</a>
+</div>
+</center>
+</body>
+</html>

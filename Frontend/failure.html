@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Failed</title>
+    <link rel="stylesheet" href="styles.css"> <!-- Add your CSS file -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background-color: #f8f9fa;
+        }
+        .failure-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: inline-block;
+            max-width: 500px;
+            margin: auto;
+        }
+        .failure-image {
+            width: 120px;
+            height: auto;
+            margin-bottom: 20px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #dc3545;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .btn:hover {
+            background: #c82333;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="failure-container">
+        <img src="https://cdn-icons-png.flaticon.com/512/1828/1828843.png" alt="Failure" class="failure-image"> 
+        <h2>Payment Failed!</h2>
+        <p>Unfortunately, your payment could not be processed.</p>
+        <p>Please try again or contact support.</p>
+        <a href="payment.html" class="btn">Try Again</a>
+    </div>
+
+</body>
+</html>

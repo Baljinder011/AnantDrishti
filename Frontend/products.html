@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Products</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="./index.css">
+    <link rel="stylesheet" href="./products.css">
+    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+
+</head>
+
+<body>
+
+
+    <div id="nav-placeholder">
+
+    </div>
+
+    <script>
+          $(function(){
+          $("#nav-placeholder").load("nav.html" , function () {
+        updateCartCounter(); // Ensure counter updates after loading nav
+    });
+        });
+    </script>
+
+
+
+
+    <div class="my-products">
+        <h1>Anantdrristi Products</h1>
+    </div>
+
+    <br><br><br>
+
+    <div class="the-products">
+        <h1>Our Products</h1>
+        <img src="../Photos/Line 1.png"><br>
+        <img class="purple" src="../Photos/Ellipse 1.png"><br>
+
+        <p>Bracelets are versatile pieces of jewelry worn around the wrist, often used for fashion, self-expression, or
+            cultural and religious significance. <br>They come in various materials such as metal, leather, fabric, or
+            beads and can range from simple and minimalist designs to elaborate and ornate styles.</p>
+        <br>
+
+
+
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <label for="colorFilter" class="form-label">Color</label>
+                <select id="colorFilter" class="form-select">
+                    <option value="">All Colors</option>
+                    <option value="blue">Blue</option>
+                    <option value="red">Red</option>
+                    <option value="green">Green</option>
+                    <option value="yellow">Yellow</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="sortOptions" class="form-label">Sort By</label>
+                <select id="sortOptions" class="form-select">
+                    <option value="">Default</option>
+                    <option value="price-asc">Price: Low to High</option>
+                    <option value="price-desc">Price: High to Low</option>
+                    <option value="name-asc">Name: A to Z</option>
+                    <option value="name-desc">Name: Z to A</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="minPrice" class="form-label">Min Price</label>
+                <div class="d-flex align-items-center">
+                    <input type="number" id="minPrice" class="form-control me-2 min-price" placeholder="Min Price">
+                    <button id="priceFilterBtn" class="primry">Apply</button>
+                </div>
+            </div>
+        </div>
+
+
+
+    </div>
+
+
+
+
+    <div id="loading" style="display: none; text-align: center;">Loading products...</div>
+    <div id="error-message" style="display: none; color: red; text-align: center;">Error fetching products. Please try
+        again later.</div>
+    <div id="product-list" class="row"></div>
+
+
+
+
+    <br><br><br>
+
+    <div class="horoscope">
+        <img src="../Photos/Group 2.png">
+
+    </div>
+
+    <br><br>
+
+    <div class="the-products">
+        <h1>Our Team</h1>
+        <img src="../Photos/Line 1.png"><br>
+        <img class="purple" src="../Photos/Ellipse 1.png"><br>
+
+        <p>Proin gravida nibh vel velit auctor aliquet. Aenean sollicitudin, lorem quis bibendumauctor,<br> nisi elit
+            consequat hello Aenean world.</p>
+        <div class="three-products">
+            <div class="three-products-1">
+                <img src="../Photos/Rectangle 8.png">
+                <h5>Blue Sunstone Bracelet<br> For Spiritual Protection</h5>
+                <a href="./lucky.html"> <button>Connect Now</button></a>
+            </div>
+            <div class="three-products-1">
+                <img src="../Photos/Rectangle 9.png">
+                <h5>Blue Sunstone Bracelet<br> For Spiritual Protection</h5>
+                <a href="./lucky.html"> <button>Connect Now</button></a>
+
+            </div>
+            <div class="three-products-1">
+                <img src="../Photos/Rectangle 10.png">
+                <h5>Blue Sunstone Bracelet<br> For Spiritual Protection</h5>
+                <a href="./lucky.html"> <button>Connect Now</button></a>
+
+
+            </div>
+        </div>
+
+    </div>
+
+    <br><br><br><br>
+
+    <div class="the-products">
+        <h1>Latest News</h1>
+        <img src="../Photos/Line 1.png"><br>
+        <img class="purple" src="../Photos/Ellipse 1.png"><br>
+
+        <p>Proin gravida nibh vel velit auctor aliquet. Aenean sollicitudin, lorem quis bibendumauctor,<br> nisi elit
+            consequat hello Aenean world.</p>
+        <div class="three-products">
+            <div class="three-products-1">
+                <img src="../Photos/Rectangle 11.png">
+                <h5>Proin gravida nibh vel velit<br> auctor aliquet. </h5>
+                <p>lorem quis bibendum auctoe, nisi elit <br>consequet ipsum, nec sagittis sem nibh id <br>elit. Duis
+                    odio sit amet</p>
+                <a href="./services.html"> Read More <i class="fa-solid fa-arrow-right"></i></a>
+
+
+            </div>
+            <div class="three-products-1">
+                <img src="../Photos/Rectangle 12.png">
+                <h5>Proin gravida nibh vel velit<br> auctor aliquet. </h5>
+                <p>lorem quis bibendum auctoe, nisi elit <br>consequet ipsum, nec sagittis sem nibh id <br>elit. Duis
+                    odio sit amet</p>
+                <a href="../services.html"> Read More <i class="fa-solid fa-arrow-right"></i></a>
+
+            </div>
+            <div class="three-products-1">
+                <img src="../Photos/Rectangle 13.png">
+                <h5>Proin gravida nibh vel velit<br> auctor aliquet. </h5>
+                <p>lorem quis bibendum auctoe, nisi elit <br>consequet ipsum, nec sagittis sem nibh id <br>elit. Duis
+                    odio sit amet</p>
+                <a href="../services.html"> Read More <i class="fa-solid fa-arrow-right"></i></a>
+
+
+
+            </div>
+        </div>
+
+    </div>
+    <br><br>
+
+
+
+    <div class="clients">
+        <h1>What clients are saying</h1>
+        <img class="purple-1" src="../Photos/Line 1.png"><br>
+        <img class="purple" src="../Photos/Ellipse 1.png"><br>
+        <p>Provin gravida nibh vel velit aliquet. Aenean sollicitudin, lorem quis bibendum <br>auctor,nisi elit
+            com=nsequat hello Aenean world.</p>
+        <div class="creative-director">
+
+            <div class="director">
+                <center>
+                    <img class="client-photo"
+                        src="https://images.unsplash.com/photo-1589696709173-2bf10335574a?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OTZ8fHdvbWVufGVufDB8fDB8fHww">
+                    <h4>Ralph Rios</h4>
+                    <h6>Creative Director</h6>
+                    <img src="../Photos/Line 1.png"><br>
+                    <img class="purple" src="../Photos/Ellipse 1.png"><br>
+                </center>
+                Lorem ipsum is simply dummpy text of the printing and typesetting <br>industry. Lorem ipsum has been the
+                industry's standard dummy text <br>ever since the 1500s, when an unknown printer gallery of type.
+            </div>
+            <div class="director">
+                <center>
+                    <img class="client-photo"
+                        src="https://images.unsplash.com/photo-1496345875659-11f7dd282d1d?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MjZ8fG1lbnxlbnwwfHwwfHx8MA%3D%3D">
+                    <h4>Ralph Rios</h4>
+                    <h6>Creative Director</h6>
+                    <img src="../Photos/Line 1.png"><br>
+                    <img class="purple" src="../Photos/Ellipse 1.png"><br>
+                </center>
+                Lorem ipsum is simply dummpy text of the printing and typesetting <br>industry. Lorem ipsum has been the
+                industry's standard dummy text<br> ever since the 1500s, when an unknown printer gallery of type.
+            </div>
+        </div>
+
+    </div>
+    <br><br><br><br><br>
+
+    <div id="footer-placeholder"></div>
+
+    <script>
+        $(function(){
+          $("#footer-placeholder").load("footer.html")
+        });
+    </script>
+
+
+    <script>
+
+        async function fetchProducts() {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('error-message').style.display = 'none';
+
+                const urlParams = new URLSearchParams(window.location.search);
+        const searchQuery = urlParams.get("search") || "";
+
+        let response;
+        if (searchQuery) {
+            response = await fetch(`http://localhost:3000/products/search?query=${searchQuery}`);
+        } else {
+            response = await fetch("http://localhost:3000/products");
+        }
+
+        if (!response.ok) {
+            throw new Error("Network response was not ok");
+        }
+                let products = await response.json();
+
+                const colorFilter = document.getElementById('colorFilter').value;
+                const minPrice = parseFloat(document.getElementById('minPrice').value) || 0;
+                const sortOption = document.getElementById('sortOptions').value;
+
+                products = applyFiltersAndSort(products, colorFilter, minPrice, sortOption);
+                renderProducts(products);
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error-message').style.display = 'block';
+                console.error('Error fetching products:', error);
+            }
+        }
+
+        function applyFiltersAndSort(products, colorFilter, minPrice, sortOption) {
+            if (colorFilter) {
+                products = products.filter(product => product.color.toLowerCase() === colorFilter.toLowerCase());
+            }
+            if (minPrice) {
+                products = products.filter(product => product.price >= minPrice);
+            }
+            if (sortOption) {
+                if (sortOption === 'price-asc') {
+                    products.sort((a, b) => a.price - b.price);
+                } else if (sortOption === 'price-desc') {
+                    products.sort((a, b) => b.price - a.price);
+                } else if (sortOption === 'name-asc') {
+                    products.sort((a, b) => a.name.localeCompare(b.name));
+                } else if (sortOption === 'name-desc') {
+                    products.sort((a, b) => b.name.localeCompare(a.name));
+                }
+            }
+            return products;
+        }
+
+        function renderProducts(products) {
+            const productContainer = document.getElementById('product-list');
+            productContainer.innerHTML = '';
+
+            if (products.length === 0) {
+                productContainer.innerHTML = '<p>No products found.</p>';
+                document.getElementById('loading').style.display = 'none';
+                return;
+            }
+
+            products.forEach(product => {
+                const productCard = document.createElement('div');
+                productCard.classList.add('col');
+                productCard.innerHTML = `
+                    <center>
+                        <div class="the-card">                        
+                            <div class="card-body">
+                                <img src="${product.image}" class="card-img-top" alt="${product.name}"><br>
+                                <h5 class="card-title">${product.name}</h5>
+                                <p class="card-text">${product.description}</p>
+                                <p class="card-text"><strong>Price:</strong> Rs.${product.price}</p>
+                                <button class="buy-now" data-product='${JSON.stringify(product)}'>Buy Now</button>
+                            </div>
+                        </div>
+                    </center>
+                `;
+                productContainer.appendChild(productCard);
+            });
+
+            document.getElementById('loading').style.display = 'none';
+
+            document.querySelectorAll('.buy-now').forEach(button => {
+                button.addEventListener('click', function () {
+                    const productData = JSON.parse(this.getAttribute('data-product'));
+                    const queryString = new URLSearchParams(productData).toString();
+                    window.location.href = `./The-products.html?${queryString}`;
+                });
+            });
+        }
+
+        document.getElementById('priceFilterBtn').addEventListener('click', fetchProducts);
+        document.getElementById('colorFilter').addEventListener('change', fetchProducts);
+        document.getElementById('sortOptions').addEventListener('change', fetchProducts);
+
+        fetchProducts();
+
+        document.querySelectorAll('.dropdown').forEach(dropdown => {
+            const toggle = dropdown.querySelector('.dropdown-toggle');
+            toggle.addEventListener('click', () => {
+                dropdown.classList.toggle('open');
+            });
+        });
+
+
+    </script>
+
+    <script src="./main.js"></script>   
+    <script src="function.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+</body>
+
+</html>

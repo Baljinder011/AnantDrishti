@@ -1,0 +1,199 @@
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 15px;
+}
+
+
+h2 {
+    color: #333;
+    margin-bottom: 20px;
+}
+
+
+.saved-address-card {
+    background-color: #f9f9f9;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.form-control {
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+@media (max-width: 768px) {
+    .container.mt-5 {
+        margin-top: 20px;
+    }
+
+    .btn-2, .btn-1 {
+        width: 100%;
+    }
+
+    .popup {
+        width: 95%;
+    }
+}
+
+
+.popup {
+    display: none;
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    max-width: 500px;
+    max-height: 80%;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    overflow-y: auto;
+}
+
+.popup-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+}
+
+
+.popup.custom-bg {
+    background-color: #f8f9fa;
+}
+
+
+.closePopup {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    cursor: pointer;
+    float: right;
+    border-radius: 6px;
+}
+
+
+.saved-address-card p{
+    margin-top: 10px;
+}
+.saved-address-card button{
+    margin-top: 10px;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.yohoho{
+    margin-top:50px
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.btn-danger {
+    background-color: rgb(175, 82, 222);
+    padding: 8px;
+    border-radius: 5px;
+    color: white;
+    border: none;
+    transition: 0.5s;
+}
+
+
+.center-buttons {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+
+.custom-checkbox {
+    width: 16px;
+    height: 16px;
+    margin-right: 10px;
+}
+
+
+.text-muted {
+    color: #6c757d;
+}
+
+
+form.check-selected input[type="radio"]:checked ~ label {
+    background-color: #e0e0e0;
+}
+
+
+.mt-4 {
+    margin-top: 20px;
+}
+
+
+
+.custom-add-btn{
+    background-color: rgb(175, 82, 222);
+    padding: 8px;
+    border-radius: 5px;
+    color: white;
+    border: none;
+    transition: 0.5s;
+}
+
+.custom-add-btn:hover{
+    background-color: rgb(100, 34, 133);
+    transform: matrix(1);
+}
+
+
+.custom-pay-btn{
+    background-color: rgb(175, 82, 222);
+    padding: 8px;
+    border-radius: 5px;
+    color: white;
+    border: none;
+    transition: 0.5s;
+}
+
+.custom-pay-btn:hover{
+    background-color: rgb(100, 34, 133);
+    transform: matrix(1);
+}
+
+
+.mb-3{
+    margin-top:20px
+}

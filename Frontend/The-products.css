@@ -1,0 +1,187 @@
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f9f9f9;
+    color: #333;
+  }
+  
+  
+  h1 {
+    color: #2c3e50;
+  }
+  
+
+  .product-info {
+    padding: 20px;
+  }
+  
+  .product-price {
+    color: #e74c3c;
+  }
+
+
+  
+ 
+  .btn {
+    margin-top: 10px;
+  }
+  
+@media screen and (max-width:768px){
+  .product-info{
+    margin-top:320px;
+   
+  }
+}
+  
+
+  .form-select {
+    margin-bottom: 15px;
+  }
+  
+ 
+  .table {
+    background-color: #fff;
+  }
+  
+  .table th,
+  .table td {
+    padding: 12px 15px;
+  }
+  
+
+  
+ 
+  @media (max-width: 768px) {
+    .product-info {
+      padding: 10px;
+    }
+  
+  
+   
+  }
+
+  .footer{
+    background-color: rgba(79, 0, 119, 0.77);
+    width:100%;
+    height:auto;
+    color:white;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap:50px;
+   
+    
+}
+
+@media screen and (max-width:1055px){
+    .footer{
+        padding-bottom: 80px;
+        padding-inline-start: 30px;
+        padding-inline-end: 30px;
+       
+    }
+   
+}
+
+@media screen and (max-width:768px){
+    .footer{
+        display: block;
+        justify-content: start;
+    }
+}
+
+.my-footer{
+    p{
+        font-size:14px;
+    }
+    margin-top:50px
+}
+
+
+
+.the-icons{
+    display: flex;
+    
+
+}
+
+.my-footer input{
+    padding:5px 20px;
+    border-radius:6px;
+    border:none;
+    margin-top:7px;
+    font-size:14px
+}
+
+.my-footer button{
+    background-color: rgba(175, 82, 222, 1);
+    padding: 8px;
+    border-radius: 5px;
+    color: white;
+    border: none;
+    transition: 0.5s;
+}
+
+.my-footer button:hover {
+    background-color: rgb(100, 34, 133);
+    transform: matrix(1);
+}
+
+@media screen and (max-width:768px){
+.my-footer h4{
+    margin-top:50px
+}
+}
+  
+
+.the-btn{
+  background-color: rgba(175, 82, 222, 1);
+  padding: 8px;
+  border-radius: 5px;
+  color: white;
+  border: none;
+  transition: 0.5s;
+}
+
+.the-btn:hover{
+  background-color: rgb(100, 34, 133);
+    transform: matrix(1);
+}
+
+
+
+    .product-image {
+        text-align: left;
+    }
+
+    @media (max-width: 768px) {
+        .product-image {
+            text-align: center;
+        }
+
+        #product-details {
+            flex-direction: column;
+        }
+
+        #product-details .col-md-6 {
+            max-width: 100%;
+        }
+    }
+
+
+.cart-btn button{
+  background-color: rgba(175, 82, 222, 1);
+  padding: 8px;
+  border-radius: 5px;
+  color: white;
+  border: none;
+  transition: 0.5s;
+}
+
+
+.cart-btn button:hover{
+  background-color: rgb(61, 14, 85);
+  transform: matrix(1);
+}
+
+

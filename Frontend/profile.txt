@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="myProfile.css">
+    <style>
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            overflow: auto; 
+            background-color: rgb(0,0,0); 
+            background-color: rgba(0,0,0,0.4); 
+            padding-top: 60px;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%; 
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="nav-placeholder"></div>
+    <script>
+        $(function () {
+            $("#nav-placeholder").load("profileNav.html");
+        });
+    </script>
+
+    <div class="container">
+        <h1>MY PROFILE</h1>
+
+        <!-- Profile Picture Section -->
+        <div class="image-upload-container">
+            <div class="photo">
+                <input type="file" id="profile-image" accept="image/*" onchange="previewImage(event)">
+                <img id="image-preview" class="image-preview" src="default-profile.png">
+            </div>
+            <div class="photo-1">
+                <button class="upload-btn" onclick="uploadImage()">Upload Image</button>
+                <button onclick="selectFromLibrary()">Select Photo from Library</button>
+            </div>
+        </div>
+
+        <div class="profile-info">
+            <div class="profile-inputs">
+                <label for="name">Full Name:</label>
+                <input type="text" id="name" value="" disabled><br>
+
+                <label for="email">Email Address:</label>
+                <input type="email" id="email" value="" disabled><br>
+
+                <label for="phone">Phone Number:</label>
+                <input type="text" id="phone" value="" disabled>
+            </div>
+
+            <div class="profile-inputs">
+                <label for="dob">Date of Birth:</label>
+                <input type="date" id="dob" value="" disabled><br>
+
+                <label for="password">Update Password:</label>
+                <input type="password" id="password" placeholder="Enter new password" disabled>
+            </div>
+        </div>
+
+        <div class="save-btn">
+            <div class="changes-btn">
+                <button onclick="toggleEditMode()">Edit Profile</button>
+                <button onclick="saveProfile()">Save Changes</button>
+            </div>
+            <div class="changes-btn-1">
+                <button onclick="openPasswordModal()">Enable Password Edit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for password editing -->
+    <div id="passwordModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closePasswordModal()">&times;</span>
+            <h2>Change Password</h2>
+
+            <label for="old-password">Old Password:</label>
+            <input type="password" id="old-password" placeholder="Enter your old password" required><br><br>
+
+            <label for="new-password">New Password:</label>
+            <input type="password" id="new-password" placeholder="Enter new password" required><br><br>
+
+            <label for="confirm-password">Confirm New Password:</label>
+            <input type="password" id="confirm-password" placeholder="Confirm your new password" required><br><br>
+
+            <button onclick="updatePassword()">Change Password</button>
+        </div>
+    </div>
+
+    <script>
+        // Open the password change modal
+        function openPasswordModal() {
+            document.getElementById('passwordModal').style.display = "block";
+        }
+    
+        // Close the password change modal
+        function closePasswordModal() {
+            document.getElementById('passwordModal').style.display = "none";
+        }
+    
+        // Save the updated profile (no fetching)
+        window.onload = function() {
+            const savedImage = localStorage.getItem('profileImage');
+            if (savedImage) {
+                document.getElementById('image-preview').src = savedImage;
+            }
+    
+            const storedProfile = JSON.parse(localStorage.getItem('profileInfo'));
+            if (storedProfile) {
+                document.getElementById('name').value = storedProfile.name;
+                document.getElementById('email').value = storedProfile.email;
+                document.getElementById('phone').value = storedProfile.phone;
+                document.getElementById('dob').value = storedProfile.dob;
+                document.getElementById('password').value = storedProfile.password;
+            }
+        };
+    
+        function previewImage(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+    
+            reader.onload = function () {
+                const output = document.getElementById('image-preview');
+                output.src = reader.result;
+                localStorage.setItem('profileImage', reader.result);
+            };
+    
+            if (file) {
+                reader.readAsDataURL(file);
+            }
+        }
+    
+        function toggleEditMode() {
+            const inputs = document.querySelectorAll('.profile-info input');
+            inputs.forEach(input => {
+                input.disabled = !input.disabled;
+            });
+        }
+    
+        function saveProfile() {
+            const updatedInfo = {
+                email: document.getElementById('email').value,
+                name: document.getElementById('name').value,
+                phone: document.getElementById('phone').value,
+                dob: document.getElementById('dob').value,
+                password: document.getElementById('password').value,
+            };
+    
+            // Save updated info to localStorage
+            localStorage.setItem('profileInfo', JSON.stringify(updatedInfo));
+    
+            const fileInput = document.getElementById('profile-image');
+            if (fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function () {
+                    localStorage.setItem('profileImage', reader.result);
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            }
+    
+            alert('Profile saved locally!');
+            // Disable input fields after saving
+            const inputs = document.querySelectorAll('.profile-info input');
+            inputs.forEach(input => input.disabled = true);
+        }
+    
+        // Simulate uploading the image (it would be handled on the server)
+        function uploadImage() {
+            alert("Image uploaded successfully! (In real scenario, it's saved server-side)");
+        }
+    
+        // Trigger file selection dialog
+        function selectFromLibrary() {
+            document.getElementById('profile-image').click();
+        }
+    
+        // Handle password change
+        function updatePassword() {
+            const oldPassword = document.getElementById('old-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+    
+            if (newPassword !== confirmPassword) {
+                alert("New passwords do not match.");
+                return;
+            }
+    
+            alert("Password updated!");
+        }
+    </script>
+    
+
+</body>
+</html>

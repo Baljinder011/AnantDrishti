@@ -1,0 +1,305 @@
+body {
+  font-family: 'Arial', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #fff;
+  overflow: clip;
+}
+
+@media screen and (max-width:768px){
+  body{
+    overflow: visible;
+  }
+}
+
+.container {
+  max-width: 700px;
+  background-color: white;
+  padding: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  border-radius: 5px;
+}
+
+.container h2 {
+  color: #000;
+  text-align: start;
+  font-size: 1.8rem;
+  border-radius: 5px;
+}
+
+#cart-summary h2 {
+  color: green;
+}
+
+.selected-address,
+.payment-methods {
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+}
+
+.selected-address h5,
+.payment-methods h5 {
+  margin-bottom: 15px;
+  color: #555;
+}
+
+.the-address p {
+  margin-top: 15px;
+}
+
+
+
+.payment-btn button {
+  background-color: rgb(175, 82, 222);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  width: 100%;
+  max-width: 170px;
+  margin-top: 20px;
+  transition: 0.5s;
+}
+
+.payment-btn button:hover {
+  background-color: rgb(81, 27, 107);
+  transform: translateY(-5px);
+}
+
+.card {
+  padding: 8px;
+  margin-bottom: 15px;
+  border-radius: 5px;
+}
+
+.payment h3 {
+  margin-top: 10px;
+  color: rgb(66, 66, 66);
+}
+
+.razor-icons {
+  display: flex;
+  justify-content: space-between;
+}
+
+.razor-icons i {
+  color: rgb(69, 68, 68);
+  font-size: 30px;
+}
+
+.line {
+  background-color: black;
+  width: 100%;
+  height: 1px;
+}
+
+.parent {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 15px;
+  background-color: white;
+  margin-top: 20px;
+  padding-left: 100px;
+}
+
+.pay-btn {
+  position: fixed;
+  left: 100px;
+  width:38%
+}
+
+@media screen and (max-width: 880px) {
+  .pay-btn {
+    position: relative;
+    left: 0;
+  }
+}
+
+.parent-2 {
+  position: absolute;
+  right: 10px;
+  width: 50%;
+}
+
+@media screen and (max-width: 768px) {
+  .container {
+    padding: 15px;
+  }
+
+  .parent {
+    flex-direction: column;
+    padding-inline-start: 40px;
+    padding-inline-end: 40px;
+  }
+
+  .pay-btn {
+    width: 100%;
+  }
+
+  .container-1 {
+    width: 100%;
+  }
+
+  .parent-2 {
+    position: relative;
+    width: 100%;
+    margin-top: 0;  
+    margin-left:10px
+  }
+
+  .container h2 {
+    font-size: 1.5rem;
+  }
+}
+
+@media screen and (max-width: 520px) {
+  .container {
+    padding: 10px;
+  }
+
+  .razor-icons i {
+    font-size: 24px;
+  }
+
+  .payment-btn button {
+    padding: 10px 15px;
+  }
+
+  .summary p {
+    margin-top: 10px;
+    text-align: start;
+  }
+
+  .cart-items {
+    padding: 10px;
+  }
+
+  #cart-summary {
+    padding: 10px;
+  }
+
+  #cart-summary p {
+    font-size: 14px;
+  }
+}
+
+
+.cart-items {
+  padding: 15px;
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 20px;
+  border-radius: 8px;
+}
+
+#cart-summary {
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  background-color: rgb(242, 242, 242);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+
+
+}
+
+#cart-summary p {
+  font-size: 16px;
+  margin-top:10px
+}
+
+#cart-summary p span {
+  font-weight: bold;
+}
+
+#cart-summary h2 {
+  font-size: 25px;
+  color: #2e8b57; 
+  margin-top:10px
+}
+
+.summary p{
+  margin-top:20px;
+  position: relative;
+  top:20px
+}
+
+.cart-items button {
+  margin-top: 10px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.cart-items button:hover {
+  background-color: rgb(94, 26, 128);
+  transform: translateY(-5px);
+}
+
+.mastercard-icon {
+  background: linear-gradient(90deg, #FF5F00 0%, #EB001B 50%, #F79E1B 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 2rem;
+}
+
+.visa-icon {
+  background: linear-gradient(90deg, #0224e2 0%, #6065c6 50%, #F7B600 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 2rem;
+}
+
+.summary {
+  display: flex;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+
+@media screen and (max-width: 458px) {
+  .summary {
+    gap: 10px;
+  }
+}
+
+.summary img {
+  margin-top: 40px;
+}
+
+#selectedAddress button {
+  margin-top: 20px;
+}
+
+#cart-summary p:first-child {
+  font-size: 18px;
+  color: #555;
+}
+
+#cart-summary p:last-child {
+  font-size: 20px;
+  color: #2e8b57; /* Green color for total price */
+}
+
+#cart-summary p:nth-child(2) {
+  color: #555;
+}
+
+@media (max-width: 600px) {
+  #cart-summary {
+    padding: 15px;
+  }
+
+  #cart-summary p {
+    font-size: 14px;
+  }
+
+  #cart-summary p span {
+    font-size: 16px;
+  }
+}
+
+

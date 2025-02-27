@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Profile</title>
+  <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+  <link rel="stylesheet" href="index.css">
+  <link rel="stylesheet" href="myProfile.css">
+</head>
+
+<body>
+
+  <div id="nav-placeholder"></div>
+  <script>
+    $(function(){
+      $("#nav-placeholder").load("profileNav.html" , function () {
+        updateCartCounter(); // Ensure counter updates after loading nav
+      });
+    });
+</script>
+
+  <div class="container">
+    <h1>MY PROFILE</h1>
+
+    <div class="image-upload-container">
+      <div class="photo">
+        <input type="file" id="profile-image" accept="image/*" onchange="previewImage(event)">
+        <img id="image-preview" class="image-preview" src="uploads/default-profile.png" alt="Profile Image">
+      </div>
+      <div class="photo-1">
+        <button class="upload-image-btn" onclick="document.getElementById('profile-image').click()">Upload Image</button>
+      </div>
+    </div>
+
+    <div class="profile-info">
+      <div class="profile-inputs">
+        <label for="name">Full Name:</label>
+        <input type="text" id="name" placeholder="Enter Your Name" required disabled><br>
+
+        <label for="email">Email Address:</label>
+        <input type="email" id="email" placeholder="Enter Your Email" required disabled><br>
+
+        <label for="phone">Phone Number:</label>
+        <input type="text" id="phone" placeholder="Enter Your Number" disabled><br>
+      </div>
+
+      <div class="profile-inputs">
+        <label for="dob">Date of Birth:</label>
+        <input type="date" id="dob" placeholder="Enter Your DOB" disabled><br>
+      </div>
+
+      <div class="photo-1">
+        <button class="unlock-btn" onclick="unlockInputs()">Edit Profile</button>
+        <button class="upload-btn-1" onclick="saveProfile()">Save Profile</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function previewImage(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function () {
+          const output = document.getElementById('image-preview');
+          output.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function saveProfile() {
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const dob = document.getElementById('dob').value;
+      const image = document.getElementById('profile-image').files[0];
+
+      if (!name || !email) {
+        alert('Name and Email are required.');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('name', name);
+      formData.append('email', email);
+      formData.append('phone', phone);
+      formData.append('dob', dob);
+
+      if (image) {
+        formData.append('image', image);
+      }
+
+      // Add loading state
+      const saveButton = document.querySelector('.upload-btn-1');
+      saveButton.disabled = true;
+      saveButton.textContent = 'Saving...';
+
+      fetch('http://localhost:3000/saveProfile', {
+        method: 'POST',
+        body: formData,
+      })
+        .then(response => response.json())
+        .then(data => {
+          alert(data.message || 'Profile saved successfully!');
+          saveToLocalStorage({ name, email, phone, dob });
+          if (image) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+              localStorage.setItem('profileImage', e.target.result);
+              document.getElementById('image-preview').src = e.target.result;
+            };
+            reader.readAsDataURL(image);
+          }
+          lockInputs();
+        })
+        .catch(error => {
+          console.error('Error saving profile:', error);
+          alert('Failed to save profile. Please try again later.');
+        })
+        .finally(() => {
+          saveButton.disabled = false;
+          saveButton.textContent = 'Save Profile';
+        });
+    }
+
+    function unlockInputs() {
+      document.getElementById('name').disabled = false;
+      document.getElementById('email').disabled = false;
+      document.getElementById('phone').disabled = false;
+      document.getElementById('dob').disabled = false;
+    }
+
+    function lockInputs() {
+      document.getElementById('name').disabled = true;
+      document.getElementById('email').disabled = true;
+      document.getElementById('phone').disabled = true;
+      document.getElementById('dob').disabled = true;
+    }
+
+    function saveToLocalStorage(profile) {
+      localStorage.setItem('userProfile', JSON.stringify(profile));
+    }
+
+    window.onload = function () {
+      const savedProfile = JSON.parse(localStorage.getItem('userProfile'));
+      const savedImage = localStorage.getItem('profileImage');
+
+      if (savedProfile) {
+        document.getElementById('name').value = savedProfile.name;
+        document.getElementById('email').value = savedProfile.email;
+        document.getElementById('phone').value = savedProfile.phone;
+        document.getElementById('dob').value = savedProfile.dob;
+      }
+
+      if (savedImage) {
+        document.getElementById('image-preview').src = savedImage;
+      }
+    };
+  </script>
+
+</body>
+</html>

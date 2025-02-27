@@ -1,0 +1,99 @@
+[
+    {
+        "id": 1,
+        "name": "Red",
+        "description": "For Spiritual Protection",
+        "price": 625,
+        "image": "../Photos/Rectangle 2.png",
+        "color":"red"
+    },
+    {
+        "id": 2,
+        "name": "Blue",
+        "description": "For Emotional Healing",
+        "price": 420,
+        "image": "../Photos/Rectangle 3.png",
+        "color":"blue"
+    },
+    {
+        "id": 3,
+        "name": "Green",
+        "description": "For Stress Relief",
+        "price": 530,
+        "image": "../Photos/Rectangle 4.png",
+        "color":"red"
+    },
+    {
+        "id": 4,
+        "name": "Yellow",
+        "description": "For Spiritual Protection",
+        "price": 425,
+        "image": "../Photos/Rectangle 5.png",
+        "color":"green"
+    },
+    {
+        "id": 5,
+        "name": "Purple",
+        "description": "For Emotional Healing",
+        "price": 820,
+        "image": "../Photos/Rectangle 6.png",
+        "color":"yellow"
+    },
+    {
+        "id": 6,
+        "name": "Brown",
+        "description": "For Stress Relief",
+        "price": 930,
+        "image": "../Photos/Rectangle 7.png",
+        "color":"yellow"
+    },
+    {
+        "id": 7,
+        "name": "White",
+        "description": "For Spiritual Protection",
+        "price": 725,
+        "image": "../Photos/Rectangle 2.png",
+        "color":"green"
+    },
+    {
+        "id": 8,
+        "name": "Black",
+        "description": "For Emotional Healing",
+        "price": 620,
+        "image": "../Photos/Rectangle 3.png",
+        "color":"blue"
+    },
+    {
+        "id": 9,
+        "name": "Orange",
+        "description": "For Emotional Healing",
+        "price": 620,
+        "image": "../Photos/Rectangle 4.png",
+        "color":"yellow"
+    },
+    {
+        "id": 10,
+        "name": "Grey",
+        "description": "For Spiritual Protection",
+        "price": 725,
+        "image": "../Photos/Rectangle 5.png",
+        "color":"red"
+    },
+    {
+        "id":11,
+        "name": "Sky Blue",
+        "description": "For Emotional Healing",
+        "price": 520,
+        "image": "../Photos/Rectangle 6.png",
+        "color":"blue"
+    },
+    {
+        "id": 12,
+        "name": "Pink",
+        "description": "For Stress Relief",
+        "price": 430,
+        "image": "../Photos/Rectangle 7.png",
+        "color":"green"
+    }
+    
+]

@@ -1,0 +1,425 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    width: 80%;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin-top: 30px;
+}
+
+h1 {
+    text-align: center;
+}
+
+.profile-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.profile-info div {
+    width: 48%;
+}
+
+.profile-info label {
+    font-weight: bold;
+}
+
+.profile-info input {
+    width: 100%;
+    padding: 8px;
+    margin: 5px 0;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+
+
+
+.image-preview {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #ccc;
+}
+
+.image-upload-container {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.image-upload-container input {
+    display: none;
+}
+
+body button {
+    background-color: rgb(175, 82, 222);
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    width: 100%;
+    max-width: 180px;
+    transition: 0.5s;
+}
+
+button:hover {
+    background-color: rgb(103, 35, 137);
+    transform: translateY(10px);
+}
+
+.photo-1 {
+    margin-top: 20px;
+}
+
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .profile-info {
+        flex-direction: column;
+    }
+
+    .profile-info div {
+        width: 100%;
+    }
+
+    .image-upload-container {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .image-preview {
+        width: 120px;
+        height: 120px;
+    }
+
+    .photo-1 {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        width: 100%;
+    }
+
+    body button {
+        max-width: 200px;
+        margin: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    body button {
+        max-width: 100%;
+    }
+
+    .image-preview {
+        width: 100px;
+        height: 100px;
+    }
+
+    h1 {
+        font-size: 1.5rem;
+    }
+}
+
+
+
+
+
+
+body button {
+    background-color: rgb(175, 82, 222);
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    width: 100%;
+    max-width: 180px;
+    margin-top: 20px;
+    transition: 0.5s;
+}
+
+button:hover {
+    background-color: rgb(103, 35, 137);
+    transform: translateY(10);
+}
+
+.photo-1 {
+    margin-top: 20px;
+}
+
+
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .profile-info {
+        flex-direction: column;
+    }
+
+    .profile-info div {
+        width: 100%;
+    }
+
+    .image-upload-container {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .image-preview {
+        width: 120px;
+        height: 120px;
+    }
+}
+
+@media (max-width: 480px) {
+    body button {
+        max-width: 100%;
+    }
+
+    .image-preview {
+        body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+    }
+    
+    .container {
+        width: 80%;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        margin-top: 30px;
+    }
+    
+    h1 {
+        text-align: center;
+    }
+    
+    .profile-info {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+    
+    .profile-info div {
+        width: 48%;
+    }
+    
+    .profile-info label {
+        font-weight: bold;
+    }
+    
+    .profile-info input {
+        width: 100%;
+        padding: 8px;
+        margin: 5px 0;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
+    
+ 
+    
+    .save-btn {
+        display: none;
+        padding: 10px 20px;
+        background-color: #2196F3;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    
+    .save-btn:hover {
+        background-color: #1e88e5;
+    }
+    
+    .image-preview {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #ccc;
+        margin-top: 0;
+        margin-left: 0;
+    }
+    
+    .image-upload-container {
+        margin-bottom: 20px;
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-start;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+    
+    .image-upload-container input {
+        display: none;
+    }
+    
+    body button {
+        background-color: rgb(175, 82, 222);
+        color: white;
+        border: none;
+        padding: 10px;
+        border-radius: 6px;
+        cursor: pointer;
+        width: 100%;
+        max-width: 180px;
+        margin-top: 20px;
+        transition: 0.5s;
+    }
+    
+    button:hover {
+        background-color: rgb(103, 35, 137);
+        transform: translateY(10);
+    }
+    
+    .photo-1 {
+        margin-top: 20px;
+     width:100%;
+    }
+    
+    .select-library-btn {
+        padding: 8px 16px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-top: 10px;
+    }
+    
+    
+    
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .profile-info {
+            flex-direction: column;
+        }
+    
+        .profile-info div {
+            width: 100%;
+        }
+    
+        .image-upload-container {
+            flex-direction: column;
+            align-items: center;
+        }
+    
+        .image-preview {
+            width: 120px;
+            height: 120px;
+        }
+    
+        /* Center buttons under profile image */
+        .photo-1 {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            width: 100%;
+        }
+    
+        body button {
+            max-width: 200px;
+            margin: 10px;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        body button {
+            max-width: 100%;
+        }
+    
+        .image-preview {
+            width: 100px;
+            height: 100px;
+        }
+    
+        h1 {
+            font-size: 1.5rem;
+        }
+    }
+    
+    }
+
+    h1 {
+        font-size: 1.5rem;
+    }
+}
+
+
+.save-btn {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px; 
+   
+}
+.save-btn button{
+    padding:5px;
+    width:100%;
+    max-width:200px
+}
+
+.changes-btn, .changes-btn-1 {
+    display: flex;
+    gap: 10px; /* Ensure space between buttons in each group */
+}
+
+@media screen and (max-width: 768px) {
+    .save-btn {
+        flex-direction: column; /* Stack buttons vertically */
+    }
+
+    .changes-btn, .changes-btn-1 {
+        width: 100%;  /* Buttons take full width on small screens */
+        justify-content: space-between;
+    }
+
+    .changes-btn button,
+    .changes-btn-1 button {
+        width: 100%; /* Ensure buttons fill their container */
+    }
+}
+
+/* For smaller screens below 478px */
+@media screen and (max-width: 478px) {
+    .save-btn {
+        flex-direction: column; /* Stack buttons vertically */
+    }
+
+    .changes-btn, .changes-btn-1 {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .changes-btn button,
+    .changes-btn-1 button {
+        width: 100%;
+    }
+}
+
+input.read-only {
+    pointer-events: none;
+    background-color: #f2f2f2;
+  }
+  
+

@@ -1,0 +1,160 @@
+body {
+    animation: fadeIn 1s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+.about {
+    background: url("../aboutPhotos/about.png");
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    width: 100%;
+    height: 250px;
+    position: relative;
+    bottom: 60px;
+    color: white;
+    margin-top: 70px;
+    text-align: center;
+
+
+}
+
+.about h1 {
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    font-size: 50px;
+    text-align: start;
+    padding: 80px 140px 0;
+    /* margin-top: -180px; */
+    color: white;
+    position: relative;
+
+}
+
+
+
+@media screen and (max-width:768px) {
+    .about h1 {
+        font-size: 30px;
+        text-align: center;
+        padding: 80px;
+    }
+}
+
+
+.purple-0 {
+    margin-top: -47px;
+    margin-left:20px
+}
+
+.about-us {
+    display: flex;
+    justify-content: center;
+    gap: 100px;
+    flex-wrap: wrap;
+}
+
+.about-us button {
+    background-color: rgb(175, 82, 222);
+    padding: 8px;
+    border-radius: 5px;
+    color: white;
+    border: none;
+    transition: 0.5s;
+}
+
+.about-us button:hover {
+    background-color: rgb(100, 34, 133);
+    transform: matrix(1);
+}
+
+
+.connect img {
+    width: 100%;
+    max-width: 500px;
+}
+
+@media screen and (max-width:768px){
+    .about-us{
+        padding-inline-start: 40px;
+        padding-inline-end: 40px;
+    }
+}
+
+@media screen and (max-width:1280px){
+    .our-service{
+        margin-top:-10px
+    }
+}
+
+
+#cart-countdown {
+    margin-left: 10px;
+    color: red;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+
+.astrologer{
+    background: url("../aboutPhotos/image 7.png");
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    width: 100%;
+    height: 600px;
+    position: relative;
+    color: white;
+    text-align: center;
+}
+
+
+.horoscope {
+    background: url("../Photos/Group 1.png");
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    width: 100%;
+    height: 500px;
+    position: relative;
+    color: white;
+    text-align: center;
+    margin-top:1px
+
+   
+}
+
+.horoscope img{
+    
+        width: 100%;
+        max-width: 450px;
+        margin-top: 160px
+    
+}
+
+
+@media screen and (max-width:1280px){
+    .footer{
+        margin-top:400px
+    }
+}
+
+@media screen and (max-width:410px){
+    .footer{
+        margin-top:650px;
+        
+    }
+  
+}
+
+

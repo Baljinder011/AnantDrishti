@@ -1,0 +1,200 @@
+body {
+    animation: fadeIn 1s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+
+#cart-countdown {
+    margin-left: 10px;
+    color: red;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.my-contact {
+    background: url("https://s3-alpha-sig.figma.com/img/80d0/41e3/1c59e96f80d66a39079e8426af30e0c3?Expires=1737936000&Key-Pair-Id=APKAQ4GOSFWCVNEHN3O4&Signature=RM9HdYKv9eIkY4UwStNWFdNh0HVJh6Us43fj8ua~GGquhBo3nRppDj2~Tr~l4j-XjEdG0fBbx~eZxs4p6zM9~CILy-VcKLfDiOudkEvP8BwlPcmPMcDKjBbT640Q4aj~PKJnOklNJKOw9zhXeCSLM0CMuvnNs95P5Hdui1gtVdXP3Vdrkh6sdm1AKgUY2CxbqC5gMx-j86DNxmhx6MUu2368rBAQNtyaGwvaadh7HQDf9QMIKlE2T7KM1iORgOs2RxHNtA39rXK7TYhHTmVNDVNVOFHoOs6-tzSSzr072lsjxwQvyhuXHFXBBQ~EwqWheg1FzMq-m202Ir3tF0d21g__");
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    width: 100%;
+    height: 250px;
+    position: relative;
+    bottom: 60px;
+    color: white;
+    margin-top: 70px;
+    text-align: center;
+
+
+}
+
+.my-contact h1 {
+    text-align: center;
+    font-size: 60px;
+    font-family:'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+   position: relative;
+   top:75px
+
+}
+
+@media screen and (max-width:450px){
+    .my-contact h1{
+        font-size: 40px;
+    }
+}
+
+.touch{
+    text-align: center;
+    background-color: rgb(233, 233, 233);
+    position: relative;
+    top:-84px;
+    width:100%;
+    height: 500px;
+}
+
+.touch h1{
+    position: relative;
+    top:50px
+}
+.touch img{
+    position: relative;
+    top:50px
+}
+.touch> :nth-child(6){
+    position: relative;
+    top:50px
+}
+
+@media screen and (max-width:980px){
+    .touch{
+        height: 700px;
+    }
+}
+
+@media screen and (max-width:680px){
+    .touch{
+        height:900px
+    }
+}
+
+.touch> :nth-child(4){
+    margin-top:-47px
+}
+
+@media screen and (max-width:768px){
+    .touch{
+        padding-inline-start: 20px;
+        padding-inline-end: 20px;
+    }
+    .touch>:nth-child(4){
+        position: relative;
+        top:60px
+    }
+}
+
+
+.the-contact{
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap ;
+    gap:40px;
+text-align: start;
+}
+
+.contact-me{
+    background-color: rgb(233, 233, 233);
+    width:100%;
+    max-width:300px;
+    padding:10px 20px;
+    border:4px solid rgb(255, 255, 255);
+    position: relative;
+    top:50px;
+}
+
+.the-contact i{
+  color:rgb(143, 142, 142);
+    font-size:30px;
+    position: relative;
+    top:-30px;
+    /* padding:0 150px */
+}
+
+
+iframe{
+width:100%;
+position: relative;
+top:-84px
+}
+
+
+.the-form{
+    text-align: center;
+}
+
+.the-form>:nth-child(4){
+    margin-top: -47px;
+}
+
+@media screen and (max-width:768px){
+    .the-form>:nth-child(4){
+position: relative;
+top:9px
+}
+.the-form{
+    padding-inline-start: 20px;
+        padding-inline-end: 20px;
+}
+}
+
+
+.my-form input{
+    width:100%;
+    max-width:600px;
+    padding:13px;
+    border:1px solid rgb(111, 111, 111)
+  
+}
+textarea{
+    width:100%;
+    max-width:1200px;
+    padding-bottom: 70px;
+    padding-left: 7px;
+    border:1px solid rgb(111, 111, 111)
+
+}
+
+
+.my-form button{
+    background-color: rgba(175, 82, 222, 1);
+    padding: 8px;
+    border-radius: 5px;
+    color: white;
+    border: none;
+    transition: 0.5s;
+}
+
+.my-form button:hover{
+    background-color: rgb(100, 34, 133);
+    transform: matrix(1);
+}
+
+@media screen and (max-width:1200px){
+    textarea{
+        width:100%;
+        max-width:600px
+    }
+
+    input{
+        margin-top:20px
+    }
+}

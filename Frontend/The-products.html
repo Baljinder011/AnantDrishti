@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Details</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="The-products.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+</head>
+<body>
+    <div id="nav-placeholder"></div>
+    <!-- <script>
+    $(function () {
+        $("#nav-placeholder").load("nav.html"); // Ensure counter updates after loading nav
+    });
+    </script> -->
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Product Details</h1>
+        <div id="product-details" class="row flex-wrap">
+            <div class="col-md-6 product-image">
+                <img id="product-image" src="" alt="" class="img-fluid">
+            </div>
+            <div class="col-md-6 product-info">
+                <h2 id="product-name"></h2>
+                <p id="product-description"></p>
+                <p class="product-price">Price: Rs.<span id="product-price"></span></p>
+                <div class="form-group">
+                    <label for="color">Color:</label>
+                    <select id="color" name="color" class="form-select" aria-label="Select color">
+                        <option value="Red">Red</option>
+                        <option value="Blue">Blue</option>
+                        <option value="Green">Green</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="size">Size:</label>
+                    <select id="size" name="size" class="form-select" aria-label="Select size">
+                        <option value="S">S</option>
+                        <option value="M">M</option>
+                        <option value="L">L</option>
+                        <option value="XL">XL</option>
+                    </select>
+                </div>
+                <div class="product-buttons mt-3 cart-btn">
+                    <button aria-label="Add to cart" id="add-to-cart">Add to Cart</button>
+                    <button aria-label="Add to favorites">
+                        <i class="fa-regular fa-heart"></i> Favorite
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="delivery-info mt-5">
+            <h5>Delivery Information</h5>
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Delivery Option</th>
+                        <th>Estimated Time</th>
+                        <th>Charges</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Standard Shipping</td>
+                        <td class="estimated-time">3-5 Business Days</td>
+                        <td class="charges">Free for orders over Rs.1000. Rs.100 for orders below Rs.1000</td>
+                    </tr>
+                    <tr>
+                        <td>Express Shipping</td>
+                        <td class="estimated-time">1-2 Business Days</td>
+                        <td class="charges">Rs.200</td>
+                    </tr>
+                    <tr>
+                        <td>Same Day Delivery</td>
+                        <td class="estimated-time">Same Day</td>
+                        <td class="charges">Rs.400</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="return-policy mt-5">
+            <h5>Return Policy</h5>
+            <p>We value your satisfaction and strive to provide a hassle-free return process:</p>
+            <ul>
+                <li>Returns are accepted within <strong>14 days</strong> of receiving your order.</li>
+                <li>Items must be in their <strong>original condition</strong>, including packaging and tags, to be eligible for a return.</li>
+                <li>Refunds will be processed within <strong>5-7 business days</strong> after receiving the returned item.</li>
+                <li>Return shipping costs are the responsibility of the customer, except in cases of defective or incorrect items.</li>
+            </ul>
+            <p>
+                <strong>Note:</strong> Custom-made, personalized, or clearance items are not eligible for return or refund.<br>
+                For further assistance, contact our <a href="./contact.html">support team</a>.
+            </p>
+        </div>
+        <div class="share mt-5">
+            <h5>Share:</h5>
+            <div class="icons">
+                <a href="/"> <i class="fa-brands fa-facebook"></i></a>
+                <a href="/"> <i class="fa-brands fa-twitter"></i></a>
+                <a href="/"> <i class="fa-brands fa-pinterest"></i></a>
+            </div>
+        </div>
+        <div class="payment-methods mt-5">
+            <h5>Payment Methods</h5>
+            <div class="d-flex flex-wrap">
+                <button class="btn btn-light ms-2"><i class="fa-brands fa-cc-visa"></i> Visa</button>
+                <button class="btn btn-light ms-2"><i class="fa-brands fa-cc-mastercard"></i> MasterCard</button>
+                <button class="btn btn-light ms-2"><i class="fa-brands fa-paypal"></i> PayPal</button>
+            </div>
+        </div>
+    </div>
+    <br><br>
+    <div class="footer">
+        <div class="my-footer">
+            <img src="../aboutPhotos/footer.png"><br><br>
+            <p>Bracelets are versatile pieces of jewelry worn<br> around the wrist, often used for fashion,
+                self-<br>expression, or cultural and religious significance.
+                <br><br>
+                They come in various materials such as metal,<br> leather, fabric, or beads and can range from<br>
+                simple and minimalist designs to elaborate and<br> ornate styles.
+            </p>
+            <br>
+            <p>All Rights Reserved by © 2021 Sonssel.</p>
+        </div>
+        <div class="my-footer">
+<h4 class="useful">Useful Links</h4>
+<p>About Us</p>
+<p>Products</p>
+<p>Services</p>
+<p>Terms & Condition</p>
+<p>Privacy Policy</p>
+        </div>
+        <div class="my-footer">
+<h4 class="useful">Contact us</h4>
+<div class="the-icons">
+    <div class="my-icons">
+<i class="fa-solid fa-location-dot"></i>
+</div>
+<div class="my-icons">
+Registered Office: Nilam Nagar<br>
+Building. No. 6, E-801, Mulund
+</div>
+ <br><br>
+</div>
+ <div class="the-icons">
+ <div class="my-icons">
+    <br>
+  <i class="fa-solid fa-location-dot"></i>
+</div>
+<div class="my-icons">
+ <br>
+    Corporate office: Ecstacy Business Park,<br>      Citi of Joy. Below West-East Flyover,
+</div>
+</div>
+<div class="the-icons">
+    <div class="my-icons">
+       <br>
+       <i class="fa-solid fa-phone"></i>     918169461298
+       </div>
+</div>
+<div class="the-icons">
+    <div class="my-icons">
+       <br>
+       <i class="fa-solid fa-envelope-open"></i>     918169461298
+       </div>
+</div>
+</div>
+        <div class="my-footer">
+<h4 class="useful">Enquire Now</h4><br>
+<input type="text" placeholder="Full Name"><br>
+<input type="text" placeholder="Contact Number"><br>
+<input type="text" placeholder="Email"><br><br>
+<a href="./contact.html">  <button>Contact Us</button></a>
+        </div>
+</div>
+<script>
+ $(function () {
+    $("#nav-placeholder").load("nav.html", function () {
+        updateCartCounter(); // Ensure counter updates after loading nav
+    });
+});
+document.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const product = Object.fromEntries(params.entries("id"));
+    document.getElementById('product-name').innerText = product.name;
+    document.getElementById('product-description').innerText = product.description;
+    document.getElementById('product-price').innerText = product.price;
+    document.getElementById('product-image').src = product.image;
+    document.getElementById('add-to-cart').addEventListener('click', () => {
+        addToCart(product.id);
+    });
+    updateCartCounter(); // Ensure counter updates when the page loads
+});
+function addToCart(productId) {
+    const productImage = document.getElementById('product-image').src;
+    const productName = document.getElementById('product-name').innerText;
+    const productPrice = parseFloat(document.getElementById('product-price').innerText.replace('Rs.', '').trim());
+    const productColor = document.getElementById('color').value;
+    const productSize = document.getElementById('size').value;
+    // Get the selected quantity, ensure it's at least 1
+    const quantityInput = document.getElementById('quantity');
+    const productQuantity = quantityInput ? Math.max(1, parseInt(quantityInput.value)) : 1;
+    const cart = JSON.parse(localStorage.getItem('cart')) || [];
+    // Check if the same product (same ID, color, and size) is already in the cart
+    const existingProduct = cart.find(item =>
+        item.id === productId &&
+        item.color === productColor &&
+        item.size === productSize
+    );
+    if (existingProduct) {
+        existingProduct.quantity += productQuantity; // Increase by selected quantity
+    } else {
+        cart.push({
+            id: productId,
+            name: productName,
+            price: productPrice,
+            color: productColor,
+            size: productSize,
+            quantity: productQuantity,
+            image: productImage
+        });
+    }
+    localStorage.setItem('cart', JSON.stringify(cart));
+    updateCartCounter(); // Update cart count in UI
+}
+function updateCartCounter() {
+    let totalCount = getTotalCartCount();
+    const cartCounter = document.getElementById('cart-counter');
+    if (cartCounter) {
+        cartCounter.innerText = totalCount;
+    }
+}
+function getTotalCartCount() {
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+    return cart.reduce((sum, item) => sum + item.quantity, 0);
+}
+    function addToWishlist(productId) {
+        const productImage = document.getElementById('product-image').src;
+        const productName = document.getElementById('product-name').innerText;
+        const productPrice = parseFloat(document.getElementById('product-price').innerText.replace('Rs.', '').trim());
+        const productColor = document.getElementById('color').value;
+        const productSize = document.getElementById('size').value;
+        const wishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
+        const existingProduct = wishlist.find(item =>
+            item.id === productId &&
+            item.color === productColor &&
+            item.size === productSize
+        );
+        if (!existingProduct) {
+            wishlist.push({
+                id: productId,
+                name: productName,
+                price: productPrice,
+                color: productColor,
+                size: productSize,
+                image: productImage
+            });
+        }
+        localStorage.setItem('wishlist', JSON.stringify(wishlist));
+    }
+    document.querySelector('.product-buttons button[aria-label="Add to favorites"]').addEventListener('click', () => {
+        const productId = new URLSearchParams(window.location.search).get('id');
+        addToWishlist(productId);
+    });
+</script>
+</body>
+</html>
+
+
+
+
+
+

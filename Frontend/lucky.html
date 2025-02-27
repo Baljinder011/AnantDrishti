@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lucky page</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="./index.css">
+    <link rel="stylesheet" href="./lucky.css">
+    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+</head>
+
+<body>
+
+    <div id="nav-placeholder">
+
+    </div>
+    
+    <script>
+        $(function(){
+          $("#nav-placeholder").load("nav.html" , function () {
+            updateCartCounter(); // Ensure counter updates after loading nav
+          });
+        });
+    </script>
+
+
+    <div class="lucky">
+        <h1>Lucky Bracelet Calculator</h1>
+    </div>
+
+
+    <div class="form-container">
+
+        <form>
+
+            <div class="form-group">
+                <label for="name">Full Name:</label>
+                <input type="text" id="name" name="name" placeholder="Enter your name" required>
+            </div>
+
+
+            <div class="form-group">
+                <label for="dob">Date of Birth:</label>
+                <div class="dob-selectors">
+                    <select id="day" name="day" required>
+                        <option value="">Select Date</option>
+
+                        <script>
+                            for (let i = 1; i <= 31; i++) {
+                                document.write(`<option value="${i}">${i}</option>`);
+                            }
+                        </script>
+                    </select>
+                    <select id="month" name="month" required>
+                        <option value="">Select Month</option>
+                        <option value="1">January</option>
+                        <option value="2">February</option>
+                        <option value="3">March</option>
+                        <option value="4">April</option>
+                        <option value="5">May</option>
+                        <option value="6">June</option>
+                        <option value="7">July</option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                    </select>
+                    <select id="year" name="year" required>
+                        <option value="">Select Year</option>
+                        <script>
+                            const currentYear = new Date().getFullYear();
+                            for (let i = currentYear; i >= 1900; i--) {
+                                document.write(`<option value="${i}">${i}</option>`);
+                            }
+                        </script>
+                    </select>
+                </div>
+            </div>
+
+
+            <div class="form-group">
+                <label for="birth-time">Time of Birth:</label>
+                <div class="time-selectors">
+                    <select id="hours" name="hours" required>
+                        <option value="">Select Hour</option>
+
+                        <script>
+                            for (let i = 0; i < 24; i++) {
+                                document.write(`<option value="${i}">${i.toString().padStart(2, '0')}</option>`);
+                            }
+                        </script>
+                    </select>
+                    <select id="minutes" name="minutes" required>
+                        <option value="">Select Minute</option>
+
+                        <script>
+                            for (let i = 0; i < 60; i++) {
+                                document.write(`<option value="${i}">${i.toString().padStart(2, '0')}</option>`);
+                            }
+                        </script>
+                    </select>
+                </div>
+            </div>
+
+
+            <div class="form-group">
+                <label for="location">Location </label>
+                <input type="text" id="location" name="location" placeholder="Enter Your Birth Location" required>
+            </div>
+
+
+            <div class="form-group">
+                <button type="submit">Submit</button>
+            </div>
+        </form>
+    </div>
+    <br><br>
+
+    <div class="choose">
+        <section>
+        <h4>How to choose a bracelet?</h4>
+        <p>Generally, the free bracelet calculator gives you three bracelet suggestions: first as per your master<br>
+            number, second as per your name, and third as per your origin number. Wearing the set of these three
+            <br>bracelets proves utmost beneficial; however, to choose one, you must go for the bracelet suggested<br>
+            as per your master numbe
+        </p><br>
+        <h4>How to Wear a Bracelet:</h4>
+        <p>Here are certain ways to use the Bracelet. You can use any one of them to take advantage of this <br>magical
+            bracelet</p>
+        <ul>
+            <li>
+
+                Wear the Bracelet in either hand.
+            </li>
+            <li>
+                Keep the Bracelet in the pocket or purse.
+            </li>
+            <li>
+                Children may keep the Bracelet in their school/college bag.
+            </li>
+        </ul>
+        <br>
+        <h4>On Which Day to Wear Bracelet:</h4>
+        <p>Bracelets can be worn irrespective of day and time. However, prefer to wear this magical bracelet in<br>the daylight.</p>
+        <br>
+        <h4>Preventions While Wearing Bracelet:</h4>
+        <p>There are no such preventions to be followed while wearing the bracelet. You do not need to make<br> any changes in your routine after wearing this bracelet. It will keep working and benefiting you till you<br> are connected to it physically & psychologically.</p>
+        <br>
+        <h4>Difference between Charged & Uncharged Bracelet:</h4>
+        <p>We offer you both charged & uncharged Bracelets which you can order as per your need and budget.<br> Charged bracelet reaches you after performing certain Puja, Chanting of respective Mantras, and <br>giving intent to the bracelet which takes considerable time & energy. However, the charged bracelet<br> begins to work faster than an uncharged bracelet. On the other hand, we also offer uncharged <br> bracelets on which no custom of Puja, Mantra or intent has been performed. It does not mean the<br> uncharged bracelet does not work; it just takes some time to sync with your energies.</p>
+        <br>
+        <h4>Safety Information:</h4>
+        <ul>
+            <li>
+                Detergents and lotions can damage the finishing and color of the stones/crystals.
+            </li>
+            <li>
+                So don’t dip your stones/crystals in water. Bracelets should always be removed before swimming<br>and washing dishes.
+            </li>
+            <li>
+                It can be kept in a jewellery/bracelets case or stored in a plastic or soft cloth bag to protect.
+            </li>
+            <li>
+                Clean bracelets with a soft 100% cotton.
+            </li>
+        </ul>
+        </section>
+        
+    </div>
+
+
+    <div class="footer">
+        <div class="my-footer">
+            <img src="../aboutPhotos/footer.png"><br><br>
+            <p>Bracelets are versatile pieces of jewelry worn<br> around the wrist, often used for fashion,
+                self-<br>expression, or cultural and religious significance.
+                <br><br>
+                They come in various materials such as metal,<br> leather, fabric, or beads and can range from<br>
+                simple and minimalist designs to elaborate and<br> ornate styles.
+            </p>
+            <br>
+            <p>All Rights Reserved by © 2021 Sonssel.</p>
+        </div>
+        
+        <div class="my-footer">
+         
+<h4 class="useful">Useful Links</h4>
+<p>About Us</p>
+<p>Products</p>
+<p>Services</p>
+<p>Terms & Condition</p>
+<p>Privacy Policy</p>
+        </div>
+        <div class="my-footer">
+<h4 class="useful">Contact us</h4>
+<div class="the-icons">
+    <div class="my-icons">
+<i class="fa-solid fa-location-dot"></i> 
+</div>
+<div class="my-icons">
+Registered Office: Nilam Nagar<br>
+Building. No. 6, E-801, Mulund 
+</div>
+ <br><br>
+</div>
+ <div class="the-icons">
+ <div class="my-icons">
+    <br>
+  <i class="fa-solid fa-location-dot"></i>
+</div>
+<div class="my-icons">
+ <br>
+    Corporate office: Ecstacy Business Park,<br>      Citi of Joy. Below West-East Flyover,
+</div>
+</div>
+
+<div class="the-icons">
+    <div class="my-icons">
+       <br>
+       <i class="fa-solid fa-phone"></i>     918169461298 
+       </div>
+
+</div>
+
+
+<div class="the-icons">
+    <div class="my-icons">
+       <br>
+       <i class="fa-solid fa-envelope-open"></i>     918169461298 
+       </div>
+  
+</div>
+</div>
+        
+        <div class="my-footer">
+<h4 class="useful">Enquire Now</h4><br>
+<input type="text" placeholder="Full Name"><br>
+<input type="text" placeholder="Contact Number"><br>
+<input type="text" placeholder="Email"><br><br>
+<a href="./contact.html">  <button>Contact Us</button></a>
+        </div>
+
+</div>
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+</body>
+
+</html>

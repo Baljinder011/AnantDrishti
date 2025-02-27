@@ -1,0 +1,279 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .profile-container {
+            width: 300px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+        .profile-container img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: block;
+            margin: 0 auto;
+        }
+        .profile-container input {
+            width: 100%;
+            padding: 8px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .profile-container button {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .profile-container button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="profile-container">
+        <h2>Profile Page</h2>
+        <form id="profileForm">
+            <img id="profileImagePreview" src="default-profile.jpg" alt="Profile Image">
+            <input type="file" id="profileImage" accept="image/*" onchange="previewImage()">
+            <input type="text" id="name" placeholder="Name" required>
+            <input type="email" id="email" placeholder="Email" required>
+            <input type="tel" id="phone" placeholder="Phone Number" required>
+            <input type="date" id="dob" placeholder="Date of Birth" required>
+            <button type="submit">Save Profile</button>
+        </form>
+    </div>
+
+    <script>
+        // Fetch user data from the database (if any) when the page loads
+        window.onload = function() {
+            fetch('/getProfileData')
+                .then(response => response.json())
+                .then(data => {
+                    if (data) {
+                        document.getElementById('name').value = data.name || '';
+                        document.getElementById('email').value = data.email || '';
+                        document.getElementById('phone').value = data.phone || '';
+                        document.getElementById('dob').value = data.dob || '';
+                        document.getElementById('profileImagePreview').src = data.profileImage || 'default-profile.jpg';
+                    }
+                })
+                .catch(error => console.log(error));
+        };
+
+        // Preview the uploaded image
+        function previewImage() {
+            const file = document.getElementById('profileImage').files[0];
+            const reader = new FileReader();
+            reader.onloadend = function () {
+                document.getElementById('profileImagePreview').src = reader.result;
+            };
+            if (file) {
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Save profile data
+        document.getElementById('profileForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
+            const dob = document.getElementById('dob').value;
+            const profileImage = document.getElementById('profileImage').files[0];
+
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('email', email);
+            formData.append('phone', phone);
+            formData.append('dob', dob);
+            if (profileImage) {
+                formData.append('profileImage', profileImage);
+            }
+
+            fetch('/saveProfile', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert('Profile saved successfully!');
+                // Update form inputs with the saved data (optional)
+                document.getElementById('name').value = data.name;
+                document.getElementById('email').value = data.email;
+                document.getElementById('phone').value = data.phone;
+                document.getElementById('dob').value = data.dob;
+                document.getElementById('profileImagePreview').src = data.profileImage;
+            })
+            .catch(error => {
+                alert('Error saving profile');
+                console.error(error);
+            });
+        });
+    </script>
+</body>
+</html> -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- <script>
+    document.addEventListener("DOMContentLoaded", loadProfile);
+
+   
+    function loadProfile() {
+      const email = "baljinder@gmail.com"; 
+      const savedProfile = JSON.parse(localStorage.getItem("userProfile"));
+
+    
+      if (savedProfile && savedProfile.email === email) {
+        populateProfileFields(savedProfile);
+      } else {
+       
+        fetch(`http://localhost:3000/getProfile/${email}`)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error("Network response was not ok " + response.statusText);
+            }
+            return response.json();
+          })
+          .then(profile => {
+            if (profile) {
+              populateProfileFields(profile);
+            }
+          })
+          .catch(error => console.error("Error loading profile:", error));
+      }
+    }
+
+ 
+    function populateProfileFields(profile) {
+      document.getElementById('name').value = profile.name || '';
+      document.getElementById('email').value = profile.email || '';
+      document.getElementById('phone').value = profile.phone || '';
+      document.getElementById('dob').value = profile.dob || '';
+
+   
+      const imagePreview = document.getElementById('image-preview');
+      imagePreview.src = profile.image || 'uploads/default-profile.png'; 
+    }
+
+   
+    function previewImage(event) {
+      const file = event.target.files[0];
+      const reader = new FileReader();
+
+      reader.onload = function () {
+        const output = document.getElementById('image-preview');
+        output.src = reader.result;
+      };
+
+      if (file) {
+        reader.readAsDataURL(file);
+      }
+    }
+
+  
+    async function saveProfile() {
+      const email = document.getElementById('email').value;
+      const name = document.getElementById('name').value;
+
+      if (!email || !name) {
+        alert('Please enter your name and email.');
+        return;
+      }
+
+      const updatedInfo = {
+        email: email,
+        name: name,
+        phone: document.getElementById('phone').value,
+        dob: document.getElementById('dob').value,
+      };
+
+      const fileInput = document.getElementById('profile-image');
+      let formData = new FormData();
+
+      for (const key in updatedInfo) {
+        formData.append(key, updatedInfo[key]);
+      }
+
+      if (fileInput.files[0]) {
+        formData.append('profileImage', fileInput.files[0]);
+      }
+
+      try {
+        const response = await fetch("http://localhost:3000/saveProfile", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (response.ok) {
+          saveToLocalStorage(updatedInfo);
+          updateUIWithSavedData(updatedInfo);
+        }
+      } catch (error) {
+        console.error("Failed to save profile: " + error.message);
+      }
+    }
+
+    function saveToLocalStorage(profile) {
+      localStorage.setItem("userProfile", JSON.stringify(profile));
+    }
+
+
+    function updateUIWithSavedData(profile) {
+      document.getElementById('name').value = profile.name || '';
+      document.getElementById('email').value = profile.email || '';
+      document.getElementById('phone').value = profile.phone || '';
+      document.getElementById('dob').value = profile.dob || '';
+    }
+
+   
+    function unlockInputs() {
+      document.getElementById('name').disabled = false;
+      document.getElementById('email').disabled = false;
+      document.getElementById('phone').disabled = false;
+      document.getElementById('dob').disabled = false;
+    }
+  </script> -->

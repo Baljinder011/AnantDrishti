@@ -1,0 +1,83 @@
+body {
+    animation: fadeIn 1s ease-out;
+}
+
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.calculator {
+    background: url("https://s3-alpha-sig.figma.com/img/80d0/41e3/1c59e96f80d66a39079e8426af30e0c3?Expires=1737936000&Key-Pair-Id=APKAQ4GOSFWCVNEHN3O4&Signature=RM9HdYKv9eIkY4UwStNWFdNh0HVJh6Us43fj8ua~GGquhBo3nRppDj2~Tr~l4j-XjEdG0fBbx~eZxs4p6zM9~CILy-VcKLfDiOudkEvP8BwlPcmPMcDKjBbT640Q4aj~PKJnOklNJKOw9zhXeCSLM0CMuvnNs95P5Hdui1gtVdXP3Vdrkh6sdm1AKgUY2CxbqC5gMx-j86DNxmhx6MUu2368rBAQNtyaGwvaadh7HQDf9QMIKlE2T7KM1iORgOs2RxHNtA39rXK7TYhHTmVNDVNVOFHoOs6-tzSSzr072lsjxwQvyhuXHFXBBQ~EwqWheg1FzMq-m202Ir3tF0d21g__");
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    width: 100%;
+    height: 250px;
+    position: relative;
+    bottom: 60px;
+    color: white;
+    margin-top: 70px;
+    text-align: center;
+
+
+}
+
+.calculator h1 {
+    text-align: center;
+    font-size: 60px;
+    font-family:'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+   position: relative;
+   top:75px
+
+}
+
+@media screen and (max-width:650px){
+    .calculator h1{
+        font-size: 40px;
+    }
+}
+
+.Numerology{
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap:40px
+}
+
+.Numerology img{
+    width:100%;
+    max-width:549px
+}
+
+.Numerology button {
+  
+    background-color: rgb(175, 82, 222);
+    padding: 8px;
+    border-radius: 5px;
+    color: white;
+    border: none;
+    transition: 0.5s;
+  }
+  .Numerology button:hover {
+    background-color: rgb(100, 34, 133);
+    transform: matrix(1);
+  }
+
+  @media screen and (max-width:768px){
+    .Numerology{
+        padding-inline-start: 40px;
+        padding-inline-end: 40px;
+    }
+  }
+
+
+  
+
