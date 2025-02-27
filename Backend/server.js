@@ -482,7 +482,7 @@ app.get("/products/search", async (req, res) => {
       return res.status(400).json({ message: "Search query is required" });
     }
     
-    const products = await ProductData.find({ name: { $regex: query, $options: "i" } });
+    const products = await Product.find({ name: { $regex: query, $options: "i" } });
     
     if (products.length === 0) {
       return res.status(404).json({ message: "No products found" });

@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -12,7 +11,27 @@
 <body>
     <nav class="navbar">
         <div class="navbar-brand">
+            <a href="./index.html">
             <img src="../Photos/logo.png" alt="Logo">
+            </a>
+        </div>
+
+        <!-- display flex after 1072px -->
+        <div class="new-nav">
+            <!-- Profile Section (Hidden if not logged in) -->
+            <div class="profile-menu-container" id="profileMenuContainerSidebar" style="display: none;">
+                <a href="#" id="profileIconSidebar">
+                    <i class="fa-solid fa-user-circle fa-xl"></i>
+                </a>
+                <div id="profileDropdownSidebar" class="dropdown hidden">
+                    <p><a href="./profile.html">Profile</a></p>
+                    <p id="logoutButtonSidebar">Sign Out</p> <!-- Sign Out Button -->
+                </div>
+                <a href="./cart.html">
+                    <i class="fa-solid fa-cart-shopping the-cart"></i>
+                    <span id="cart-counter">0</span>
+                </a>
+            </div>
         </div>
         <div class="nav-open">
             <button class="navbar-toggler" id="navbar-toggler">☰</button>
@@ -48,6 +67,7 @@
             </a>
             <a href="./cart.html">
                 <i class="fa-solid fa-cart-shopping the-cart"></i>
+                <span id="cart-counter">0</span>
             </a>
         </div>
     </nav>
@@ -55,49 +75,34 @@
     <!-- Sidebar Section -->
     <div class="sidebar" id="sidebar">
         <button class="close-btn" id="close-btn">&times;</button>
-        <a href="./cart.html">
-            <i class="fa-solid fa-cart-shopping cart"></i>
-        </a>
+
         <ul>
             <div class="navbar-brand">
                 <img src="../aboutPhotos/footer.png" alt="Logo">
             </div>
             <br>
-            <p>Celebrating AnantDrrishti Digital Era: Your Journey, Our Celebration A Legacy of Trust & Excellence with
-                People</p>
-            <div class="nav-items">
-                <a href="./index.html" class="nav-link"> <i class="fa-solid fa-house"></i>
-                    <li>Home</li>
-                </a>
-                <a href="./about.html" class="nav-link"> <i class="fa-solid fa-eject"></i>
-                    <li> About</li>
-                </a>
-                <a href="./services.html" class="nav-link"> <i class="fa-brands fa-servicestack"></i>
-                    <li> Services</li>
-                </a>
-                <a href="./products.html" class="nav-link"> <i class="fa-solid fa-bag-shopping"></i>
-                    <li> Products</li>
-                </a>
-                <a href="./calculator.html" class="nav-link"><i class="fa-solid fa-calculator"></i>
-                    <li>Calculator</li>
-                </a>
-                <a href="./privacy-policy.html" class="nav-link"> <i class="fa-solid fa-shield-halved"></i>
-                    <li> Privacy Policy</li>
-                </a>
-            </div>
+            <p>Celebrating AnantDrrishti Digital Era: Your Journey, Our Celebration A Legacy of Trust & Excellence with People</p>
+
+            <a href="./index.html" class="nav-link"> <i class="fa-solid fa-house"></i>
+                <li>Home</li>
+            </a>
+            <a href="./about.html" class="nav-link"> <i class="fa-solid fa-eject"></i>
+                <li> About</li>
+            </a>
+            <a href="./services.html" class="nav-link"> <i class="fa-brands fa-servicestack"></i>
+                <li> Services</li>
+            </a>
+            <a href="./products.html" class="nav-link"> <i class="fa-solid fa-bag-shopping"></i>
+                <li> Products</li>
+            </a>
+            <a href="./calculator.html" class="nav-link"><i class="fa-solid fa-calculator"></i>
+                <li>Calculator</li>
+            </a>
+            <a href="./privacy-policy.html" class="nav-link"> <i class="fa-solid fa-shield-halved"></i>
+                <li> Privacy Policy</li>
+            </a>
         </ul>
         <div class="side-btn">
-            <!-- Profile Section (Hidden if not logged in) -->
-            <div class="profile-menu-container" id="profileMenuContainerSidebar" style="display: none;">
-                <a href="#" id="profileIconSidebar">
-                    <i class="fa-solid fa-user-circle fa-xl"></i>
-                </a>
-                <ul id="profileDropdownSidebar" class="dropdown hidden">
-                    <li><a href="./profile.html">Profile</a></li>
-                    <li id="logoutButtonSidebar">Sign Out</li>
-                </ul>
-            </div>
-
             <!-- Login Button -->
             <a id="loginButtonSidebar">
                 <button class="the-btn" type="button">Login</button>
@@ -111,10 +116,13 @@
     <div class="overlay" id="overlay"></div>
 
     <script>
-      // Fetch products and enable search suggestions
+
+
+
+// Fetch products and enable search suggestions
 async function fetchAndEnableSearch() {
     try {
-        const response = await fetch('https://indraq.tech:3000/products'); // Fetch products from the API
+        const response = await fetch('http://localhost:3000/products'); // Fetch products from the API
         const products = await response.json();
 
         const searchInput = document.getElementById('searchInput');
@@ -165,6 +173,24 @@ async function fetchAndEnableSearch() {
             suggestionBox.style.display = 'block';
         });
 
+        // Trigger search when Enter key is pressed
+        searchInput.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                const query = searchInput.value.toLowerCase();
+                const filteredProducts = products.filter(product =>
+                    product.name.toLowerCase().includes(query)
+                );
+
+                if (filteredProducts.length > 0) {
+                    // Navigate to the products page with filtered query
+                    const queryString = new URLSearchParams({ search: query }).toString();
+                    window.location.href = `./products.html?${queryString}`;
+                } else {
+                    alert('No products found');
+                }
+            }
+        });
+
         // Hide suggestions when clicking outside
         document.addEventListener('click', function (event) {
             if (!searchInput.contains(event.target) && !suggestionBox.contains(event.target)) {
@@ -178,6 +204,7 @@ async function fetchAndEnableSearch() {
 
 // Call the function to enable search functionality
 fetchAndEnableSearch();
+
 
 
 
@@ -213,6 +240,8 @@ function updateUIBasedOnLoginStatus() {
     }
 }
 
+updateUIBasedOnLoginStatus();
+
 // Logout functionality
 const logoutHandler = () => {
             // Clear login state and profile info from local storage
@@ -220,7 +249,8 @@ const logoutHandler = () => {
             localStorage.removeItem('token');
             localStorage.removeItem('userProfile');
             localStorage.removeItem('profileImage');
-
+            localStorage.removeItem('cart');
+            localStorage.removeItem('wishlist');
             // Redirect to home page after logout
             window.location.href = './index.html';
         };
@@ -254,7 +284,7 @@ loginButtonSidebar.addEventListener('click', function (event) {
     window.location.href = './login.html'; // Navigate to login page
 });
 
-updateUIBasedOnLoginStatus();
+
 
 // Navbar toggle functionality
 const navbarToggler = document.getElementById('navbar-toggler');
@@ -288,7 +318,34 @@ overlay.addEventListener('click', () => {
     overlay.classList.remove('active');
 });
 
+
+
+function updateCartCounter() {
+    const cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+    // Calculate total quantity of all products in cart
+    const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+    // Update all cart counter elements
+    document.querySelectorAll('#cart-counter').forEach(counter => {
+        if (totalQuantity > 0) {
+            counter.textContent = totalQuantity;
+            counter.style.display = 'inline-block'; // Show the counter
+        } else {
+            counter.style.display = 'none'; // Hide the counter when cart is empty
+        }
+    });
+}
+
+// Run this function when the page loads
+document.addEventListener("DOMContentLoaded", updateCartCounter);
+window.addEventListener('storage', updateCartCounter);
+
+
+
+
     </script>
+    <script src="function.js"></script>
 </body>
 
 </html>

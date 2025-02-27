@@ -536,3 +536,40 @@ body button {
 .product-name {
     font-size: 14px;
 }
+
+
+
+#cart-counter {
+    background-color: red;
+    color: white;
+    font-size: 9px;
+    font-weight: bold;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 28px;
+    right: 14px;
+}
+
+/* Ensure cart icon is positioned relatively */
+.the-cart {
+    position: relative;
+    font-size: 20px;
+}
+@media screen and (max-width:1072px){
+    .nav-open input{
+        display: block;
+        margin-left: -200px;
+    }
+} 
+
+
+
+.new-nav{
+    display: none;
+}
