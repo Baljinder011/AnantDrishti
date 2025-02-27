@@ -97,7 +97,7 @@
       saveButton.disabled = true;
       saveButton.textContent = 'Saving...';
 
-      fetch('http://localhost:3000/saveProfile', {
+      fetch('https://indraq.tech:3000/saveProfile', {
         method: 'POST',
         body: formData,
       })
