@@ -17,6 +17,49 @@ body button {
     background-color: #ffffff;
 }
 
+
+.navbar-nav .nav-item {
+    margin: 0 10px;
+
+}
+
+
+
+.logo {
+    padding: 0 100px;
+}
+
+@media screen and (max-width:968px) {
+    .logo {
+        margin-left: -100px;
+
+    }
+
+    .nav-link {
+        align-items: start;
+    }
+
+}
+
+.nav-link {
+    color: black;
+    transition: color 0.3s ease;
+}
+
+
+.navbar-nav {
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.navbar a {
+    text-decoration: none;
+    color: black;
+    margin-top: 20px
+}
+
 .navbar-brand img {
 
     height: 50px;
@@ -48,7 +91,7 @@ body button {
 
 .nav-link:hover {
     color: rgb(170, 0, 255);
-    transform: translateY(-10px);
+    transform: scale(1.1)
 }
 
 .sidebar {
@@ -181,13 +224,7 @@ body button {
 }
 
 
-.sidebar a {
-    /* margin-top: 10px */
-}
-.sidebar a{
-    /* margin-top:10px */
 
-}
 
 .side-btn a {
     text-decoration: none;
