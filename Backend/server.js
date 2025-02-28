@@ -94,7 +94,7 @@ app.post("/create-payment-link", async (req, res) => {
           link_expiry_time: getExpiryTime(),
           link_meta: {
               // return_url: `http://localhost:${PORT}/redirect.html?link_id=${link_id}`
-              return_url: `http://indraq.tech:${PORT}/redirect.html?link_id=${link_id}`
+              return_url: `https://indraq.tech:${PORT}/redirect.html?link_id=${link_id}`
 
           }
       };

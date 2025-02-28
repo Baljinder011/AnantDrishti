@@ -254,7 +254,7 @@ body button {
     }
 
     .navbar-menu.active {
-        display: flex;
+        display: none;
     }
 }
 
@@ -288,7 +288,7 @@ body button {
     .navbar-menu.active {
         display: none;}
     .navbar-menu.active {
-        display: flex;
+        /* display: flex; */
     }
 }
 
