@@ -8,7 +8,8 @@ const bcrypt = require("bcrypt");
 require('dotenv').config();
 const crypto = require("crypto");
 const axios= require("axios")
-
+// const https = require("https");
+// const fs = require("fs");
 
 
 const app = express();
@@ -27,8 +28,20 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 const PORT = process.env.PORT || 3000
 
 
+// const options = {
+//   key: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/privkey.pem"),
+//   cert: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/fullchain.pem"),
+// };
 
 
+
+// Enforce HTTPS middleware
+// app.use((req, res, next) => {
+//   if (req.protocol !== "https") {
+//     return res.redirect("https://" + req.headers.host + req.url);
+//   }
+//   next();
+// });
 
 
 // MongoDB connection
@@ -81,8 +94,8 @@ app.post("/create-payment-link", async (req, res) => {
             link_auto_reminders: true,
             link_expiry_time: getExpiryTime(),
             link_meta: {
-              // return_url: `https://localhost:${PORT}/redirect.html?link_id=${link_id}`
-              return_url: `          https://indraq.tech/redirect.html?link_id=${link_id}`
+              // return_url: `http://localhost:${PORT}/redirect.html?link_id=${link_id}`
+              return_url: ` http://indraq.tech:${PORT}/redirect.html?link_id=${link_id}`
 
           }
         };
@@ -600,11 +613,14 @@ app.put('/products/:id/status', async (req, res) => {
 
 
 
-
-
-
-
-// Start server
+// Start Server
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });
+
+
+
+// Start HTTPS server
+// https.createServer(options, app).listen(PORT, () => {
+//   console.log(`Secure server running on HTTPS at port ${PORT}`);
+// });

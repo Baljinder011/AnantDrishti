@@ -15,11 +15,56 @@ body button {
     align-items: center;
     padding: 10px 20px;
     background-color: #ffffff;
+}
 
+
+.navbar-nav .nav-item {
+    margin: 0 10px;
 
 }
 
+
+
+.logo {
+    padding: 0 100px;
+}
+
+@media screen and (max-width:968px) {
+    .logo {
+        margin-left: -100px;
+
+    }
+
+    .nav-link {
+        align-items: start;
+    }
+
+}
+
+.nav-link {
+    color: black;
+    transition: color 0.3s ease;
+}
+
+
+.navbar-nav {
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.navbar a {
+    text-decoration: none;
+    color: black;
+    margin-top: 20px
+}
+
 .navbar-brand img {
+
+    height: 50px;
+    width: 100px;
+
     height: 40px;
 }
 
