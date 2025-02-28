@@ -15,7 +15,9 @@ const axios= require("axios")
 const app = express();
 
 // Middleware
-app.use(cors({ origin: "*" }));
+app.use(cors());
+app.use(express.json());
+
 
 const frontendPath = path.join(__dirname, "..", "Frontend"); // Adjust if needed
 console.log("Serving frontend from:", frontendPath); // Debugging
@@ -69,57 +71,54 @@ function getExpiryTime() {
     return now.toISOString();
 }
 
-// API to Create a Payment Link
+// Create Payment Link API
 app.post("/create-payment-link", async (req, res) => {
-    try {
-        const { customer_name, customer_email, customer_phone, amount } = req.body;
-        if (!customer_name || !customer_email || !customer_phone || !amount) {
-            return res.status(400).json({ error: "Missing required fields" });
-        }
-        
-        // Generate a unique link_id (Order ID)
-        const link_id = `CF_${crypto.randomBytes(8).toString("hex")}`;
-        const apiUrl = "https://sandbox.cashfree.com/pg/links";
-        const payload = {
-            link_id: link_id,
-            customer_details: {
-                customer_name,
-                customer_email,
-                customer_phone
-            },
-            link_amount: amount,
-            link_currency: "INR",
-            link_purpose: "E-commerce Purchase",
-            link_notify: { send_email: true, send_sms: true },
-            link_auto_reminders: true,
-            link_expiry_time: getExpiryTime(),
-            link_meta: {
+  try {
+      const { customer_name, customer_email, customer_phone, amount } = req.body;
+
+      if (!customer_name || !customer_email || !customer_phone || !amount) {
+          return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      const link_id = `CF_${crypto.randomBytes(8).toString("hex")}`;
+      const apiUrl = "https://sandbox.cashfree.com/pg/links";
+
+      const payload = {
+          link_id,
+          customer_details: { customer_name, customer_email, customer_phone },
+          link_amount: amount,
+          link_currency: "INR",
+          link_purpose: "E-commerce Purchase",
+          link_notify: { send_email: true, send_sms: true },
+          link_auto_reminders: true,
+          link_expiry_time: getExpiryTime(),
+          link_meta: {
               // return_url: `http://localhost:${PORT}/redirect.html?link_id=${link_id}`
-              return_url: ` http://indraq.tech:${PORT}/redirect.html?link_id=${link_id}`
+              return_url: `http://indraq.tech:${PORT}/redirect.html?link_id=${link_id}`
 
           }
-        };
-        
-        const response = await axios.post(apiUrl, payload, {
-            headers: {
-                "Content-Type": "application/json",
-                "x-api-version": "2022-09-01",
-                "x-client-id": APP_ID,
-                "x-client-secret": SECRET_KEY
-            }
-        });
+      };
 
-        res.json({
-            link_id: response.data.link_id,
-            link_url: response.data.link_url
-        });
-    } catch (error) {
-        res.status(500).json({
-            error: "Failed to create payment link",
-            details: error.response?.data || error.message || "Unknown error occurred"
-        });
-    }
+      const response = await axios.post(apiUrl, payload, {
+          headers: {
+              "Content-Type": "application/json",
+              "x-api-version": "2022-09-01",
+              "x-client-id": APP_ID,
+              "x-client-secret": SECRET_KEY
+          }
+      });
+
+      res.json({ link_id: response.data.link_id, link_url: response.data.link_url });
+  } catch (error) {
+      console.error("Cashfree API Error:", error.response?.data || error.message);
+      res.status(500).json({ error: "Failed to create payment link", details: error.response?.data || error.message });
+  }
 });
+
+
+
+
+
 
 // **Check Payment Status**
 app.get("/check-payment-status", async (req, res) => {

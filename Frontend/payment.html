@@ -108,40 +108,40 @@ document.getElementById("payButton").addEventListener("click", async function ()
     const customerEmail = "johndoe@example.com";
     const customerPhone = "9999999999";
 
-    // ✅ Get the total price from the cart summary dynamically
     const amount = document.getElementById("total-price").innerText.trim(); 
+    console.log("Total Price:", amount); // Debugging log
 
-    // Check if amount is valid
     if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
-        alert("Invalid total amount!");
+        alert("Invalid total amount: " + amount);
         return;
     }
 
     try {
         const response = await fetch("http://indraq.tech:3000/create-payment-link", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 customer_name: customerName,
                 customer_email: customerEmail,
                 customer_phone: customerPhone,
-                amount: parseFloat(amount) // Convert to a number before sending
+                amount: parseFloat(amount)
             })
         });
 
         const result = await response.json();
+        console.log("Response:", result); // Debugging log
 
         if (result.link_url) {
-            window.location.href = result.link_url; // Redirect to payment page
+            window.location.href = result.link_url;
         } else {
             alert("Payment Link creation failed!");
         }
     } catch (error) {
         console.error("Error:", error);
+        alert("Error in payment process");
     }
 });
+
 
 
 
