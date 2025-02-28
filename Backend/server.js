@@ -8,8 +8,8 @@ const bcrypt = require("bcrypt");
 require('dotenv').config();
 const crypto = require("crypto");
 const axios= require("axios")
-// const https = require("https");
-// const fs = require("fs");
+const https = require("https");
+const fs = require("fs");
 
 
 const app = express();
@@ -30,20 +30,20 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 const PORT = process.env.PORT || 3000
 
 
-// const options = {
-//   key: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/privkey.pem"),
-//   cert: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/fullchain.pem"),
-// };
+const options = {
+  key: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/privkey.pem"),
+  cert: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/fullchain.pem"),
+};
 
 
 
 // Enforce HTTPS middleware
-// app.use((req, res, next) => {
-//   if (req.protocol !== "https") {
-//     return res.redirect("https://" + req.headers.host + req.url);
-//   }
-//   next();
-// });
+app.use((req, res, next) => {
+  if (req.protocol !== "https") {
+    return res.redirect("https://" + req.headers.host + req.url);
+  }
+  next();
+});
 
 
 // MongoDB connection
@@ -613,13 +613,13 @@ app.put('/products/:id/status', async (req, res) => {
 
 
 // Start Server
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+// app.listen(PORT, () => {
+//   console.log(`Server running on http://localhost:${PORT}`);
+// });
 
 
 
 // Start HTTPS server
-// https.createServer(options, app).listen(PORT, () => {
-//   console.log(`Secure server running on HTTPS at port ${PORT}`);
-// });
+https.createServer(options, app).listen(PORT, () => {
+  console.log(`Secure server running on HTTPS at port ${PORT}`);
+});
