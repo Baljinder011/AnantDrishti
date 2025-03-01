@@ -39,12 +39,16 @@ const options = {
 
 
 // Enforce HTTPS middleware
+
+
 app.use((req, res, next) => {
   if (req.protocol !== "https") {
     return res.redirect("https://" + req.headers.host + req.url);
   }
   next();
 });
+
+
 
 
 // MongoDB connection
@@ -907,7 +911,10 @@ app.put('/orders/:id', async (req, res) => {
 
 
 
+
 // Start Server
+
+
 // app.listen(PORT, () => {
 //   console.log(`Server running on http://localhost:${PORT}`);
 // });
@@ -915,6 +922,8 @@ app.put('/orders/:id', async (req, res) => {
 
 
 // Start HTTPS server
+
+
 https.createServer(options, app).listen(PORT, () => {
   console.log(`Secure server running on HTTPS at port ${PORT}`);
 });

@@ -9,7 +9,7 @@ body button {
 }
 
 body button:hover {
-  transform: translateY(-10px);
+  transform: scale(1.1);
 }
 
 body i {
@@ -17,7 +17,7 @@ body i {
 }
 
 body i:hover {
-  transform: translateY(-10px);
+  transform: scale(1.1);
 }
 
 body {

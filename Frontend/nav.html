@@ -335,24 +335,23 @@ overlay.addEventListener('click', () => {
 
 function updateCartCounter() {
     const cart = JSON.parse(localStorage.getItem('cart')) || [];
-
-    // Calculate total quantity of all products in cart
     const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
+    const cartCounters = document.querySelectorAll('#cart-counter');
 
-    // Update all cart counter elements
-    document.querySelectorAll('#cart-counter').forEach(counter => {
+    cartCounters.forEach(counter => {
         if (totalQuantity > 0) {
             counter.textContent = totalQuantity;
-            counter.style.display = 'inline-block'; // Show the counter
+            counter.style.display = 'inline-block'; // Show when there are items
         } else {
-            counter.style.display = 'none'; // Hide the counter when cart is empty
+            counter.style.display = 'none'; // Hide when cart is empty
         }
     });
 }
 
-// Run this function when the page loads
+// Run on page load and when cart updates
 document.addEventListener("DOMContentLoaded", updateCartCounter);
 window.addEventListener('storage', updateCartCounter);
+
 
 
 
