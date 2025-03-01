@@ -126,7 +126,7 @@
         const response = await fetch(`${CONFIG.API_URL}/signup`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password, fullName: name, dob, phone }),
+          body: JSON.stringify({ email, password, name: name, dob, phone }),
         });
         const data = await response.json();
         if (data.message) {

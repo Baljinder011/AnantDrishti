@@ -9,6 +9,10 @@ body button{
     cursor: pointer;
 }
 
+body button{
+    transition: 0.5s;
+}
+
 body button:hover{
     transform:scale(1.1)
 }
@@ -246,8 +250,8 @@ body {
 @media screen and (max-width:768px) {
     .the-products {
 
-        padding-inline-start: 40px;
-        padding-inline-end: 40px;
+        // padding-inline-start: 40px;
+        // padding-inline-end: 40px;
 
 
     }
@@ -703,21 +707,31 @@ body {
 
 
 .product-list {
-    display: flex;
-    justify-content: center;
+    // display: flex;
+    // justify-content: center;
+
+    display: grid;
+    grid-template-columns: auto auto auto;
     // gap: 20px;
     width:100%;
     flex-wrap: wrap;
-    padding-inline-start: 100px;
-    padding-inline-end: 100px;
+    // padding-inline-start: 100px;
+    // padding-inline-end: 100px;
+}
+
+@media screen and (max-width:1200px){
+    .product-list{
+        grid-template-columns: auto auto;
+    }
 }
 
 @media screen and (max-width:768px) {
     .product-list {
-        padding-inline-start: 10px;
-        padding-inline-end: 10px;
+        // padding-inline-start: 10px;
+        // padding-inline-end: 10px;
     }
 }
+
 
 
 
@@ -772,17 +786,33 @@ body {
   .the-card h5 {
     margin-top: 10px
   }
+
+
+
   
   
-  @media screen and (max-width:768px) {
+  @media screen and (max-width:1000px) {
     .card-body {
       width: 100%;
       max-width: 300px;
-      padding-inline-start: 10px;
-      padding-inline-end: 10px;
+    //   padding-inline-start: 10px;
+    //   padding-inline-end: 10px;
     }
   
     .the-card {
       width: 300px
     }
   }
+
+
+  @media screen and (max-width:700px){
+    .the-card{
+        max-width: 200px;
+    }
+  }
+  
+  @media screen and (max-width:440px){
+    .the-card{
+        max-width: 150px;
+    }
+}

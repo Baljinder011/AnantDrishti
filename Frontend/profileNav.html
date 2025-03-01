@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Navbar with Sidebar</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="profileNav.css">
+    <link rel="stylesheet" href="nav.css">
 </head>
 
 <body>
@@ -16,9 +16,42 @@
             </a>
         </div>
 
-       
+        <!-- display flex after 1072px -->
+        <div class="new-nav">
+            <!-- Profile Section (Hidden if not logged in) -->
+
+               <!-- Login Button -->
+               <a id="loginButtonSidebar">
+                <button class="the-btn" type="button">Login</button>
+            </a>
+
+
+            <div class="profile-menu-container" id="profileMenuContainerSidebar" style="display: none;">
+                <a href="#" id="profileIconSidebar">
+                    <i class="fa-solid fa-user-circle fa-xl"></i>
+                </a>
+                <div id="profileDropdownSidebar" class="dropdown hidden">
+                    <p><a href="./profile.html">Profile</a></p>
+                    <p id="logoutButtonSidebar">Sign Out</p> <!-- Sign Out Button -->
+                </div>
+                <a href="./cart.html">
+                    <i class="fa-solid fa-cart-shopping the-cart"></i>
+                    <span id="cart-counter">0</span>
+                </a>
+
+              
+            </div>
+            
+        </div>
+<div class="searchInput">
+        <input type="text" id="searchInput" placeholder="Search for products..." />
+        <i class="fa-solid fa-magnifying-glass the-search"></i>
+        <ul id="suggestionBox" class="list-group"></ul>
+</div>
+
         <div class="nav-open">
             <button class="navbar-toggler" id="navbar-toggler">☰</button>
+            
         </div>
         <div class="navbar-menu" id="navbar-menu">
             <a href="./index.html" class="nav-link">Home</a>
@@ -27,8 +60,7 @@
             <a href="./products.html" class="nav-link">Products</a>
             <a href="./calculator.html" class="nav-link">Calculator</a>
             <a href="./privacy-policy.html" class="nav-link">Privacy Policy</a>
-            <input type="text" id="searchInput" placeholder="Search for products..." />
-            <ul id="suggestionBox" class="list-group"></ul>
+          
 
             <a href="./wishlist.html">
                 <button class="the-btn" type="submit">My Wishlist</button>
@@ -54,24 +86,6 @@
                 <span id="cart-counter">0</span>
             </a>
         </div>
-
- <!-- display flex after 1072px -->
- <div class="new-nav">
-    <div class="profile-menu-container" id="profileMenuContainerSidebar" style="display: none;">
-        <a href="#" id="profileIconSidebar">
-            <i class="fa-solid fa-user-circle fa-xl"></i>
-        </a>
-        <div id="profileDropdownSidebar" class="dropdown hidden">
-            <p><a href="./profile.html">Profile</a></p>
-            <p id="logoutButtonSidebar">Sign Out</p> <!-- Sign Out Button -->
-        </div>
-        <a href="./cart.html">
-            <i class="fa-solid fa-cart-shopping the-cart"></i>
-            <span id="cart-counter">0</span>
-        </a>
-    </div>
-</div>
-
     </nav>
 
     <!-- Sidebar Section -->
@@ -105,10 +119,7 @@
             </a>
         </ul>
         <div class="side-btn">
-            <!-- Login Button -->
-            <a id="loginButtonSidebar">
-                <button class="the-btn" type="button">Login</button>
-            </a>
+         
             <a href="./wishlist.html">
                 <button class="the-btn" type="button">My Wishlist</button>
             </a>
@@ -324,25 +335,70 @@ overlay.addEventListener('click', () => {
 
 function updateCartCounter() {
     const cart = JSON.parse(localStorage.getItem('cart')) || [];
-
-    // Calculate total quantity of all products in cart
     const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
+    const cartCounters = document.querySelectorAll('#cart-counter');
 
-    // Update all cart counter elements
-    document.querySelectorAll('#cart-counter').forEach(counter => {
+    cartCounters.forEach(counter => {
         if (totalQuantity > 0) {
             counter.textContent = totalQuantity;
-            counter.style.display = 'inline-block'; // Show the counter
+            counter.style.display = 'inline-block'; // Show when there are items
         } else {
-            counter.style.display = 'none'; // Hide the counter when cart is empty
+            counter.style.display = 'none'; // Hide when cart is empty
         }
     });
 }
 
-// Run this function when the page loads
+// Run on page load and when cart updates
 document.addEventListener("DOMContentLoaded", updateCartCounter);
 window.addEventListener('storage', updateCartCounter);
 
+
+
+
+
+
+
+function updateUIBasedOnLoginStatus() {
+    const searchInputContainer = document.querySelector('.searchInput');
+
+    if (isLoggedIn) {
+        profileMenuContainer.style.display = 'block';
+        profileMenuContainerSidebar.style.display = 'block';
+        loginButton.style.display = 'none';
+        loginButtonSidebar.style.display = 'none';
+
+        // Apply the logged-in style
+        searchInputContainer.classList.add('logged-in');
+    } else {
+        profileMenuContainer.style.display = 'none';
+        profileMenuContainerSidebar.style.display = 'none';
+        loginButton.style.display = 'block';
+        loginButtonSidebar.style.display = 'block';
+
+        // Remove the logged-in style
+        searchInputContainer.classList.remove('logged-in');
+    }
+}
+
+updateUIBasedOnLoginStatus();
+
+
+
+
+
+
+function updateSearchIconStyle() {
+    const searchIcon = document.querySelector('.the-search');
+
+    if (isLoggedIn) {
+        searchIcon.classList.add('logged-in-search');
+    } else {
+        searchIcon.classList.remove('logged-in-search');
+    }
+}
+
+// Call this function after checking login status
+updateSearchIconStyle();
 
 
 

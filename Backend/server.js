@@ -237,15 +237,7 @@ const upload = multer({
 
 
 
-// const profileSchema = new mongoose.Schema({
-//   name: String,
-//   email: { type: String, required: true, unique: true },
-//   phone: String,
-//   dob: String,
-//   image: String, // Store image file path
-// });
-// profileSchema.index({ email: 1 }); 
-// const Profile = mongoose.model("Profile", profileSchema);
+
 
 
 
@@ -316,77 +308,13 @@ const Product = mongoose.model('products', productSchema);
 
 
 
-// Register api
-
-
-// app.post("/register", async (req, res) => {
-//   const { email, password, fullName, dob, phone } = req.body;
-
-//   // Ensure that all required fields are provided
-//   if (!email || !password || !fullName || !dob || !phone) {
-//     return res.status(400).json({ message: "All fields are required" });
-//   }
-
-//   try {
-//     const existingUser = await User.findOne({ email });
-//     if (existingUser) {
-//       return res.status(400).json({ message: "User already exists" });
-//     }
-
-//     // Hash the password using bcrypt
-//     const hashedPassword = await bcrypt.hash(password, 10);
-
-//     // Create new user with hashed password and other details
-//     const newUser = new User({ email, password: hashedPassword, fullName, dob, phone });
-
-//     // Save the new user to the database
-//     await newUser.save();
-
-//     res.status(201).json({ message: "User registered successfully" });
-//   } catch (error) {
-//     console.error("Error during registration:", error);
-//     res.status(500).json({ message: "Internal Server Error", error: error.message });
-//   }
-// });
 
 
 
 
 
 
-// Login api
 
-
-// app.post('/login', async (req, res) => {
-//   const { email, password } = req.body;
-
-//   if (!email || !password) {
-//     return res.status(400).json({ message: "Email and password are required" });
-//   }
-
-//   try {
-//       const user = await User.findOne({ email });
-//       if (!user) {
-//           return res.status(400).json({ message: 'User not found' });
-//       }
-
-//       const match = await bcrypt.compare(password, user.password);
-//       if (!match) {
-//           return res.status(400).json({ message: 'Invalid password' });
-//       }
-
-//       // Return user profile data without password
-//       const userProfile = {
-//           name: user.fullName,
-//           email: user.email,
-//           dob: user.dob,
-//           phone: user.phone
-//       };
-//       res.json({ message: 'Login successful', userProfile });
-//   } catch (error) {
-//       res.status(500).json({ message: 'Server error' });
-//   }
-// });
 
 
 
@@ -431,7 +359,7 @@ app.post("/saveProfile", upload.single("image"), async (req, res) => {
 
     const profileData = {
       name: profileInfo.name,
-      email: profileInfo.email,
+      email: profileInfo.email, 
       phone: profileInfo.phone,
       dob: profileInfo.dob,
       image: req.file ? req.file.path : "uploads/default-profile.png", // Default image fallback
@@ -640,11 +568,11 @@ app.put('/products/:id/status', async (req, res) => {
 
 // User Schema & Model
 const userSchema = new mongoose.Schema({
-  firstName: String,
-  lastName: String,
+  name: String,
   email: String,
   phone: String,
   dob: { type: Date, required: true },
+  password: { type: String, required: true }, // Add this field
   createdAt: { type: Date, default: Date.now },
 
   address: {
@@ -660,7 +588,6 @@ const userSchema = new mongoose.Schema({
       location: String
     }
   ],
-
   orders: [
     {
       orderId: String,
@@ -671,7 +598,9 @@ const userSchema = new mongoose.Schema({
     }
   ]
 }, { timestamps: true });
-const User = mongoose.model('users', userSchema);
+
+const User = mongoose.model("users", userSchema);
+
 
 
 
@@ -684,6 +613,112 @@ const orderSchema = new mongoose.Schema({
   status: String,
 });
 const Order = mongoose.model('Order', orderSchema);
+
+
+
+
+//profile schema
+
+const profileSchema = new mongoose.Schema({
+  name: String,
+  email: { type: String, required: true, unique: true },
+  phone: String,
+  dob: String,
+  image: String, // Store image file path
+});
+profileSchema.index({ email: 1 }); 
+const Profile = mongoose.model("Profile", profileSchema);
+
+
+
+
+// My Login api
+
+app.post("/login", async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ message: "Email and password are required" });
+  }
+
+  try {
+    // Find user in User collection
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
+
+    // Check password
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) {
+      return res.status(400).json({ message: "Invalid password" });
+    }
+
+    // Find user profile to get the image
+    const profile = await Profile.findOne({ email });
+
+    // Return user profile data with image
+    const userProfile = {
+      name: user.name,
+      email: user.email,
+      dob: user.dob,
+      phone: user.phone,
+      image: profile?.image || null, // Get image from profile, or return null if not found
+    };
+
+    res.json({ message: "Login successful", userProfile });
+  } catch (error) {
+    console.error("Error during login:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+
+
+
+
+
+// My Register api
+
+
+app.post("/signup", async (req, res) => {
+  const { email, password, name, dob, phone, image } = req.body;
+
+  if (!email || !password || !name || !dob || !phone) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
+
+  try {
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "User already exists" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create and save user
+    const newUser = new User({ email, password: hashedPassword, name, dob, phone });
+    await newUser.save();
+
+    // Create and save profile with image
+    const newProfile = new Profile({ email, name, phone, dob, image: image || "" });
+    await newProfile.save();
+
+    res.status(201).json({ message: "User registered successfully" });
+  } catch (error) {
+    console.error("Error during registration:", error);
+    res.status(500).json({ message: "Internal Server Error", error: error.message });
+  }
+});
+
+
+
+
+
+
+
+
+
 
 
 
@@ -714,76 +749,79 @@ async function sendMail(to, subject, text, html) {
     });
     console.log(":e-mail: Email sent successfully:", info.messageId);
     return { success: true, message: "Email sent successfully" };
-  } 
-  
+  }
+
   catch (error) {
 
     console.error(":x: Error sending email:", error);
     return { success: false, message: "Failed to send email", error: error.message };
   }
 }
-const profileSchema = new mongoose.Schema({
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-});
 
-const Profile = mongoose.model('profiles', profileSchema);
+
+
+// const profileSchema = new mongoose.Schema({
+//   email: { type: String, required: true, unique: true },
+//   password: { type: String, required: true },
+// });
+
+// const Profile = mongoose.model('profiles', profileSchema);
 // :white_tick: Signup Route with Email & Notification
 
 
 
 
 
-app.post("/signup", async (req, res) => {
-  console.log("Received signup request:", req.body);
+// app.post("/signup", async (req, res) => {
+//   console.log("Received signup request:", req.body);
 
-  try {
-    const { email, password, fullName, dob, phone } = req.body;
+//   try {
+//     const { email, password, fullName, dob, phone } = req.body;
 
-    // Validate input
-    if (!email || !password || !fullName || !dob || !phone) {
-      console.log("Signup error: Missing required fields");
-      return res.status(400).json({ success: false, message: "All fields are required" });
-    }
+//     // Validate input
+//     if (!email || !password || !fullName || !dob || !phone) {
+//       console.log("Signup error: Missing required fields");
+//       return res.status(400).json({ success: false, message: "All fields are required" });
+//     }
 
-    // Check if user already exists
-    const existingUser = await Profile.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ success: false, message: "User already exists" });
-    }
+//     // Check if user already exists
+//     const existingUser = await Profile.findOne({ email });
+//     if (existingUser) {
+//       return res.status(400).json({ success: false, message: "User already exists" });
+//     }
 
-    // Create new user (storing plain password)
-    const newUser = new Profile({
-      email,
-      password, // Plain text password (Not recommended for production)
-      fullName,
-      dob,
-      phone
-    });
+//     // Create new user (storing plain password)
+//     const newUser = new Profile({
+//       email,
+//       password, // Plain text password (Not recommended for production)
+//       fullName,
+//       dob,
+//       phone
+//     });
 
-    await newUser.save();
-    console.log("User registered successfully:", newUser);
+//     await newUser.save();
+//     console.log("User registered successfully:", newUser);
 
-    // Send welcome email
-    const emailResponse = await sendMail(
-      email,
-      "Welcome to Anant ki Drishti",
-      "Hi, thank you for registering on Anant ki Drishti.",
-      "<p>Hi,</p><p>Thank you for registering on Anant ki Drishti.</p>"
-    );
+//     // Send welcome email
+//     const emailResponse = await sendMail(
+//       email,
+//       "Welcome to Anant ki Drishti",
+//       "Hi, thank you for registering on Anant ki Drishti.",
+//       "<p>Hi,</p><p>Thank you for registering on Anant ki Drishti.</p>"
+//     );
 
-    if (!emailResponse.success) {
-      console.log("Signup warning: User registered, but email failed");
-      return res.status(500).json({ success: false, message: "User registered, but email sending failed" });
-    }
+//     if (!emailResponse.success) {
+//       console.log("Signup warning: User registered, but email failed");
+//       return res.status(500).json({ success: false, message: "User registered, but email sending failed" });
+//     }
 
-    res.status(201).json({ success: true, message: "Signup successful, email sent" });
+//     res.status(201).json({ success: true, message: "Signup successful, email sent" });
 
-  } catch (err) {
-    console.error("Signup error:", err);
-    res.status(500).json({ success: false, message: "Error during signup" });
-  }
-});
+//   } catch (err) {
+//     console.error("Signup error:", err);
+//     res.status(500).json({ success: false, message: "Error during signup" });
+//   }
+// });
 
 
 
@@ -791,30 +829,32 @@ app.post("/signup", async (req, res) => {
 
 
 // :white_tick: Login Route
-app.post('/login', async (req, res) => {
-  console.log("Received login request:", req.body);
-  const { email, password } = req.body;
-  try {
-    if (!email || !password) {
-      return res.status(400).json({ success: false, message: "Email and password are required" });
-    }
-    const user = await Profile.findOne({ email });
-    if (!user) {
-      console.log("User not found:", email);
-      return res.status(400).json({ success: false, message: "User not found" });
-    }
-    if (user.password !== password) {
-      console.log("Invalid password for user:", email);
-      return res.status(400).json({ success: false, message: "Invalid password" });
-    }
-    console.log("User logged in successfully:", email);
-    return res.json({ success: true, message: "Login successful" });
-  } catch (err) {
 
-    console.error(":x: Login error:", err);
-    return res.status(500).json({ success: false, message: "Internal server error" });
-  }
-});
+
+// app.post('/login', async (req, res) => {
+//   console.log("Received login request:", req.body);
+//   const { email, password } = req.body;
+//   try {
+//     if (!email || !password) {
+//       return res.status(400).json({ success: false, message: "Email and password are required" });
+//     }
+//     const user = await Profile.findOne({ email });
+//     if (!user) {
+//       console.log("User not found:", email);
+//       return res.status(400).json({ success: false, message: "User not found" });
+//     }
+//     if (user.password !== password) {
+//       console.log("Invalid password for user:", email);
+//       return res.status(400).json({ success: false, message: "Invalid password" });
+//     }
+//     console.log("User logged in successfully:", email);
+//     return res.json({ success: true, message: "Login successful" });
+//   } catch (err) {
+
+//     console.error(":x: Login error:", err);
+//     return res.status(500).json({ success: false, message: "Internal server error" });
+//   }
+// });
 
 
 
