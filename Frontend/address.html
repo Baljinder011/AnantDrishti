@@ -396,7 +396,7 @@
     isDefaultAddress: document.getElementById('defaultAddressCheckbox').checked,
   };
 
-  fetch('http://localhost:3000/address', {
+  fetch(`${CONFIG.API_URL}/address`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(newAddress),
@@ -412,6 +412,7 @@
 });
 
     </script>
+    <script src="config.js"></script>
 </body>
 
 </html>

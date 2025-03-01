@@ -339,7 +339,7 @@
         async function fetchProducts() {
             try {
                 const token = localStorage.getItem('token'); // Retrieve JWT token from storage
-                const response = await fetch('http://localhost:3000/products', {
+                const response = await fetch(`${CONFIG.API_URL}/products`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -404,6 +404,8 @@
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
         crossorigin="anonymous"></script>
 
+
+        <script src="config.js"></script>
 </body>
 
 </html>

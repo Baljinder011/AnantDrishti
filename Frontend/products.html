@@ -237,9 +237,9 @@
 
         let response;
         if (searchQuery) {
-            response = await fetch(`http://localhost:3000/products/search?query=${searchQuery}`);
+            response = await fetch(`${CONFIG.API_URL}/products/search?query=${searchQuery}`);
         } else {
-            response = await fetch("http://localhost:3000/products");
+            response = await fetch(`${CONFIG.API_URL}/products`);
         }
 
         if (!response.ok) {
@@ -339,6 +339,8 @@
 
     <script src="main.js"></script>   
     <script src="function.js"></script>
+    <script src="config.js"></script>
+
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"

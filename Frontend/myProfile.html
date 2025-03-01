@@ -97,7 +97,7 @@
       saveButton.disabled = true;
       saveButton.textContent = 'Saving...';
 
-      fetch('http://localhost:3000/saveProfile', {
+      fetch(`${CONFIG.API_URL}/saveProfile`, {
         method: 'POST',
         body: formData,
       })
@@ -159,6 +159,9 @@
       }
     };
   </script>
+
+<script src="config.js"></script>
+
 
 </body>
 </html>

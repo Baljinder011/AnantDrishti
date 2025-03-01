@@ -33,7 +33,7 @@
                 clearInterval(countdownTimer);
 
                 // Call backend to check payment status
-                fetch(`http://localhost:3000/check-payment-status?link_id=${linkId}`)
+                fetch(`${CONFIG.API_URL}/check-payment-status?link_id=${linkId}`)
                     .then(response => response.json())
                     .then(data => {
                         console.log("Payment Status Response:", data);
@@ -45,10 +45,10 @@
 
                         if (data.link_status === "PAID") {
                             // Redirect to success page
-                            window.location.href = "http://localhost:3000/success.html";
+                            window.location.href = `${CONFIG.API_URL}/success.html`;
                         } else {
                             // Redirect to failure page
-                            window.location.href = "http://localhost:3000/failure.html";
+                            window.location.href = `${CONFIG.API_URL}/failure.html`;
                         }
                     })
                     .catch(error => {
@@ -58,5 +58,9 @@
             }
         }, 1000);
     </script>
+
+<script src="config.js"></script>
+
+
 </body>
 </html>

@@ -11,9 +11,9 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         try {
-            const response = await fetch(`http://localhost:3000/products/search?query=${query}`);
+            const response = await fetch(`${CONFIG.API_URL}/products/search?query=${query}`);
             const products = await response.json();
-
+            
             searchSuggestions.innerHTML = "";
             if (products.length > 0) {
                 products.forEach(product => {
@@ -51,3 +51,5 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 });
+
+<script src="config.js"></script>

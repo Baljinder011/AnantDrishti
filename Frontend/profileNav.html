@@ -124,7 +124,7 @@
 // Fetch products and enable search suggestions
 async function fetchAndEnableSearch() {
     try {
-        const response = await fetch('http://localhost:3000/products'); // Fetch products from the API
+        const response = await fetch(`${CONFIG.API_URL}/products`); // Fetch products from the API
         const products = await response.json();
 
         const searchInput = document.getElementById('searchInput');
@@ -348,6 +348,8 @@ window.addEventListener('storage', updateCartCounter);
 
     </script>
     <script src="function.js"></script>
+    <script src="config.js"></script>
+
 </body>
 
 </html>
