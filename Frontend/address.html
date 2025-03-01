@@ -396,7 +396,7 @@
     isDefaultAddress: document.getElementById('defaultAddressCheckbox').checked,
   };
 
-  fetch('https://indraq.tech:3000/address', {
+  fetch('http://localhost:3000/address', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(newAddress),

@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         try {
-            const response = await fetch(`https://indraq.tech:3000/products/search?query=${query}`);
+            const response = await fetch(`http://localhost:3000/products/search?query=${query}`);
             const products = await response.json();
 
             searchSuggestions.innerHTML = "";

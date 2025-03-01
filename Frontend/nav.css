@@ -57,7 +57,8 @@ body button {
 .navbar a {
     text-decoration: none;
     color: black;
-    margin-top: 20px
+    margin-top: 20px;
+
 }
 
 .navbar-brand img {
@@ -81,6 +82,12 @@ body button {
     display: flex;
     gap: 20px;
 }
+
+.navbar-menu .nav-link {
+    position: relative;
+    left: -220px
+}
+
 
 .nav-link {
     text-decoration: none;
@@ -119,7 +126,7 @@ body button {
 .sidebar .close-btn {
     position: absolute;
     top: 20px;
-    left: 220px;
+    left: 250px;
     background-color: #151515;
     color: #ffffff;
     border: none;
@@ -181,11 +188,11 @@ body button {
     width: 100%;
     height: 1px
 }
-.line{
-    background-color: white;
-    width:100%;
-    height:1px
 
+.line {
+    background-color: white;
+    width: 100%;
+    height: 1px
 }
 
 .overlay {
@@ -206,16 +213,17 @@ body button {
     pointer-events: all;
 }
 
-.sidebar .the-btn {
+.new-nav .the-btn {
     background-color: rgb(175, 82, 222);
-    padding: 6px;
-    margin-top: -10px;
+    margin-top: 3px;
+    position: relative;
+    left: -10px;
     border: none;
     color: white;
     border-radius: 5px;
-    padding-left: 10px;
-    padding-right: 10px;
+    padding: 8px 15px 8px 15px;
     display: block;
+
 }
 
 .sidebar .the-btn:hover {
@@ -263,7 +271,7 @@ body button {
         display: block;
         color: black;
 
-      
+
 
     }
 
@@ -286,7 +294,9 @@ body button {
 
 @media screen and (max-width:1074px) {
     .navbar-menu.active {
-        display: none;}
+        display: none;
+    }
+
     .navbar-menu.active {
         /* display: flex; */
     }
@@ -294,6 +304,7 @@ body button {
 
 .sidebar a {
     color: white;
+
 }
 
 .side-btn {
@@ -351,33 +362,98 @@ body button {
     top: -25px;
 }
 
-.navbar-menu input {
+/* Default style when not logged in */
+.searchInput {
+    position: absolute;
+    right: 240px;
+    top: 11px
+}
+
+/* Style when logged in */
+.searchInput.logged-in {
+    position: absolute;
+    right: 200px;
+    /* top: -22px */
+}
+
+
+.searchInput input {
     border: 1px solid grey;
     padding: 10px;
     height: 40px;
     margin-top: 10px;
     border-radius: 5px;
-}
 
-.search {
-    margin-top: 22px;
-    margin-left: -50px;
 }
 
 
 
-.search {
-    display: none;
-    cursor: pointer;
+.the-search {
+    color: rgb(0, 0, 0); /* Default color */
+    font-size: 16px;
+    transition: all 0.3s ease;
 }
 
 
-@media (min-width: 1072px) {
-    .search {
-        display: block;
 
+
+
+@media screen and (max-width:1073px) {
+
+    .searchInput {
+        right: 140px;
+        top: 9px
+    }
+
+
+    .searchInput.logged-in {
+        right: 130px;
+        top: 5px
+    }
+
+
+}
+
+
+@media screen and (max-width:768px) {
+    .searchInput.logged-in {
+        top: 15px
+    }
+
+    .searchInput {
+        top: 19px
     }
 }
+
+.the-search {
+    position: relative;
+    left: -30px
+}
+
+
+@media screen and (max-width:500px) {
+    .searchInput input {
+        display: none;
+    }
+
+    .the-search {
+        margin-top: 20px;
+        position: relative;
+        left:65px
+    }
+
+    .logged-in-search{
+        position: relative;
+        left:-30px;
+        top:3px
+    }
+
+    .new-nav .the-btn{
+        left:-40px
+    }
+}
+
+
 
 
 
@@ -414,10 +490,10 @@ body button {
     max-width: 400px;
     top: 100%;
 
-    width:100%;
-    max-width:400px;
+    width: 100%;
+    max-width: 400px;
     top: 100%;
-   
+
     right: 100px;
     z-index: 1000;
     background-color: #fff;
@@ -553,13 +629,12 @@ body button {
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden; */
-    margin-left:10px;
+    margin-left: 10px;
     display: none;
 }
 
 
-/* .nav-open input{
->>>>>>> 0ecbba1 (first commit)
+.nav-open input {
     display: none;
 }
 
@@ -652,12 +727,12 @@ body button {
 
     .new-nav i {
         position: relative;
-        top: -20px
+        /* top: -20px */
     }
 
     .navbar-toggler {
-        position: relative;
-        top: -20px
+        /* position: relative;
+        top: -20px */
     }
 
     .navbar-brand img {
@@ -666,7 +741,7 @@ body button {
     }
 
     #cart-counter {
-    margin-top: -20px;
+        margin-top: -20px;
     }
 }
 
@@ -823,10 +898,10 @@ body button {
     position: relative;
     font-size: 20px;
 }
-@media screen and (max-width:1072px){
-    .nav-open input{
+
+@media screen and (max-width:1072px) {
+    .nav-open input {
         display: block;
         margin-left: -200px;
     }
-} 
-
+}

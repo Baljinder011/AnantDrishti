@@ -5,7 +5,7 @@
         "description": "For Spiritual Protection",
         "price": 625,
         "image": "../Photos/Rectangle 2.png",
-        "color":"red"
+        "color":"Red"
     },
     {
         "id": 2,
@@ -13,7 +13,7 @@
         "description": "For Emotional Healing",
         "price": 420,
         "image": "../Photos/Rectangle 3.png",
-        "color":"blue"
+        "color":"Blue"
     },
     {
         "id": 3,
@@ -21,7 +21,7 @@
         "description": "For Stress Relief",
         "price": 530,
         "image": "../Photos/Rectangle 4.png",
-        "color":"red"
+        "color":"Red"
     },
     {
         "id": 4,
@@ -29,7 +29,7 @@
         "description": "For Spiritual Protection",
         "price": 425,
         "image": "../Photos/Rectangle 5.png",
-        "color":"green"
+        "color":"Green"
     },
     {
         "id": 5,
@@ -37,7 +37,7 @@
         "description": "For Emotional Healing",
         "price": 820,
         "image": "../Photos/Rectangle 6.png",
-        "color":"yellow"
+        "color":"Yellow"
     },
     {
         "id": 6,
@@ -45,7 +45,7 @@
         "description": "For Stress Relief",
         "price": 930,
         "image": "../Photos/Rectangle 7.png",
-        "color":"yellow"
+        "color":"Yellow"
     },
     {
         "id": 7,
@@ -53,7 +53,7 @@
         "description": "For Spiritual Protection",
         "price": 725,
         "image": "../Photos/Rectangle 2.png",
-        "color":"green"
+        "color":"Green"
     },
     {
         "id": 8,
@@ -61,7 +61,7 @@
         "description": "For Emotional Healing",
         "price": 620,
         "image": "../Photos/Rectangle 3.png",
-        "color":"blue"
+        "color":"Blue"
     },
     {
         "id": 9,
@@ -69,7 +69,7 @@
         "description": "For Emotional Healing",
         "price": 620,
         "image": "../Photos/Rectangle 4.png",
-        "color":"yellow"
+        "color":"Yellow"
     },
     {
         "id": 10,
@@ -77,7 +77,7 @@
         "description": "For Spiritual Protection",
         "price": 725,
         "image": "../Photos/Rectangle 5.png",
-        "color":"red"
+        "color":"Red"
     },
     {
         "id":11,
@@ -85,7 +85,7 @@
         "description": "For Emotional Healing",
         "price": 520,
         "image": "../Photos/Rectangle 6.png",
-        "color":"blue"
+        "color":"Blue"
     },
     {
         "id": 12,
@@ -93,7 +93,7 @@
         "description": "For Stress Relief",
         "price": 430,
         "image": "../Photos/Rectangle 7.png",
-        "color":"green"
+        "color":"Green"
     }
     
 ]

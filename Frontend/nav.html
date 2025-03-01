@@ -19,6 +19,13 @@
         <!-- display flex after 1072px -->
         <div class="new-nav">
             <!-- Profile Section (Hidden if not logged in) -->
+
+               <!-- Login Button -->
+               <a id="loginButtonSidebar">
+                <button class="the-btn" type="button">Login</button>
+            </a>
+
+
             <div class="profile-menu-container" id="profileMenuContainerSidebar" style="display: none;">
                 <a href="#" id="profileIconSidebar">
                     <i class="fa-solid fa-user-circle fa-xl"></i>
@@ -31,10 +38,20 @@
                     <i class="fa-solid fa-cart-shopping the-cart"></i>
                     <span id="cart-counter">0</span>
                 </a>
+
+              
             </div>
+            
         </div>
+<div class="searchInput">
+        <input type="text" id="searchInput" placeholder="Search for products..." />
+        <i class="fa-solid fa-magnifying-glass the-search"></i>
+        <ul id="suggestionBox" class="list-group"></ul>
+</div>
+
         <div class="nav-open">
             <button class="navbar-toggler" id="navbar-toggler">☰</button>
+            
         </div>
         <div class="navbar-menu" id="navbar-menu">
             <a href="./index.html" class="nav-link">Home</a>
@@ -43,8 +60,7 @@
             <a href="./products.html" class="nav-link">Products</a>
             <a href="./calculator.html" class="nav-link">Calculator</a>
             <a href="./privacy-policy.html" class="nav-link">Privacy Policy</a>
-            <input type="text" id="searchInput" placeholder="Search for products..." />
-            <ul id="suggestionBox" class="list-group"></ul>
+          
 
             <a href="./wishlist.html">
                 <button class="the-btn" type="submit">My Wishlist</button>
@@ -103,10 +119,7 @@
             </a>
         </ul>
         <div class="side-btn">
-            <!-- Login Button -->
-            <a id="loginButtonSidebar">
-                <button class="the-btn" type="button">Login</button>
-            </a>
+         
             <a href="./wishlist.html">
                 <button class="the-btn" type="button">My Wishlist</button>
             </a>
@@ -122,7 +135,7 @@
 // Fetch products and enable search suggestions
 async function fetchAndEnableSearch() {
     try {
-        const response = await fetch('https://indraq.tech:3000/products'); // Fetch products from the API
+        const response = await fetch('http://localhost:3000/products'); // Fetch products from the API
         const products = await response.json();
 
         const searchInput = document.getElementById('searchInput');
@@ -341,6 +354,52 @@ function updateCartCounter() {
 document.addEventListener("DOMContentLoaded", updateCartCounter);
 window.addEventListener('storage', updateCartCounter);
 
+
+
+
+
+
+function updateUIBasedOnLoginStatus() {
+    const searchInputContainer = document.querySelector('.searchInput');
+
+    if (isLoggedIn) {
+        profileMenuContainer.style.display = 'block';
+        profileMenuContainerSidebar.style.display = 'block';
+        loginButton.style.display = 'none';
+        loginButtonSidebar.style.display = 'none';
+
+        // Apply the logged-in style
+        searchInputContainer.classList.add('logged-in');
+    } else {
+        profileMenuContainer.style.display = 'none';
+        profileMenuContainerSidebar.style.display = 'none';
+        loginButton.style.display = 'block';
+        loginButtonSidebar.style.display = 'block';
+
+        // Remove the logged-in style
+        searchInputContainer.classList.remove('logged-in');
+    }
+}
+
+updateUIBasedOnLoginStatus();
+
+
+
+
+
+
+function updateSearchIconStyle() {
+    const searchIcon = document.querySelector('.the-search');
+
+    if (isLoggedIn) {
+        searchIcon.classList.add('logged-in-search');
+    } else {
+        searchIcon.classList.remove('logged-in-search');
+    }
+}
+
+// Call this function after checking login status
+updateSearchIconStyle();
 
 
 

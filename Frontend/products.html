@@ -237,9 +237,9 @@
 
         let response;
         if (searchQuery) {
-            response = await fetch(`https://indraq.tech:3000/products/search?query=${searchQuery}`);
+            response = await fetch(`http://localhost:3000/products/search?query=${searchQuery}`);
         } else {
-            response = await fetch("https://indraq.tech:3000/products");
+            response = await fetch("http://localhost:3000/products");
         }
 
         if (!response.ok) {

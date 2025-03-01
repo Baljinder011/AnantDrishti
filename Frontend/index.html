@@ -339,7 +339,7 @@
         async function fetchProducts() {
             try {
                 const token = localStorage.getItem('token'); // Retrieve JWT token from storage
-                const response = await fetch('https://indraq.tech:3000/products', {
+                const response = await fetch('http://localhost:3000/products', {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }

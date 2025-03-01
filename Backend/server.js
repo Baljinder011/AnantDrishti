@@ -7,9 +7,10 @@ const path = require("path");
 const bcrypt = require("bcrypt");
 require('dotenv').config();
 const crypto = require("crypto");
-const axios= require("axios")
-const https = require("https");
-const fs = require("fs");
+const axios = require("axios");
+const nodemailer = require("nodemailer");
+// const https = require("https");
+// const fs = require("fs");
 
 
 const app = express();
@@ -30,32 +31,32 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 const PORT = process.env.PORT || 3000
 
 
-const options = {
-  key: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/privkey.pem"),
-  cert: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/fullchain.pem"),
-};
+// const options = {
+//   key: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/privkey.pem"),
+//   cert: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/fullchain.pem"),
+// };
 
 
 
 // Enforce HTTPS middleware
-app.use((req, res, next) => {
-  if (req.protocol !== "https") {
-    return res.redirect("https://" + req.headers.host + req.url);
-  }
-  next();
-});
+// app.use((req, res, next) => {
+//   if (req.protocol !== "https") {
+//     return res.redirect("https://" + req.headers.host + req.url);
+//   }
+//   next();
+// });
 
 
 // MongoDB connection
 
 const uri = "mongodb://localhost:27017/AnantDrishti";
-mongoose
-  .connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(uri)
   .then(() => console.log("Connected to MongoDB"))
   .catch((error) => {
     console.error("MongoDB connection error:", error);
     process.exit(1);
   });
+
 
 
 // Cashfree API Credentials
@@ -66,52 +67,52 @@ const SECRET_KEY = process.env.CASHFREE_SECRET_KEY || "YOUR_SECRET_KEY";
 
 // Function to generate expiry time (30 minutes from now)
 function getExpiryTime() {
-    const now = new Date();
-    now.setMinutes(now.getMinutes() + 30);
-    return now.toISOString();
+  const now = new Date();
+  now.setMinutes(now.getMinutes() + 30);
+  return now.toISOString();
 }
 
 // Create Payment Link API
 app.post("/create-payment-link", async (req, res) => {
   try {
-      const { customer_name, customer_email, customer_phone, amount } = req.body;
+    const { customer_name, customer_email, customer_phone, amount } = req.body;
 
-      if (!customer_name || !customer_email || !customer_phone || !amount) {
-          return res.status(400).json({ error: "Missing required fields" });
+    if (!customer_name || !customer_email || !customer_phone || !amount) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    const link_id = `CF_${crypto.randomBytes(8).toString("hex")}`;
+    const apiUrl = "https://sandbox.cashfree.com/pg/links";
+
+    const payload = {
+      link_id,
+      customer_details: { customer_name, customer_email, customer_phone },
+      link_amount: amount,
+      link_currency: "INR",
+      link_purpose: "E-commerce Purchase",
+      link_notify: { send_email: true, send_sms: true },
+      link_auto_reminders: true,
+      link_expiry_time: getExpiryTime(),
+      link_meta: {
+        // return_url: `http://localhost:${PORT}/redirect.html?link_id=${link_id}`
+        return_url: `https://indraq.tech/redirect.html?link_id=${link_id}`
+
       }
+    };
 
-      const link_id = `CF_${crypto.randomBytes(8).toString("hex")}`;
-      const apiUrl = "https://sandbox.cashfree.com/pg/links";
+    const response = await axios.post(apiUrl, payload, {
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-version": "2022-09-01",
+        "x-client-id": APP_ID,
+        "x-client-secret": SECRET_KEY
+      }
+    });
 
-      const payload = {
-          link_id,
-          customer_details: { customer_name, customer_email, customer_phone },
-          link_amount: amount,
-          link_currency: "INR",
-          link_purpose: "E-commerce Purchase",
-          link_notify: { send_email: true, send_sms: true },
-          link_auto_reminders: true,
-          link_expiry_time: getExpiryTime(),
-          link_meta: {
-              // return_url: `http://localhost:${PORT}/redirect.html?link_id=${link_id}`
-              return_url: `https://indraq.tech:${PORT}/redirect.html?link_id=${link_id}`
-
-          }
-      };
-
-      const response = await axios.post(apiUrl, payload, {
-          headers: {
-              "Content-Type": "application/json",
-              "x-api-version": "2022-09-01",
-              "x-client-id": APP_ID,
-              "x-client-secret": SECRET_KEY
-          }
-      });
-
-      res.json({ link_id: response.data.link_id, link_url: response.data.link_url });
+    res.json({ link_id: response.data.link_id, link_url: response.data.link_url });
   } catch (error) {
-      console.error("Cashfree API Error:", error.response?.data || error.message);
-      res.status(500).json({ error: "Failed to create payment link", details: error.response?.data || error.message });
+    console.error("Cashfree API Error:", error.response?.data || error.message);
+    res.status(500).json({ error: "Failed to create payment link", details: error.response?.data || error.message });
   }
 });
 
@@ -122,27 +123,27 @@ app.post("/create-payment-link", async (req, res) => {
 
 // **Check Payment Status**
 app.get("/check-payment-status", async (req, res) => {
-    const linkId = req.query.link_id;
-    if (!linkId) {
-        return res.status(400).json({ error: "Missing Payment Link ID" });
-    }
+  const linkId = req.query.link_id;
+  if (!linkId) {
+    return res.status(400).json({ error: "Missing Payment Link ID" });
+  }
 
-    try {
-        const response = await axios.get(`https://sandbox.cashfree.com/pg/links/${linkId}`, {
-            headers: {
-                "x-api-version": "2022-09-01",
-                "x-client-id": APP_ID,
-                "x-client-secret": SECRET_KEY
-            }
-        });
+  try {
+    const response = await axios.get(`https://sandbox.cashfree.com/pg/links/${linkId}`, {
+      headers: {
+        "x-api-version": "2022-09-01",
+        "x-client-id": APP_ID,
+        "x-client-secret": SECRET_KEY
+      }
+    });
 
-        res.json({ link_status: response.data.link_status });
-    } catch (error) {
-        res.status(500).json({
-            error: "Error checking payment status",
-            details: error.response?.data || error.message || "Unknown error occurred"
-        });
-    }
+    res.json({ link_status: response.data.link_status });
+  } catch (error) {
+    res.status(500).json({
+      error: "Error checking payment status",
+      details: error.response?.data || error.message || "Unknown error occurred"
+    });
+  }
 });
 
 
@@ -152,39 +153,40 @@ app.get("/check-payment-status", async (req, res) => {
 
 // Serve `payment.html`
 app.get("/redirect.html", (req, res) => {
-    res.sendFile(path.join(frontendPath, "redirect.html"), (err) => {
-        if (err) {
-            console.error("Error serving payment.html:", err);
-            res.status(404).send("Payment page not found");
-        }
-    });
+  res.sendFile(path.join(frontendPath, "redirect.html"), (err) => {
+    if (err) {
+      console.error("Error serving payment.html:", err);
+      res.status(404).send("Payment page not found");
+    }
+  });
 });
 
 // Serve `success.html`
 app.get("/success.html", (req, res) => {
-    res.sendFile(path.join(frontendPath, "success.html"), (err) => {
-        if (err) {
-            console.error("Error serving success.html:", err);
-            res.status(404).send("Success page not found");
-        }
-    });
+  res.sendFile(path.join(frontendPath, "success.html"), (err) => {
+    if (err) {
+      console.error("Error serving success.html:", err);
+      res.status(404).send("Success page not found");
+    }
+  });
 });
 
 // Serve `failure.html`
 app.get("/failure.html", (req, res) => {
-    res.sendFile(path.join(frontendPath, "failure.html"), (err) => {
-        if (err) {
-            console.error("Error serving failure.html:", err);
-            res.status(404).send("Failure page not found");
-        }
-    });
+  res.sendFile(path.join(frontendPath, "failure.html"), (err) => {
+    if (err) {
+      console.error("Error serving failure.html:", err);
+      res.status(404).send("Failure page not found");
+    }
+  });
 });
 
 
 
 // File upload setup
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {cb(null, "uploads/"); // Save to uploads folder
+  destination: (req, file, cb) => {
+    cb(null, "uploads/"); // Save to uploads folder
   }, filename: (req, file, cb) => {
     cb(null, Date.now() + path.extname(file.originalname)); // Unique file name
   },
@@ -211,30 +213,35 @@ const upload = multer({
 
 
 // Define the User Schema
-const userSchema = new mongoose.Schema({
-  email: { type: String, required: true, unique: true, lowercase: true },
-  password: { type: String, required: true, minlength: 6 },
-  fullName: { type: String, required: true },
-  dob: { type: Date, required: true },
-  phone: { type: String, required: true, match: /^[0-9]{10}$/ }, // Validates for 10 digits
-  createdAt: { type: Date, default: Date.now },
-});
 
-userSchema.index({ email: 1 });  // Indexing email for faster queries
-const User = mongoose.model("User", userSchema);
+
+// const userSchema = new mongoose.Schema({
+//   email: { type: String, required: true, unique: true, lowercase: true },
+//   password: { type: String, required: true, minlength: 6 },
+//   fullName: { type: String, required: true },
+//   dob: { type: Date, required: true },
+//   phone: { type: String, required: true, match: /^[0-9]{10}$/ },
+//   createdAt: { type: Date, default: Date.now },
+// });
+
+// userSchema.index({ email: 1 }); 
+// const User = mongoose.model("User", userSchema);
 
 
 
 // Profile Schema and Model
-const profileSchema = new mongoose.Schema({
-  name: String,
-  email: { type: String, required: true, unique: true },
-  phone: String,
-  dob: String,
-  image: String, // Store image file path
-});
-profileSchema.index({ email: 1 });  // Indexing email for faster queries
-const Profile = mongoose.model("Profile", profileSchema);
+
+
+
+// const profileSchema = new mongoose.Schema({
+//   name: String,
+//   email: { type: String, required: true, unique: true },
+//   phone: String,
+//   dob: String,
+//   image: String, // Store image file path
+// });
+// profileSchema.index({ email: 1 }); 
+// const Profile = mongoose.model("Profile", profileSchema);
 
 
 
@@ -278,18 +285,20 @@ const Product = mongoose.model('products', productSchema);
 
 
 // Address Schema and Model
-const addressSchema = new mongoose.Schema({
-  name: String,
-  email: String,
-  phone: String,
-  address: String,
-  city: String,
-  state: String,
-  pin: String,
-  country: String,
-  isDefaultAddress: Boolean,
-});
-const Address = mongoose.model("Address", addressSchema);
+
+
+// const addressSchema = new mongoose.Schema({
+//   name: String,
+//   email: String,
+//   phone: String,
+//   address: String,
+//   city: String,
+//   state: String,
+//   pin: String,
+//   country: String,
+//   isDefaultAddress: Boolean,
+// });
+// const Address = mongoose.model("Address", addressSchema);
 
 
 
@@ -303,73 +312,77 @@ const Address = mongoose.model("Address", addressSchema);
 
 
 
-// Register route with password hashing and validation
-app.post("/register", async (req, res) => {
-  const { email, password, fullName, dob, phone } = req.body;
-
-  // Ensure that all required fields are provided
-  if (!email || !password || !fullName || !dob || !phone) {
-    return res.status(400).json({ message: "All fields are required" });
-  }
-
-  try {
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
-    }
-
-    // Hash the password using bcrypt
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create new user with hashed password and other details
-    const newUser = new User({ email, password: hashedPassword, fullName, dob, phone });
-
-    // Save the new user to the database
-    await newUser.save();
-
-    res.status(201).json({ message: "User registered successfully" });
-  } catch (error) {
-    console.error("Error during registration:", error);
-    res.status(500).json({ message: "Internal Server Error", error: error.message });
-  }
-});
+// Register api
 
 
+// app.post("/register", async (req, res) => {
+//   const { email, password, fullName, dob, phone } = req.body;
+
+//   // Ensure that all required fields are provided
+//   if (!email || !password || !fullName || !dob || !phone) {
+//     return res.status(400).json({ message: "All fields are required" });
+//   }
+
+//   try {
+//     const existingUser = await User.findOne({ email });
+//     if (existingUser) {
+//       return res.status(400).json({ message: "User already exists" });
+//     }
+
+//     // Hash the password using bcrypt
+//     const hashedPassword = await bcrypt.hash(password, 10);
+
+//     // Create new user with hashed password and other details
+//     const newUser = new User({ email, password: hashedPassword, fullName, dob, phone });
+
+//     // Save the new user to the database
+//     await newUser.save();
+
+//     res.status(201).json({ message: "User registered successfully" });
+//   } catch (error) {
+//     console.error("Error during registration:", error);
+//     res.status(500).json({ message: "Internal Server Error", error: error.message });
+//   }
+// });
 
 
 
 
-// Login route with email and password check
-app.post('/login', async (req, res) => {
-  const { email, password } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({ message: "Email and password are required" });
-  }
 
-  try {
-      const user = await User.findOne({ email });
-      if (!user) {
-          return res.status(400).json({ message: 'User not found' });
-      }
+// Login api
 
-      const match = await bcrypt.compare(password, user.password);
-      if (!match) {
-          return res.status(400).json({ message: 'Invalid password' });
-      }
 
-      // Return user profile data without password
-      const userProfile = {
-          name: user.fullName,
-          email: user.email,
-          dob: user.dob,
-          phone: user.phone
-      };
-      res.json({ message: 'Login successful', userProfile });
-  } catch (error) {
-      res.status(500).json({ message: 'Server error' });
-  }
-});
+// app.post('/login', async (req, res) => {
+//   const { email, password } = req.body;
+
+//   if (!email || !password) {
+//     return res.status(400).json({ message: "Email and password are required" });
+//   }
+
+//   try {
+//       const user = await User.findOne({ email });
+//       if (!user) {
+//           return res.status(400).json({ message: 'User not found' });
+//       }
+
+//       const match = await bcrypt.compare(password, user.password);
+//       if (!match) {
+//           return res.status(400).json({ message: 'Invalid password' });
+//       }
+
+//       // Return user profile data without password
+//       const userProfile = {
+//           name: user.fullName,
+//           email: user.email,
+//           dob: user.dob,
+//           phone: user.phone
+//       };
+//       res.json({ message: 'Login successful', userProfile });
+//   } catch (error) {
+//       res.status(500).json({ message: 'Server error' });
+//   }
+// });
 
 
 
@@ -460,30 +473,32 @@ app.post("/saveProfile", upload.single("image"), async (req, res) => {
 
 
 // Save Address Route
-app.post("/address", async (req, res) => {
-  const { name, email, phone, address, city, state, pin, country, isDefaultAddress } = req.body;
-  if (!name || !email || !address || !city || !state || !pin || !country) {
-    return res.status(400).json({ message: "All address fields are required" });
-  }
-  try {
-    const newAddress = new Address({
-      name,
-      email,
-      phone,
-      address,
-      city,
-      state,
-      pin,
-      country,
-      isDefaultAddress,
-    });
-    const savedAddress = await newAddress.save();
-    res.status(201).json({ message: "Address saved successfully", savedAddress });
-  } catch (error) {
-    console.error("Error saving address:", error);
-    res.status(500).json({ message: "Internal Server Error", error: error.message });
-  }
-});
+
+
+// app.post("/address", async (req, res) => {
+//   const { name, email, phone, address, city, state, pin, country, isDefaultAddress } = req.body;
+//   if (!name || !email || !address || !city || !state || !pin || !country) {
+//     return res.status(400).json({ message: "All address fields are required" });
+//   }
+//   try {
+//     const newAddress = new Address({
+//       name,
+//       email,
+//       phone,
+//       address,
+//       city,
+//       state,
+//       pin,
+//       country,
+//       isDefaultAddress,
+//     });
+//     const savedAddress = await newAddress.save();
+//     res.status(201).json({ message: "Address saved successfully", savedAddress });
+//   } catch (error) {
+//     console.error("Error saving address:", error);
+//     res.status(500).json({ message: "Internal Server Error", error: error.message });
+//   }
+// });
 
 
 
@@ -494,9 +509,9 @@ app.get("/products/search", async (req, res) => {
     if (!query) {
       return res.status(400).json({ message: "Search query is required" });
     }
-    
+
     const products = await Product.find({ name: { $regex: query, $options: "i" } });
-    
+
     if (products.length === 0) {
       return res.status(404).json({ message: "No products found" });
     }
@@ -512,6 +527,11 @@ app.get("/products/search", async (req, res) => {
 
 
 
+
+
+
+
+//shelinder bhai di api ans schema
 
 
 
@@ -612,14 +632,289 @@ app.put('/products/:id/status', async (req, res) => {
 
 
 
+
+
+// User Schema & Model
+const userSchema = new mongoose.Schema({
+  firstName: String,
+  lastName: String,
+  email: String,
+  phone: String,
+  dob: { type: Date, required: true },
+  createdAt: { type: Date, default: Date.now },
+
+  address: {
+    street: String,
+    city: String,
+    postalCode: String,
+    country: String
+  },
+  loginSessions: [
+    {
+      date: String,
+      time: String,
+      location: String
+    }
+  ],
+
+  orders: [
+    {
+      orderId: String,
+      productName: String,
+      price: Number,
+      date: String,
+      status: String
+    }
+  ]
+}, { timestamps: true });
+const User = mongoose.model('users', userSchema);
+
+
+
+
+// Order Schema & Model
+const orderSchema = new mongoose.Schema({
+  productName: String,
+  price: Number,
+  placedOn: Date,
+  status: String,
+});
+const Order = mongoose.model('Order', orderSchema);
+
+
+
+
+
+// :white_tick: Email Transporter Setup (Fixed)
+const transporter = nodemailer.createTransport({
+  service: "gmail", // :white_tick: Correct service name
+  auth: {
+    user: process.env.EMAIL_USER, // :white_tick: Your email from .env
+    pass: process.env.EMAIL_PASS, // :white_tick: App password (Not normal password)
+  },
+});
+
+
+
+
+
+// :white_tick: Function to Send Email (Improved)
+async function sendMail(to, subject, text, html) {
+  try {
+    const info = await transporter.sendMail({
+      from: `"Anant Ki Drishti" <${process.env.EMAIL_USER}>`,
+      to,
+      subject,
+      text,
+      html,
+    });
+    console.log(":e-mail: Email sent successfully:", info.messageId);
+    return { success: true, message: "Email sent successfully" };
+  } 
+  
+  catch (error) {
+
+    console.error(":x: Error sending email:", error);
+    return { success: false, message: "Failed to send email", error: error.message };
+  }
+}
+const profileSchema = new mongoose.Schema({
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+});
+
+const Profile = mongoose.model('profiles', profileSchema);
+// :white_tick: Signup Route with Email & Notification
+
+
+
+
+
+app.post("/signup", async (req, res) => {
+  console.log("Received signup request:", req.body);
+
+  try {
+    const { email, password, fullName, dob, phone } = req.body;
+
+    // Validate input
+    if (!email || !password || !fullName || !dob || !phone) {
+      console.log("Signup error: Missing required fields");
+      return res.status(400).json({ success: false, message: "All fields are required" });
+    }
+
+    // Check if user already exists
+    const existingUser = await Profile.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: "User already exists" });
+    }
+
+    // Create new user (storing plain password)
+    const newUser = new Profile({
+      email,
+      password, // Plain text password (Not recommended for production)
+      fullName,
+      dob,
+      phone
+    });
+
+    await newUser.save();
+    console.log("User registered successfully:", newUser);
+
+    // Send welcome email
+    const emailResponse = await sendMail(
+      email,
+      "Welcome to Anant ki Drishti",
+      "Hi, thank you for registering on Anant ki Drishti.",
+      "<p>Hi,</p><p>Thank you for registering on Anant ki Drishti.</p>"
+    );
+
+    if (!emailResponse.success) {
+      console.log("Signup warning: User registered, but email failed");
+      return res.status(500).json({ success: false, message: "User registered, but email sending failed" });
+    }
+
+    res.status(201).json({ success: true, message: "Signup successful, email sent" });
+
+  } catch (err) {
+    console.error("Signup error:", err);
+    res.status(500).json({ success: false, message: "Error during signup" });
+  }
+});
+
+
+
+
+
+
+// :white_tick: Login Route
+app.post('/login', async (req, res) => {
+  console.log("Received login request:", req.body);
+  const { email, password } = req.body;
+  try {
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: "Email and password are required" });
+    }
+    const user = await Profile.findOne({ email });
+    if (!user) {
+      console.log("User not found:", email);
+      return res.status(400).json({ success: false, message: "User not found" });
+    }
+    if (user.password !== password) {
+      console.log("Invalid password for user:", email);
+      return res.status(400).json({ success: false, message: "Invalid password" });
+    }
+    console.log("User logged in successfully:", email);
+    return res.json({ success: true, message: "Login successful" });
+  } catch (err) {
+
+    console.error(":x: Login error:", err);
+    return res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
+
+
+
+// Example route for dashboard (requires authentication)
+app.get('/dashboard', (req, res) => {
+  // In this case, we are not using JWT, but you can manually check session/cookie for authentication
+  res.json({ success: true, message: 'Welcome to the dashboard!' });
+});
+
+
+
+
+
+
+
+// User Routes
+app.get("/users", async (req, res) => {
+  try {
+    const users = await User.find({}); // Fetch all users
+    if (!users || users.length === 0) {
+      return res.status(404).json({ message: "No users found" });
+    }
+    res.json(users);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+
+
+app.get("/users/:id", async (req, res) => {
+  try {
+    const userId = req.params.id;
+    console.log("User ID:", userId);  // Log the received ID
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: "Invalid user ID format" });
+    }
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json(user);
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+
+
+app.post('/users', async (req, res) => {
+  try {
+    const newUser = new User(req.body);
+    await newUser.save();
+    res.status(201).json(newUser);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to create user', error });
+  }
+});
+
+
+
+
+
+
+// Order Routes
+app.get('/orders', async (req, res) => {
+  try {
+    const orders = await Order.find();
+    res.status(200).json(orders);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch orders', error });
+  }
+});
+
+
+
+app.put('/orders/:id', async (req, res) => {
+  try {
+    const order = await Order.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!order) {
+      return res.status(404).send('Order not found');
+    }
+    res.send(order);
+  } catch (err) {
+    res.status(500).send('Error updating order');
+  }
+});
+
+
+
+
+
+
 // Start Server
-// app.listen(PORT, () => {
-//   console.log(`Server running on http://localhost:${PORT}`);
-// });
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});
 
 
 
 // Start HTTPS server
-https.createServer(options, app).listen(PORT, () => {
-  console.log(`Secure server running on HTTPS at port ${PORT}`);
-});
+// https.createServer(options, app).listen(PORT, () => {
+//   console.log(`Secure server running on HTTPS at port ${PORT}`);
+// });
