@@ -10,8 +10,8 @@ const crypto = require("crypto");
 const axios = require("axios");
 const nodemailer = require("nodemailer");
 const router = express.Router();
-const https = require("https");
-const fs = require("fs");
+// const https = require("https");
+// const fs = require("fs");
 
 
 const app = express();
@@ -25,29 +25,29 @@ const frontendPath = path.join(__dirname, "..", "Frontend"); // Adjust if needed
 console.log("Serving frontend from:", frontendPath); // Debugging
 app.use(express.static(frontendPath));
 app.use(bodyParser.json());
-app.use("/Photos", express.static(path.join(__dirname, "Photos")));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 
 
-const PORT = process.env.PORT
+const PORT = process.env.PORT || 3000
 
 
-const options = {
-  key: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/privkey.pem"),
-  cert: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/fullchain.pem"),
-};
+// const options = {
+//   key: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/privkey.pem"),
+//   cert: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/fullchain.pem"),
+// };
 
 
 
 // Enforce HTTPS middleware
 
 
-app.use((req, res, next) => {
-  if (req.protocol !== "https") {
-    return res.redirect("https://" + req.headers.host + req.url);
-  }
-  next();
-});
+// app.use((req, res, next) => {
+//   if (req.protocol !== "https") {
+//     return res.redirect("https://" + req.headers.host + req.url);
+//   }
+//   next();
+// });
 
 
 
@@ -193,7 +193,7 @@ app.get("/failure.html", (req, res) => {
 // File upload setup
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "Photos/"); // Save to uploads folder
+    cb(null, "uploads/"); // Save to uploads folder
   }, filename: (req, file, cb) => {
     cb(null, Date.now() + path.extname(file.originalname)); // Unique file name
   },
@@ -371,7 +371,7 @@ app.post("/saveProfile", upload.single("image"), async (req, res) => {
       email: profileInfo.email, 
       phone: profileInfo.phone,
       dob: profileInfo.dob,
-      image: req.file ? req.file.path : "Photos/default-profile.png", // Default image fallback
+      image: req.file ? req.file.path : "uploads/default-profile.png", // Default image fallback
     };
 
     const existingProfile = await Profile.findOne({ email: profileInfo.email });
@@ -492,22 +492,22 @@ app.get("/products/search", async (req, res) => {
 // Product Routes
 
 
-// app.post('/products', upload.single('image'), async (req, res) => {
-//   try {
-//     const productData = {
-//       ...req.body,
-//       price: parseFloat(req.body.price),
-//       stock: parseInt(req.body.stock),
-//       discount: parseFloat(req.body.discount),
-//       image: req.file ? `/Photos/${req.file.filename}` : '',
-//     };
-//     const product = new Product(productData);
-//     await product.save();
-//     res.status(201).json(product);
-//   } catch (error) {
-//     res.status(500).json({ message: 'Error creating product', error });
-//   }
-// });
+app.post('/products', upload.single('image'), async (req, res) => {
+  try {
+    const productData = {
+      ...req.body,
+      price: parseFloat(req.body.price),
+      stock: parseInt(req.body.stock),
+      discount: parseFloat(req.body.discount),
+      image: req.file ? `/Photos/${req.file.filename}` : '',
+    };
+    const product = new Product(productData);
+    await product.save();
+    res.status(201).json(product);
+  } catch (error) {
+    res.status(500).json({ message: 'Error creating product', error });
+  }
+});
 
 
 
@@ -519,16 +519,16 @@ app.get("/products/search", async (req, res) => {
 
 
 // Create Product
-app.post('/products', upload.single('image'), async (req, res) => {
-  try {
-    const imagePath = req.file ? `/Photos/${req.file.filename}` : "";
-    const product = new Product({ ...req.body, image: imagePath });
-    await product.save();
-    res.status(201).json(product);
-  } catch (error) {
-    res.status(500).json({ error: 'Error adding product' });
-  }
-});
+// app.post('/products', upload.single('image'), async (req, res) => {
+//   try {
+//     const imagePath = req.file ? `/uploads/${req.file.filename}` : "";
+//     const product = new Product({ ...req.body, image: imagePath });
+//     await product.save();
+//     res.status(201).json(product);
+//   } catch (error) {
+//     res.status(500).json({ error: 'Error adding product' });
+//   }
+// });
 
 
 
@@ -638,13 +638,13 @@ const User = mongoose.model("users", userSchema);
 
 
 // Order Schema & Model
-// const orderSchema = new mongoose.Schema({
-//   productName: String,
-//   price: Number,
-//   placedOn: Date,
-//   status: String,
-// });
-// const Order = mongoose.model('Order', orderSchema);
+const orderSchema = new mongoose.Schema({
+  productName: String,
+  price: Number,
+  placedOn: Date,
+  status: String,
+});
+const Order = mongoose.model('Order', orderSchema);
 
 
 
@@ -991,94 +991,21 @@ app.post('/users', async (req, res) => {
 
 
 
-//My order schema and api
-
-
-
-const OrderSchema = new mongoose.Schema({
-  orderId: String,
-  customerName: String,
-  customerEmail: String,
-  customerPhone: String,
-  address: String,
-  cartItems: Array,
-  totalAmount: Number,
-  paymentStatus: String,
-  transactionId: String,
-  createdAt: { type: Date, default: Date.now }
-});
-
-const Order = mongoose.model("Order", OrderSchema);
-
-// ✅ Example Cart and Address Schema (Assuming You Store Them)
-const Cart = mongoose.model("Cart", new mongoose.Schema({
-  userEmail: String,
-  items: Array
-}));
-
-const Address = mongoose.model("Address", new mongoose.Schema({
-  userEmail: String,
-  fullAddress: String
-}));
-
-// ✅ Webhook to Capture Payment Success
-app.post("/cashfree-webhook", async (req, res) => {
-  try {
-      const { order_id, reference_id, payment_status } = req.body;
-
-      // Update order status in MongoDB
-      const order = await Order.findOneAndUpdate(
-          { _id: order_id },
-          { payment_status, reference_id },
-          { new: true }
-      );
-
-      if (!order) {
-          return res.status(404).json({ success: false, message: "Order not found" });
-      }
-
-      res.json({ success: true, message: "Payment status updated", order });
-  } catch (error) {
-      console.error("Webhook error:", error);
-      res.status(500).json({ success: false, message: "Server error" });
-  }
-});
-
-
-app.get("/get-orders", async (req, res) => {
-  try {
-      const orders = await Order.find().sort({ createdAt: -1 });
-      res.json({ success: true, orders });
-  } catch (error) {
-      console.error("Error fetching orders:", error);
-      res.status(500).json({ success: false, message: "Server error" });
-  }
-});
-
-
-
-
-
-
-
-
-
-
 
 
 
 // Start Server
 
 
-// app.listen(PORT, () => {
-//   console.log(`Server running on http://localhost:${PORT}`);
-// });
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});
 
 
 
 // Start HTTPS server
 
 
-https.createServer(options, app).listen(PORT, () => {
-  console.log(`Secure server running on HTTPS at port ${PORT}`);
-});
+// https.createServer(options, app).listen(PORT, () => {
+//   console.log(`Secure server running on HTTPS at port ${PORT}`);
+// });

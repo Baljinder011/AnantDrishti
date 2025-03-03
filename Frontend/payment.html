@@ -102,19 +102,20 @@
 
     <script>
 
-
 document.getElementById("payButton").addEventListener("click", async function () {
     const customerName = "John Doe";
     const customerEmail = "johndoe@example.com";
     const customerPhone = "9999999999";
-
-    const amount = document.getElementById("total-price").innerText.trim(); 
-    console.log("Total Price:", amount); // Debugging log
-
+    const amount = document.getElementById("total-price").innerText.trim();
+    
     if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
-        alert("Invalid total amount: " + amount);
+        alert("Invalid total amount!");
         return;
     }
+
+    // Retrieve cart and address from localStorage
+    const cart = JSON.parse(localStorage.getItem("cart")) || [];
+    const selectedAddress = document.getElementById("addressDetails").innerHTML;
 
     try {
         const response = await fetch(`${CONFIG.API_URL}/create-payment-link`, {
@@ -124,12 +125,14 @@ document.getElementById("payButton").addEventListener("click", async function ()
                 customer_name: customerName,
                 customer_email: customerEmail,
                 customer_phone: customerPhone,
-                amount: parseFloat(amount)
+                amount: parseFloat(amount),
+                cart: cart,
+                selectedAddress: selectedAddress
             })
         });
 
         const result = await response.json();
-        console.log("Response:", result); // Debugging log
+        console.log("Payment Response:", result);
 
         if (result.link_url) {
             window.location.href = result.link_url;
