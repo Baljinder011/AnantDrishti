@@ -371,7 +371,7 @@ app.post("/saveProfile", upload.single("image"), async (req, res) => {
       email: profileInfo.email, 
       phone: profileInfo.phone,
       dob: profileInfo.dob,
-      image: req.file ? req.file.path : "uploads/default-profile.png", // Default image fallback
+      image: req.file ? req.file.path : "Photos/default-profile.png", // Default image fallback
     };
 
     const existingProfile = await Profile.findOne({ email: profileInfo.email });
@@ -492,22 +492,22 @@ app.get("/products/search", async (req, res) => {
 // Product Routes
 
 
-app.post('/products', upload.single('image'), async (req, res) => {
-  try {
-    const productData = {
-      ...req.body,
-      price: parseFloat(req.body.price),
-      stock: parseInt(req.body.stock),
-      discount: parseFloat(req.body.discount),
-      image: req.file ? `/Photos/${req.file.filename}` : '',
-    };
-    const product = new Product(productData);
-    await product.save();
-    res.status(201).json(product);
-  } catch (error) {
-    res.status(500).json({ message: 'Error creating product', error });
-  }
-});
+// app.post('/products', upload.single('image'), async (req, res) => {
+//   try {
+//     const productData = {
+//       ...req.body,
+//       price: parseFloat(req.body.price),
+//       stock: parseInt(req.body.stock),
+//       discount: parseFloat(req.body.discount),
+//       image: req.file ? `/Photos/${req.file.filename}` : '',
+//     };
+//     const product = new Product(productData);
+//     await product.save();
+//     res.status(201).json(product);
+//   } catch (error) {
+//     res.status(500).json({ message: 'Error creating product', error });
+//   }
+// });
 
 
 
@@ -519,16 +519,16 @@ app.post('/products', upload.single('image'), async (req, res) => {
 
 
 // Create Product
-// app.post('/products', upload.single('image'), async (req, res) => {
-//   try {
-//     const imagePath = req.file ? `/uploads/${req.file.filename}` : "";
-//     const product = new Product({ ...req.body, image: imagePath });
-//     await product.save();
-//     res.status(201).json(product);
-//   } catch (error) {
-//     res.status(500).json({ error: 'Error adding product' });
-//   }
-// });
+app.post('/products', upload.single('image'), async (req, res) => {
+  try {
+    const imagePath = req.file ? `/Photos/${req.file.filename}` : "";
+    const product = new Product({ ...req.body, image: imagePath });
+    await product.save();
+    res.status(201).json(product);
+  } catch (error) {
+    res.status(500).json({ error: 'Error adding product' });
+  }
+});
 
 
 
