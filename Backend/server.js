@@ -9,7 +9,6 @@ require('dotenv').config();
 const crypto = require("crypto");
 const axios = require("axios");
 const nodemailer = require("nodemailer");
-const router = express.Router();
 const https = require("https");
 const fs = require("fs");
 
@@ -101,8 +100,8 @@ app.post("/create-payment-link", async (req, res) => {
       link_auto_reminders: true,
       link_expiry_time: getExpiryTime(),
       link_meta: {
-        // return_url: `http://localhost:${PORT}/redirect.html?link_id=${link_id}`
-           return_url: `http://localhost:${PORT}/redirect.html?link_id=${link_id}`
+        return_url: `http://localhost:${PORT}/redirect.html?link_id=${link_id}`
+        // return_url: `https://indraq.tech/redirect.html?link_id=${link_id}`
 
       }
     };
@@ -198,10 +197,6 @@ const storage = multer.diskStorage({
     cb(null, Date.now() + path.extname(file.originalname)); // Unique file name
   },
 });
-
-
-
-
 
 
 
@@ -468,6 +463,20 @@ app.get("/products/search", async (req, res) => {
 
 
 
+//second porducts api
+
+
+// Create Product
+// app.post('/products', upload.single('image'), async (req, res) => {
+//   try {
+//     const imagePath = req.file ? `/uploads/${req.file.filename}` : "";
+//     const product = new Product({ ...req.body, image: imagePath });
+//     await product.save();
+//     res.status(201).json(product);
+//   } catch (error) {
+//     res.status(500).json({ error: 'Error adding product' });
+//   }
+// });
 
 
 
@@ -491,37 +500,9 @@ app.get("/products/search", async (req, res) => {
 
 // Product Routes
 
-
-app.post('/products', upload.single('image'), async (req, res) => {
-  try {
-    const productData = {
-      ...req.body,
-      price: parseFloat(req.body.price),
-      stock: parseInt(req.body.stock),
-      discount: parseFloat(req.body.discount),
-      image: req.file ? `/Photos/${req.file.filename}` : '',
-    };
-    const product = new Product(productData);
-    await product.save();
-    res.status(201).json(product);
-  } catch (error) {
-    res.status(500).json({ message: 'Error creating product', error });
-  }
-});
-
-
-
-
-
-
-
-//second porducts api
-
-
-// Create Product
 // app.post('/products', upload.single('image'), async (req, res) => {
 //   try {
-//     const imagePath = req.file ? `/uploads/${req.file.filename}` : "";
+//     const imagePath = req.file ? `/uploads/${req.file.originalname}` : "";
 //     const product = new Product({ ...req.body, image: imagePath });
 //     await product.save();
 //     res.status(201).json(product);
@@ -533,25 +514,118 @@ app.post('/products', upload.single('image'), async (req, res) => {
 
 
 
-app.get('/products', async (req, res) => {
+
+
+
+
+
+
+
+// app.get('/products', async (req, res) => {
+//   try {
+//     const products = await Product.find();
+//     res.status(200).json(products);
+//   } catch (error) {
+//     res.status(500).json({ message: 'Error fetching products', error });
+//   }
+// });
+
+
+
+
+// app.get('/products/:id', async (req, res) => {
+//   try {
+//     const product = await Product.findById(req.params.id);
+//     if (!product) return res.status(404).json({ message: 'Product not found' });
+//     res.status(200).json(product);
+//   } catch (error) {
+//     res.status(500).json({ message: 'Error fetching product', error });
+//   }
+// });
+
+
+
+// app.delete('/products/:id', async (req, res) => {
+//   try {
+//     const product = await Product.findByIdAndDelete(req.params.id);
+//     if (!product) return res.status(404).json({ message: 'Product not found' });
+//     res.json({ success: true, message: 'Product deleted successfully' });
+//   } catch (error) {
+//     res.status(500).json({ message: 'Error deleting product', error });
+//   }
+// });
+
+
+
+// app.put('/products/:id/status', async (req, res) => {
+//   try {
+//     console.log("Received request to update product status for ID:", req.params.id);
+//     const product = await Product.findById(req.params.id);
+//     if (!product) {
+//       console.log("Product not found");
+//       return res.status(404).json({ message: 'Product not found' });
+//     }
+//     // Toggle status
+//     product.status = product.status === 'available' ? 'out of stock' : 'available';
+//     // Save changes
+//     await product.save();
+//     console.log("Product status updated:", product.status);
+//     res.json({ success: true, message: 'Product status updated', product });
+//   } 
+//   catch (error) 
+//   {
+//     console.error("Error updating product status:", error);
+//     res.status(500).json({ message: 'Error updating product status', error });
+//   }
+// });
+
+
+
+
+
+
+
+app.post('/products', upload.single('image'), async (req, res) => {
   try {
-    const products = await Product.find();
-    res.status(200).json(products);
+    const imagePath = req.file ? `/uploads/${req.file.originalname}` : "";
+    const product = new Product({ ...req.body, image: imagePath });
+    await product.save();
+    res.status(201).json(product);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching products', error });
+    res.status(500).json({ error: 'Error adding product' });
   }
 });
 
 
 
-
-app.get('/products/:id', async (req, res) => {
+// Product fetch route
+app.get("/products", async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
-    if (!product) return res.status(404).json({ message: 'Product not found' });
+    const products = await Product.find({});
+    res.json(products);
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    res.status(500).send("Error fetching products");
+  }
+});
+
+
+
+app.get("/products/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: ":x: Invalid product ID format" });
+    }
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ message: ":x: Product not found" });
+    }
     res.status(200).json(product);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching product', error });
+    console.error(":x: Error fetching product:", error);
+    res.status(500).json({ message: ":x: Error fetching product", error });
   }
 });
 
@@ -564,6 +638,21 @@ app.delete('/products/:id', async (req, res) => {
     res.json({ success: true, message: 'Product deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Error deleting product', error });
+  }
+});
+
+
+
+// Update Product
+app.put('/products/:id', upload.single('image'), async (req, res) => {
+  try {
+    const updatedProduct = await Product.findByIdAndUpdate(req.params.id, {
+      ...req.body,
+      image: req.file ? `/uploads/${req.file.originalname}` :  Product.image,
+    }, { new: true });
+    res.json(updatedProduct);
+  } catch (error) {
+    res.status(500).json({ error: 'Error updating product' });
   }
 });
 
@@ -583,14 +672,11 @@ app.put('/products/:id/status', async (req, res) => {
     await product.save();
     console.log("Product status updated:", product.status);
     res.json({ success: true, message: 'Product status updated', product });
-  } 
-  catch (error) 
-  {
+  } catch (error) {
     console.error("Error updating product status:", error);
     res.status(500).json({ message: 'Error updating product status', error });
   }
 });
-
 
 
 
@@ -903,58 +989,58 @@ app.get('/dashboard', (req, res) => {
 
 
 
-// User Routes
-app.get("/users", async (req, res) => {
-  try {
-    const users = await User.find({}); // Fetch all users
-    if (!users || users.length === 0) {
-      return res.status(404).json({ message: "No users found" });
-    }
-    res.json(users);
-  } catch (error) {
-    console.error("Error fetching users:", error);
-    res.status(500).json({ message: "Internal Server Error" });
-  }
-});
+//shelinder's User Routes
+// app.get("/users", async (req, res) => {
+//   try {
+//     const users = await User.find({}); // Fetch all users
+//     if (!users || users.length === 0) {
+//       return res.status(404).json({ message: "No users found" });
+//     }
+//     res.json(users);
+//   } catch (error) {
+//     console.error("Error fetching users:", error);
+//     res.status(500).json({ message: "Internal Server Error" });
+//   }
+// });
 
 
 
-app.get("/users/:id", async (req, res) => {
-  try {
-    const userId = req.params.id;
-    console.log("User ID:", userId);  // Log the received ID
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({ message: "Invalid user ID format" });
-    }
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-    res.json(user);
-  } catch (error) {
-    console.error("Error fetching user:", error);
-    res.status(500).json({ message: "Internal Server Error" });
-  }
-});
+// app.get("/users/:id", async (req, res) => {
+//   try {
+//     const userId = req.params.id;
+//     console.log("User ID:", userId);  // Log the received ID
+//     if (!mongoose.Types.ObjectId.isValid(userId)) {
+//       return res.status(400).json({ message: "Invalid user ID format" });
+//     }
+//     const user = await User.findById(userId);
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found" });
+//     }
+//     res.json(user);
+//   } catch (error) {
+//     console.error("Error fetching user:", error);
+//     res.status(500).json({ message: "Internal Server Error" });
+//   }
+// });
 
 
 
-app.post('/users', async (req, res) => {
-  try {
-    const newUser = new User(req.body);
-    await newUser.save();
-    res.status(201).json(newUser);
-  } catch (error) {
-    res.status(500).json({ message: 'Failed to create user', error });
-  }
-});
+// app.post('/users', async (req, res) => {
+//   try {
+//     const newUser = new User(req.body);
+//     await newUser.save();
+//     res.status(201).json(newUser);
+//   } catch (error) {
+//     res.status(500).json({ message: 'Failed to create user', error });
+//   }
+// });
 
 
 
 
 
 
-//Shelinder bai Order Routes
+// // Order Routes
 // app.get('/orders', async (req, res) => {
 //   try {
 //     const orders = await Order.find();
@@ -984,8 +1070,7 @@ app.post('/users', async (req, res) => {
 
 
 
-
-
+// my order api and schema
 
 
 

@@ -212,40 +212,94 @@
         </div>
 
         <div class="orders-list"></div>
-        <div id="orders-container"></div>
-
     </div>
 
     <script>
-        async function fetchOrders() {
-    try {
-        const response = await fetch("http://localhost:3000/get-orders");
-        const data = await response.json();
-
-        if (data.success && data.orders.length > 0) {
-            const ordersContainer = document.getElementById("orders-container");
-            ordersContainer.innerHTML = data.orders.map(order => `
-                <div class="order">
-                    <h3>Order #${order._id}</h3>
-                    <p>Amount: Rs. ${order.amount}</p>
-                    <p>Payment Status: ${order.payment_status}</p>
-                    <p>Address: ${order.selectedAddress}</p>
-                    <hr>
-                </div>
-            `).join("");
-        } else {
-            document.getElementById("orders-container").innerHTML = "<p>No orders found!</p>";
-        }
-    } catch (error) {
-        console.error("Error fetching orders:", error);
-    }
-}
-
-fetchOrders();
-
-        </script>
-        
-        
+        document.addEventListener("DOMContentLoaded", function () {
+            const tabs = document.querySelectorAll(".tab");
+            const ordersList = document.querySelector(".orders-list");
+            const orderCount = document.getElementById("order-count");
+            const statusFilter = document.getElementById("status-filter");
+    
+            const ordersData = {
+                "Orders": [
+                    {
+                        id: "12345", date: "02/25/2025", status: "Shipped", delivery: "03/01/2025", products: [
+                            { name: "Product Name 1", quantity: 2, price: "$20", image: "https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8Y2Fyc3xlbnwwfHwwfHx8MA%3D%3D", status: "Shipped", date: "02/25/2025" },
+                            { name: "Product Name 2", quantity: 1, price: "$15", image: "https://images.unsplash.com/photo-1553440569-bcc63803a83d?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8Y2Fyc3xlbnwwfHwwfHx8MA%3D%3D", status: "Shipped", date: "02/25/2025" }
+                        ]
+                    },
+                    {
+                        id: "67890", date: "02/20/2025", status: "Delivered", delivery: "02/25/2025", products: [
+                            { name: "Product Name 3", quantity: 1, price: "$25", image: "https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fGNhcnN8ZW58MHx8MHx8fDA%3D", status: "Delivered", date: "02/20/2025" }
+                        ]
+                    }
+                ],
+                "Buy Again": [],
+                "Not Yet Shipped": [],
+                "Cancelled Orders": []
+            };
+    
+            function renderOrders(type, status = "All") {
+                ordersList.innerHTML = "";
+                let filteredOrders = ordersData[type];
+    
+                if (status !== "All") {
+                    filteredOrders = filteredOrders.filter(order => order.status === status);
+                }
+    
+                orderCount.textContent = filteredOrders.length;
+    
+                if (filteredOrders.length === 0) {
+                    ordersList.innerHTML = `<p>No ${type.toLowerCase()} available.</p>`;
+                    return;
+                }
+    
+                filteredOrders.forEach(order => {
+                    let productsHtml = order.products.map(product => `
+                        <div class='product'>
+                            <img src='${product.image}' alt='${product.name}'>
+                            <div class='product-details'>
+                                <p><strong>${product.name}</strong></p>
+                                <p>Quantity: ${product.quantity}</p>
+                                <p>Price: ${product.price}</p>
+                                <p>Status: <strong>${product.status}</strong></p>
+                                <p>Purchased on: <strong>${product.date}</strong></p>
+                            </div>
+                        </div>
+                    `).join('');
+    
+                    ordersList.innerHTML += `
+                        <div class='order-item'>
+                            <div class='order-header'>
+                                <p>Order ID: <strong>${order.id}</strong></p>
+                                <p>Placed on: <strong>${order.date}</strong></p>
+                            </div>
+                            <div class='order-info'>
+                                <p>Status: <strong>${order.status}</strong></p>
+                                <p>Estimated Delivery: <strong>${order.delivery}</strong></p>
+                            </div>
+                            <div class='order-products'>${productsHtml}</div>
+                        </div>
+                    `;
+                });
+            }
+    
+            tabs.forEach(tab => {
+                tab.addEventListener("click", function () {
+                    tabs.forEach(t => t.classList.remove("active"));
+                    tab.classList.add("active");
+                    renderOrders(tab.dataset.type, statusFilter.value);
+                });
+            });
+    
+            statusFilter.addEventListener("change", () => {
+                renderOrders(document.querySelector(".tab.active").dataset.type, statusFilter.value);
+            });
+    
+            renderOrders("Orders");
+        });
+    </script>
     
 
 </body>
