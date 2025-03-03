@@ -6,7 +6,7 @@
     <title>Checking Payment Status...</title>
 </head>
 <body>
-    <h1>Redirecting in <span id="countdown">5</span> seconds...</h1>
+    <h1>Redirecting in <span id="countdown">2</span> seconds...</h1>
 
     <script>
         // Function to extract query parameters from URL
@@ -22,7 +22,7 @@
             throw new Error("Missing Payment Link ID in URL");
         }
 
-        let timeLeft = 5; // Countdown starts from 5 seconds
+        let timeLeft = 2; // Countdown starts from 5 seconds
         const countdownElement = document.getElementById("countdown");
 
         const countdownTimer = setInterval(() => {

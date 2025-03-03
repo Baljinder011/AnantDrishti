@@ -711,12 +711,18 @@ body {
     // justify-content: center;
 
     display: grid;
-    grid-template-columns: auto auto auto;
+    grid-template-columns: auto auto auto auto;
     // gap: 20px;
     width:100%;
     flex-wrap: wrap;
     // padding-inline-start: 100px;
     // padding-inline-end: 100px;
+}
+
+@media screen and (max-width:1550px){
+    .product-list{
+        grid-template-columns: auto auto auto;
+    }
 }
 
 @media screen and (max-width:1200px){

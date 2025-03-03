@@ -543,11 +543,16 @@ body {
 
 .product-list {
   display: grid;
-  grid-template-columns: auto auto auto;
+  grid-template-columns: auto auto auto auto;
   width: 100%;
   flex-wrap: wrap;
 }
 
+@media screen and (max-width: 1550px) {
+  .product-list {
+    grid-template-columns: auto auto auto;
+  }
+}
 @media screen and (max-width: 1200px) {
   .product-list {
     grid-template-columns: auto auto;

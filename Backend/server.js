@@ -9,8 +9,9 @@ require('dotenv').config();
 const crypto = require("crypto");
 const axios = require("axios");
 const nodemailer = require("nodemailer");
-const https = require("https");
-const fs = require("fs");
+const router = express.Router();
+// const https = require("https");
+// const fs = require("fs");
 
 
 const app = express();
@@ -24,29 +25,31 @@ const frontendPath = path.join(__dirname, "..", "Frontend"); // Adjust if needed
 console.log("Serving frontend from:", frontendPath); // Debugging
 app.use(express.static(frontendPath));
 app.use(bodyParser.json());
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/Photos", express.static(path.join(__dirname, "Photos")));
 
 
 
-const PORT = process.env.PORT || 3000
+const PORT = process.env.PORT
 
 
-const options = {
-  key: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/privkey.pem"),
-  cert: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/fullchain.pem"),
-};
+// const options = {
+//   key: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/privkey.pem"),
+//   cert: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/fullchain.pem"),
+// };
 
 
 
 // Enforce HTTPS middleware
 
 
-app.use((req, res, next) => {
-  if (req.protocol !== "https") {
-    return res.redirect("https://" + req.headers.host + req.url);
-  }
-  next();
-});
+// app.use((req, res, next) => {
+//   if (req.protocol !== "https") {
+//     return res.redirect("https://" + req.headers.host + req.url);
+//   }
+//   next();
+// });
+
+
 
 
 
@@ -99,7 +102,7 @@ app.post("/create-payment-link", async (req, res) => {
       link_expiry_time: getExpiryTime(),
       link_meta: {
         // return_url: `http://localhost:${PORT}/redirect.html?link_id=${link_id}`
-        return_url: `https://indraq.tech/redirect.html?link_id=${link_id}`
+           return_url: `http://localhost:${PORT}/redirect.html?link_id=${link_id}`
 
       }
     };
@@ -190,11 +193,17 @@ app.get("/failure.html", (req, res) => {
 // File upload setup
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/"); // Save to uploads folder
+    cb(null, "Photos/"); // Save to uploads folder
   }, filename: (req, file, cb) => {
     cb(null, Date.now() + path.extname(file.originalname)); // Unique file name
   },
 });
+
+
+
+
+
+
 
 
 const upload = multer({
@@ -490,7 +499,7 @@ app.post('/products', upload.single('image'), async (req, res) => {
       price: parseFloat(req.body.price),
       stock: parseInt(req.body.stock),
       discount: parseFloat(req.body.discount),
-      image: req.file ? `/uploads/${req.file.filename}` : '',
+      image: req.file ? `/Photos/${req.file.filename}` : '',
     };
     const product = new Product(productData);
     await product.save();
@@ -499,6 +508,27 @@ app.post('/products', upload.single('image'), async (req, res) => {
     res.status(500).json({ message: 'Error creating product', error });
   }
 });
+
+
+
+
+
+
+
+//second porducts api
+
+
+// Create Product
+// app.post('/products', upload.single('image'), async (req, res) => {
+//   try {
+//     const imagePath = req.file ? `/uploads/${req.file.filename}` : "";
+//     const product = new Product({ ...req.body, image: imagePath });
+//     await product.save();
+//     res.status(201).json(product);
+//   } catch (error) {
+//     res.status(500).json({ error: 'Error adding product' });
+//   }
+// });
 
 
 
@@ -553,7 +583,9 @@ app.put('/products/:id/status', async (req, res) => {
     await product.save();
     console.log("Product status updated:", product.status);
     res.json({ success: true, message: 'Product status updated', product });
-  } catch (error) {
+  } 
+  catch (error) 
+  {
     console.error("Error updating product status:", error);
     res.status(500).json({ message: 'Error updating product status', error });
   }
@@ -606,13 +638,13 @@ const User = mongoose.model("users", userSchema);
 
 
 // Order Schema & Model
-const orderSchema = new mongoose.Schema({
-  productName: String,
-  price: Number,
-  placedOn: Date,
-  status: String,
-});
-const Order = mongoose.model('Order', orderSchema);
+// const orderSchema = new mongoose.Schema({
+//   productName: String,
+//   price: Number,
+//   placedOn: Date,
+//   status: String,
+// });
+// const Order = mongoose.model('Order', orderSchema);
 
 
 
@@ -922,29 +954,112 @@ app.post('/users', async (req, res) => {
 
 
 
-// Order Routes
-app.get('/orders', async (req, res) => {
+//Shelinder bai Order Routes
+// app.get('/orders', async (req, res) => {
+//   try {
+//     const orders = await Order.find();
+//     res.status(200).json(orders);
+//   } catch (error) {
+//     res.status(500).json({ message: 'Failed to fetch orders', error });
+//   }
+// });
+
+
+
+// app.put('/orders/:id', async (req, res) => {
+//   try {
+//     const order = await Order.findByIdAndUpdate(req.params.id, req.body, { new: true });
+//     if (!order) {
+//       return res.status(404).send('Order not found');
+//     }
+//     res.send(order);
+//   } catch (err) {
+//     res.status(500).send('Error updating order');
+//   }
+// });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//My order schema and api
+
+
+
+const OrderSchema = new mongoose.Schema({
+  orderId: String,
+  customerName: String,
+  customerEmail: String,
+  customerPhone: String,
+  address: String,
+  cartItems: Array,
+  totalAmount: Number,
+  paymentStatus: String,
+  transactionId: String,
+  createdAt: { type: Date, default: Date.now }
+});
+
+const Order = mongoose.model("Order", OrderSchema);
+
+// ✅ Example Cart and Address Schema (Assuming You Store Them)
+const Cart = mongoose.model("Cart", new mongoose.Schema({
+  userEmail: String,
+  items: Array
+}));
+
+const Address = mongoose.model("Address", new mongoose.Schema({
+  userEmail: String,
+  fullAddress: String
+}));
+
+// ✅ Webhook to Capture Payment Success
+app.post("/cashfree-webhook", async (req, res) => {
   try {
-    const orders = await Order.find();
-    res.status(200).json(orders);
+      const { order_id, reference_id, payment_status } = req.body;
+
+      // Update order status in MongoDB
+      const order = await Order.findOneAndUpdate(
+          { _id: order_id },
+          { payment_status, reference_id },
+          { new: true }
+      );
+
+      if (!order) {
+          return res.status(404).json({ success: false, message: "Order not found" });
+      }
+
+      res.json({ success: true, message: "Payment status updated", order });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch orders', error });
+      console.error("Webhook error:", error);
+      res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
 
-
-app.put('/orders/:id', async (req, res) => {
+app.get("/get-orders", async (req, res) => {
   try {
-    const order = await Order.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!order) {
-      return res.status(404).send('Order not found');
-    }
-    res.send(order);
-  } catch (err) {
-    res.status(500).send('Error updating order');
+      const orders = await Order.find().sort({ createdAt: -1 });
+      res.json({ success: true, orders });
+  } catch (error) {
+      console.error("Error fetching orders:", error);
+      res.status(500).json({ success: false, message: "Server error" });
   }
 });
+
+
+
+
+
+
 
 
 
@@ -955,15 +1070,15 @@ app.put('/orders/:id', async (req, res) => {
 // Start Server
 
 
-// app.listen(PORT, () => {
-//   console.log(`Server running on http://localhost:${PORT}`);
-// });
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});
 
 
 
 // Start HTTPS server
 
 
-https.createServer(options, app).listen(PORT, () => {
-  console.log(`Secure server running on HTTPS at port ${PORT}`);
-});
+// https.createServer(options, app).listen(PORT, () => {
+//   console.log(`Secure server running on HTTPS at port ${PORT}`);
+// });
