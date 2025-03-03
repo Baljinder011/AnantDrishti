@@ -9,7 +9,7 @@ require('dotenv').config();
 const crypto = require("crypto");
 const axios = require("axios");
 const nodemailer = require("nodemailer");
-const https = require("https");
+// const https = require("https");
 const fs = require("fs");
 
 
@@ -21,32 +21,32 @@ app.use(express.json());
 
 
 const frontendPath = path.join(__dirname, "..", "Frontend"); // Adjust if needed
-console.log("Serving frontend from:", frontendPath); // Debugging
+app.use(express.static(path.join(__dirname, frontendPath)));
 app.use(express.static(frontendPath));
 app.use(bodyParser.json());
-app.use("/Photos", express.static(path.join(__dirname, "Photos")));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 
 
 const PORT = process.env.PORT || 3000
 
 
-const options = {
-  key: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/privkey.pem"),
-  cert: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/fullchain.pem"),
-};
+// const options = {
+//   key: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/privkey.pem"),
+//   cert: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/fullchain.pem"),
+// };
 
 
 
 // Enforce HTTPS middleware
 
 
-app.use((req, res, next) => {
-  if (req.protocol !== "https") {
-    return res.redirect("https://" + req.headers.host + req.url);
-  }
-  next();
-});
+// app.use((req, res, next) => {
+//   if (req.protocol !== "https") {
+//     return res.redirect("https://" + req.headers.host + req.url);
+//   }
+//   next();
+// });
 
 
 
@@ -189,12 +189,20 @@ app.get("/failure.html", (req, res) => {
 
 
 
+
+// Ensure `uploads/Products/` folder exists
+const uploadDir = "uploads/Products";
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+
 // File upload setup
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "Photos/"); // Save to Photos folder
+    cb(null, uploadDir); // Save to uploads folder
   }, filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname)); // Unique file name
+    cb(null,file.originalname); // Unique file name
   },
 });
 
@@ -284,6 +292,125 @@ const Product = mongoose.model('products', productSchema);
 
 
 
+
+
+app.post('/products', upload.single('image'), async (req, res) => {
+  try {
+    console.log(":inbox_tray: Incoming Request Body:", req.body);
+    console.log(":outbox_tray: Uploaded File:", req.file);
+    if (!req.body.name || !req.body.price || !req.body.category) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+    if (!req.file) {
+      return res.status(400).json({ error: "Image upload failed" });
+    }
+    const imagePath = `/uploads/Products/${req.file.originalname}`;
+    const product = new Product({ ...req.body, image: imagePath });
+    await product.save();
+    res.status(201).json(product);
+  } catch (error) {
+    console.error(":x: Error adding product:", error);
+    res.status(500).json({ error: "Error adding product", details: error.message });
+  }
+});
+
+
+
+
+// Product fetch route
+app.get("/products", async (req, res) => {
+  try {
+    const products = await Product.find({});
+    res.json(products);
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    res.status(500).send("Error fetching products");
+  }
+});
+
+
+
+
+app.get("/products/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: ":x: Invalid product ID format" });
+    }
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ message: ":x: Product not found" });
+    }
+    res.status(200).json(product);
+  } catch (error) {
+    console.error(":x: Error fetching product:", error);
+    res.status(500).json({ message: ":x: Error fetching product", error });
+  }
+});
+
+
+
+app.delete('/products/:id', async (req, res) => {
+  try {
+    const product = await Product.findByIdAndDelete(req.params.id);
+    if (!product) return res.status(404).json({ message: 'Product not found' });
+    res.json({ success: true, message: 'Product deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting product', error });
+  }
+});
+
+
+
+
+// Update Product
+app.put('/products/:id', upload.single('image'), async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ message: "Product not found" });
+    let imagePath = product.image; // Keep existing image if not updated
+    if (req.file) {
+      imagePath = `/uploads/Products/${req.file.originalname}`; // :white_tick: Store new image in correct folder
+    }
+    const updatedProduct = await Product.findByIdAndUpdate(
+      req.params.id,
+      { ...req.body, image: imagePath },
+      { new: true }
+    );
+    res.json(updatedProduct);
+  } catch (error) {
+    console.error(":x: Error updating product:", error);
+    res.status(500).json({ error: "Error updating product" });
+  }
+});
+
+
+
+app.put('/products/:id/status', async (req, res) => {
+  try {
+    console.log("Received request to update product status for ID:", req.params.id);
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      console.log("Product not found");
+      return res.status(404).json({ message: 'Product not found' });
+    }
+    // Toggle status
+    product.status = product.status === 'available' ? 'out of stock' : 'available';
+    // Save changes
+    await product.save();
+    console.log("Product status updated:", product.status);
+    res.json({ success: true, message: 'Product status updated', product });
+  } catch (error) {
+    console.error("Error updating product status:", error);
+    res.status(500).json({ message: 'Error updating product status', error });
+  }
+});
+
+
+
+
+
 // Address Schema and Model
 
 
@@ -366,7 +493,7 @@ app.post("/saveProfile", upload.single("image"), async (req, res) => {
       email: profileInfo.email, 
       phone: profileInfo.phone,
       dob: profileInfo.dob,
-      image: req.file ? req.file.path : "Photos/default-profile.png", // Default image fallback
+      image: req.file ? req.file.path : "uploads/default-profile.png", // Default image fallback
     };
 
     const existingProfile = await Profile.findOne({ email: profileInfo.email });
@@ -469,7 +596,7 @@ app.get("/products/search", async (req, res) => {
 // Create Product
 // app.post('/products', upload.single('image'), async (req, res) => {
 //   try {
-//     const imagePath = req.file ? `/Photos/${req.file.filename}` : "";
+//     const imagePath = req.file ? `/uploads/${req.file.filename}` : "";
 //     const product = new Product({ ...req.body, image: imagePath });
 //     await product.save();
 //     res.status(201).json(product);
@@ -488,7 +615,7 @@ app.get("/products/search", async (req, res) => {
 //new api to add products in database
 // Multer Configuration
 // const storage = multer.diskStorage({
-//   destination: (req, file, cb) => cb(null, 'Photos/'),
+//   destination: (req, file, cb) => cb(null, 'uploads/'),
 //   filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname),
 // });
 
@@ -502,7 +629,7 @@ app.get("/products/search", async (req, res) => {
 
 // app.post('/products', upload.single('image'), async (req, res) => {
 //   try {
-//     const imagePath = req.file ? `/Photos/${req.file.originalname}` : "";
+//     const imagePath = req.file ? `/uploads/${req.file.originalname}` : "";
 //     const product = new Product({ ...req.body, image: imagePath });
 //     await product.save();
 //     res.status(201).json(product);
@@ -585,98 +712,98 @@ app.get("/products/search", async (req, res) => {
 
 
 
-app.post('/products', upload.single('image'), async (req, res) => {
-  try {
-    const imagePath = req.file ? `/Photos/${req.file.originalname}` : "";
-    const product = new Product({ ...req.body, image: imagePath });
-    await product.save();
-    res.status(201).json(product);
-  } catch (error) {
-    res.status(500).json({ error: 'Error adding product' });
-  }
-});
+// app.post('/products', upload.single('image'), async (req, res) => {
+//   try {
+//     const imagePath = req.file ? `/uploads/${req.file.originalname}` : "";
+//     const product = new Product({ ...req.body, image: imagePath });
+//     await product.save();
+//     res.status(201).json(product);
+//   } catch (error) {
+//     res.status(500).json({ error: 'Error adding product' });
+//   }
+// });
 
 
 
-// Product fetch route
-app.get("/products", async (req, res) => {
-  try {
-    const products = await Product.find({});
-    res.json(products);
-  } catch (error) {
-    console.error("Error fetching products:", error);
-    res.status(500).send("Error fetching products");
-  }
-});
+// // Product fetch route
+// app.get("/products", async (req, res) => {
+//   try {
+//     const products = await Product.find({});
+//     res.json(products);
+//   } catch (error) {
+//     console.error("Error fetching products:", error);
+//     res.status(500).send("Error fetching products");
+//   }
+// });
 
 
 
-app.get("/products/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    // Validate ObjectId
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: ":x: Invalid product ID format" });
-    }
-    const product = await Product.findById(id);
-    if (!product) {
-      return res.status(404).json({ message: ":x: Product not found" });
-    }
-    res.status(200).json(product);
-  } catch (error) {
-    console.error(":x: Error fetching product:", error);
-    res.status(500).json({ message: ":x: Error fetching product", error });
-  }
-});
+// app.get("/products/:id", async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     // Validate ObjectId
+//     if (!mongoose.Types.ObjectId.isValid(id)) {
+//       return res.status(400).json({ message: ":x: Invalid product ID format" });
+//     }
+//     const product = await Product.findById(id);
+//     if (!product) {
+//       return res.status(404).json({ message: ":x: Product not found" });
+//     }
+//     res.status(200).json(product);
+//   } catch (error) {
+//     console.error(":x: Error fetching product:", error);
+//     res.status(500).json({ message: ":x: Error fetching product", error });
+//   }
+// });
 
 
 
-app.delete('/products/:id', async (req, res) => {
-  try {
-    const product = await Product.findByIdAndDelete(req.params.id);
-    if (!product) return res.status(404).json({ message: 'Product not found' });
-    res.json({ success: true, message: 'Product deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ message: 'Error deleting product', error });
-  }
-});
+// app.delete('/products/:id', async (req, res) => {
+//   try {
+//     const product = await Product.findByIdAndDelete(req.params.id);
+//     if (!product) return res.status(404).json({ message: 'Product not found' });
+//     res.json({ success: true, message: 'Product deleted successfully' });
+//   } catch (error) {
+//     res.status(500).json({ message: 'Error deleting product', error });
+//   }
+// });
 
 
 
-// Update Product
-app.put('/products/:id', upload.single('image'), async (req, res) => {
-  try {
-    const updatedProduct = await Product.findByIdAndUpdate(req.params.id, {
-      ...req.body,
-      image: req.file ? `/Photos/${req.file.originalname}` :  Product.image,
-    }, { new: true });
-    res.json(updatedProduct);
-  } catch (error) {
-    res.status(500).json({ error: 'Error updating product' });
-  }
-});
+// // Update Product
+// app.put('/products/:id', upload.single('image'), async (req, res) => {
+//   try {
+//     const updatedProduct = await Product.findByIdAndUpdate(req.params.id, {
+//       ...req.body,
+//       image: req.file ? `/uploads/${req.file.originalname}` :  Product.image,
+//     }, { new: true });
+//     res.json(updatedProduct);
+//   } catch (error) {
+//     res.status(500).json({ error: 'Error updating product' });
+//   }
+// });
 
 
 
-app.put('/products/:id/status', async (req, res) => {
-  try {
-    console.log("Received request to update product status for ID:", req.params.id);
-    const product = await Product.findById(req.params.id);
-    if (!product) {
-      console.log("Product not found");
-      return res.status(404).json({ message: 'Product not found' });
-    }
-    // Toggle status
-    product.status = product.status === 'available' ? 'out of stock' : 'available';
-    // Save changes
-    await product.save();
-    console.log("Product status updated:", product.status);
-    res.json({ success: true, message: 'Product status updated', product });
-  } catch (error) {
-    console.error("Error updating product status:", error);
-    res.status(500).json({ message: 'Error updating product status', error });
-  }
-});
+// app.put('/products/:id/status', async (req, res) => {
+//   try {
+//     console.log("Received request to update product status for ID:", req.params.id);
+//     const product = await Product.findById(req.params.id);
+//     if (!product) {
+//       console.log("Product not found");
+//       return res.status(404).json({ message: 'Product not found' });
+//     }
+//     // Toggle status
+//     product.status = product.status === 'available' ? 'out of stock' : 'available';
+//     // Save changes
+//     await product.save();
+//     console.log("Product status updated:", product.status);
+//     res.json({ success: true, message: 'Product status updated', product });
+//   } catch (error) {
+//     console.error("Error updating product status:", error);
+//     res.status(500).json({ message: 'Error updating product status', error });
+//   }
+// });
 
 
 
@@ -724,13 +851,13 @@ const User = mongoose.model("users", userSchema);
 
 
 // Order Schema & Model
-const orderSchema = new mongoose.Schema({
-  productName: String,
-  price: Number,
-  placedOn: Date,
-  status: String,
-});
-const Order = mongoose.model('Order', orderSchema);
+// const orderSchema = new mongoose.Schema({
+//   productName: String,
+//   price: Number,
+//   placedOn: Date,
+//   status: String,
+// });
+// const Order = mongoose.model('Order', orderSchema);
 
 
 
@@ -1072,7 +1199,67 @@ app.get('/dashboard', (req, res) => {
 
 // my order api and schema
 
+const orderSchema = new mongoose.Schema({
+  orderDetails: {
+    type: Object,
+    required: true,
+  }, // You can specify subfields if necessary
+  paymentDetails: {
+    type: Object,
+    required: true,
+  }, // Same here if you know the structure
+  status: {
+    type: String,
+    enum: ['Pending', 'Completed', 'Failed'], // List of possible statuses
+    default: 'Pending',
+  },
+  createdAt: { type: Date, default: Date.now },
+});
 
+const Order = mongoose.model('Order', orderSchema);
+
+
+
+
+app.post('/save-order', async (req, res) => {
+  const { orderDetails, paymentDetails } = req.body;
+  try {
+    const newOrder = new Order({
+      orderDetails: orderDetails,
+      paymentDetails: paymentDetails,
+      status: 'Pending', // Example status, can be adjusted
+    });
+
+    await newOrder.save();
+
+    // Send back the order ID in the response
+    res.json({ success: true, orderId: newOrder._id.toString() }); // Make sure to send orderId as a string
+  } catch (error) {
+    console.error('Error saving order:', error);
+    res.json({ success: false, message: 'Failed to save order' });
+  }
+});
+
+
+
+
+
+
+
+// Assuming you're using Express and Mongoose
+app.get('/get-order/:orderId', async (req, res) => {
+  const { orderId } = req.params;
+  try {
+      const order = await Order.findById(orderId);  // Replace Order with your Mongoose model
+      if (!order) {
+          return res.status(404).json({ success: false, message: 'Order not found' });
+      }
+      res.json({ success: true, ...order.toObject() });
+  } catch (error) {
+      console.error('Error fetching order:', error);
+      res.status(500).json({ success: false, message: 'Error fetching order' });
+  }
+});
 
 
 
@@ -1082,15 +1269,15 @@ app.get('/dashboard', (req, res) => {
 // Start Server
 
 
-// app.listen(PORT, () => {
-//   console.log(`Server running on http://localhost:${PORT}`);
-// });
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});
 
 
 
 // Start HTTPS server
 
 
-https.createServer(options, app).listen(PORT, () => {
-  console.log(`Secure server running on HTTPS at port ${PORT}`);
-});
+// https.createServer(options, app).listen(PORT, () => {
+//   console.log(`Secure server running on HTTPS at port ${PORT}`);
+// });

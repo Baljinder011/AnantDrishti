@@ -17,10 +17,10 @@
 
     <div id="nav-placeholder"></div>
     <script>
-        $(function(){
-          $("#nav-placeholder").load("nav.html" , function () {
-            updateCartCounter(); // Ensure counter updates after loading nav
-          });
+        $(function () {
+            $("#nav-placeholder").load("nav.html", function () {
+                updateCartCounter(); // Ensure counter updates after loading nav
+            });
         });
     </script>
 
@@ -69,8 +69,10 @@
                             </div>
 
                             <div class="payment-btn mt-4">
-                                <button type="button" id="payButton" class="btn btn-primary">Proceed to
-                                    Payment</button>
+                     
+                                    <button type="button" id="payButton" class="btn btn-primary">Proceed to
+                                        Payment</button>
+                            
                             </div>
                         </div>
                     </div>
@@ -90,7 +92,7 @@
                     <p>GST (18%): Rs. <span id="gst-price">0</span></p>
                     <p>Shipping Charge: Rs. <span id="shipping-charge">0</span></p>
                     <br>
-                    <hr/>
+                    <hr />
                     <h2>Total: Rs. <span id="total-price">0</span></h2>
                 </div>
             </div>
@@ -98,52 +100,94 @@
     </div>
 
     <br><br>
-    
+
 
     <script>
 
-document.getElementById("payButton").addEventListener("click", async function () {
-    const customerName = "John Doe";
-    const customerEmail = "johndoe@example.com";
-    const customerPhone = "9999999999";
-    const amount = document.getElementById("total-price").innerText.trim();
-    
-    if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
-        alert("Invalid total amount!");
-        return;
-    }
+document.getElementById('payButton').addEventListener('click', async function () {
+            const orderDetails = JSON.parse(localStorage.getItem('cart')) || [];
+            const paymentDetails = {
+                method: document.querySelector('input[name="paymentMethod"]:checked').value,
+                amount: document.getElementById('total-price').innerText.trim(),
+                shippingMethod: document.querySelector('input[name="shippingMethod"]:checked').value
+            };
 
-    // Retrieve cart and address from localStorage
-    const cart = JSON.parse(localStorage.getItem("cart")) || [];
-    const selectedAddress = document.getElementById("addressDetails").innerHTML;
+            const orderData = {
+                orderDetails,
+                paymentDetails
+            };
 
-    try {
-        const response = await fetch(`${CONFIG.API_URL}/create-payment-link`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                customer_name: customerName,
-                customer_email: customerEmail,
-                customer_phone: customerPhone,
-                amount: parseFloat(amount),
-                cart: cart,
-                selectedAddress: selectedAddress
-            })
+            try {
+                const response = await fetch('http://localhost:3000/save-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(orderData)
+                });
+
+                const result = await response.json();
+                console.log('Response from backend:', result);  // Debugging log
+                if (result.success) {
+                    console.log('Redirecting to orders page with orderId:', result.orderId);
+                    if (result.orderId) {
+                        // Redirect to orders.html with orderId in query parameter
+                        window.location.href = `orders.html?orderId=${result.orderId}`;
+                    } else {
+                        alert('Order ID not found in response');
+                    }
+                } else {
+                    alert('Error saving order: ' + result.message);
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Payment or order saving failed');
+            }
         });
 
-        const result = await response.json();
-        console.log("Payment Response:", result);
 
-        if (result.link_url) {
-            window.location.href = result.link_url;
-        } else {
-            alert("Payment Link creation failed!");
-        }
-    } catch (error) {
-        console.error("Error:", error);
-        alert("Error in payment process");
-    }
-});
+
+
+
+
+
+        // document.getElementById("payButton").addEventListener("click", async function () {
+        //     const customerName = "John Doe";
+        //     const customerEmail = "johndoe@example.com";
+        //     const customerPhone = "9999999999";
+
+        //     const amount = document.getElementById("total-price").innerText.trim(); 
+        //     console.log("Total Price:", amount); // Debugging log
+
+        //     if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
+        //         alert("Invalid total amount: " + amount);
+        //         return;
+        //     }
+
+        //     try {
+        //         const response = await fetch(`${CONFIG.API_URL}/create-payment-link`, {
+        //             method: "POST",
+        //             headers: { "Content-Type": "application/json" },
+        //             body: JSON.stringify({
+        //                 customer_name: customerName,
+        //                 customer_email: customerEmail,
+        //                 customer_phone: customerPhone,
+        //                 amount: parseFloat(amount)
+        //             })
+        //         });
+
+        //         const result = await response.json();
+        //         console.log("Response:", result); // Debugging log
+
+        //         if (result.link_url) {
+        //             window.location.href = result.link_url;
+        //         } else {
+        //             alert("Payment Link creation failed!");
+        //         }
+        //     } catch (error) {
+        //         console.error("Error:", error);
+        //         alert("Error in payment process");
+        //     }
+        // });
 
 
 
@@ -283,29 +327,29 @@ document.getElementById("payButton").addEventListener("click", async function ()
 
 
         // Function to scroll cart items while fixing the cart summary
-function fixCartSummary() {
-  const cartItems = document.querySelector('.cart-items');
-  const cartSummary = document.getElementById('cart-summary');
-  
-  // Ensure the cart-summary remains fixed
-  cartSummary.style.position = 'sticky';
-  cartSummary.style.top = '20px'; // Space from top
+        function fixCartSummary() {
+            const cartItems = document.querySelector('.cart-items');
+            const cartSummary = document.getElementById('cart-summary');
 
-  // Enable scroll on cart-items
-  cartItems.style.overflowY = 'auto';
+            // Ensure the cart-summary remains fixed
+            cartSummary.style.position = 'sticky';
+            cartSummary.style.top = '20px'; // Space from top
 
-  // Set a maximum height for the cart items container to make it scrollable
-  cartItems.style.maxHeight = '380px'; 
-}
+            // Enable scroll on cart-items
+            cartItems.style.overflowY = 'auto';
 
-// Call the function when the page loads
-window.onload = fixCartSummary;
+            // Set a maximum height for the cart items container to make it scrollable
+            cartItems.style.maxHeight = '380px';
+        }
+
+        // Call the function when the page loads
+        window.onload = fixCartSummary;
 
 
     </script>
 
-<!-- <script src="popup.js"></script> -->
-<script src="config.js"></script>
+    <!-- <script src="popup.js"></script> -->
+    <script src="config.js"></script>
 
 </body>
 

@@ -4,51 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Payment Successful</title>
-    <link rel="stylesheet" href="styles.css"> <!-- Add your CSS file -->
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 50px;
-            background-color: #f8f9fa;
-        }
-        .success-container {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            display: inline-block;
-            max-width: 500px;
-            margin: auto;
-        }
-        .success-image {
-            width: 120px;
-            height: auto;
-            margin-bottom: 20px;
-        }
-        .btn {
-            display: inline-block;
-            padding: 10px 20px;
-            background: #28a745;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            margin-top: 20px;
-        }
-        .btn:hover {
-            background: #218838;
-        }
-    </style>
 </head>
 <body>
+    <h1>Payment Successful</h1>
+    <p>Thank you for your purchase!</p>
+    <p>Your order ID is: <span id="order-id"></span></p>
 
-    <div class="success-container">
-        <img src="https://cdn-icons-png.flaticon.com/512/148/148767.png" alt="Success" class="success-image"> 
-        <h2>Payment Successful!</h2>
-        <p>Thank you for your purchase. Your payment has been processed successfully.</p>
- 
-        <a href="orders.html" class="btn">See your Order here</a>
-    </div>
-
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            const orderId = urlParams.get('orderId');
+            
+            if (orderId) {
+                document.getElementById('order-id').textContent = orderId;
+            } else {
+                document.getElementById('order-id').textContent = 'Order ID not found';
+            }
+        });
+    </script>
 </body>
 </html>
