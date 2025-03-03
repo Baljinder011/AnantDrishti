@@ -24,7 +24,7 @@ const frontendPath = path.join(__dirname, "..", "Frontend"); // Adjust if needed
 console.log("Serving frontend from:", frontendPath); // Debugging
 app.use(express.static(frontendPath));
 app.use(bodyParser.json());
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/Photos", express.static(path.join(__dirname, "Photos")));
 
 
 
@@ -192,7 +192,7 @@ app.get("/failure.html", (req, res) => {
 // File upload setup
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/"); // Save to uploads folder
+    cb(null, "Photos/"); // Save to Photos folder
   }, filename: (req, file, cb) => {
     cb(null, Date.now() + path.extname(file.originalname)); // Unique file name
   },
@@ -366,7 +366,7 @@ app.post("/saveProfile", upload.single("image"), async (req, res) => {
       email: profileInfo.email, 
       phone: profileInfo.phone,
       dob: profileInfo.dob,
-      image: req.file ? req.file.path : "uploads/default-profile.png", // Default image fallback
+      image: req.file ? req.file.path : "Photos/default-profile.png", // Default image fallback
     };
 
     const existingProfile = await Profile.findOne({ email: profileInfo.email });
@@ -469,7 +469,7 @@ app.get("/products/search", async (req, res) => {
 // Create Product
 // app.post('/products', upload.single('image'), async (req, res) => {
 //   try {
-//     const imagePath = req.file ? `/uploads/${req.file.filename}` : "";
+//     const imagePath = req.file ? `/Photos/${req.file.filename}` : "";
 //     const product = new Product({ ...req.body, image: imagePath });
 //     await product.save();
 //     res.status(201).json(product);
@@ -488,7 +488,7 @@ app.get("/products/search", async (req, res) => {
 //new api to add products in database
 // Multer Configuration
 // const storage = multer.diskStorage({
-//   destination: (req, file, cb) => cb(null, 'uploads/'),
+//   destination: (req, file, cb) => cb(null, 'Photos/'),
 //   filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname),
 // });
 
@@ -502,7 +502,7 @@ app.get("/products/search", async (req, res) => {
 
 // app.post('/products', upload.single('image'), async (req, res) => {
 //   try {
-//     const imagePath = req.file ? `/uploads/${req.file.originalname}` : "";
+//     const imagePath = req.file ? `/Photos/${req.file.originalname}` : "";
 //     const product = new Product({ ...req.body, image: imagePath });
 //     await product.save();
 //     res.status(201).json(product);
@@ -587,7 +587,7 @@ app.get("/products/search", async (req, res) => {
 
 app.post('/products', upload.single('image'), async (req, res) => {
   try {
-    const imagePath = req.file ? `/uploads/${req.file.originalname}` : "";
+    const imagePath = req.file ? `/Photos/${req.file.originalname}` : "";
     const product = new Product({ ...req.body, image: imagePath });
     await product.save();
     res.status(201).json(product);
@@ -648,7 +648,7 @@ app.put('/products/:id', upload.single('image'), async (req, res) => {
   try {
     const updatedProduct = await Product.findByIdAndUpdate(req.params.id, {
       ...req.body,
-      image: req.file ? `/uploads/${req.file.originalname}` :  Product.image,
+      image: req.file ? `/Photos/${req.file.originalname}` :  Product.image,
     }, { new: true });
     res.json(updatedProduct);
   } catch (error) {
