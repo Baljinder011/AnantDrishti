@@ -28,7 +28,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 
 
-const PORT = process.env.PORT || 3000
+const PORT = process.env.PORT || 4000
 
 
 const options = {
@@ -202,7 +202,7 @@ const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir); // Save to uploads folder
   }, filename: (req, file, cb) => {
-    cb(null,file.originalname); // Unique file name
+    cb(null, file.originalname); // Unique file name
   },
 });
 
@@ -414,40 +414,6 @@ app.put('/products/:id/status', async (req, res) => {
 // Address Schema and Model
 
 
-// const addressSchema = new mongoose.Schema({
-//   name: String,
-//   email: String,
-//   phone: String,
-//   address: String,
-//   city: String,
-//   state: String,
-//   pin: String,
-//   country: String,
-//   isDefaultAddress: Boolean,
-// });
-// const Address = mongoose.model("Address", addressSchema);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -490,7 +456,7 @@ app.post("/saveProfile", upload.single("image"), async (req, res) => {
 
     const profileData = {
       name: profileInfo.name,
-      email: profileInfo.email, 
+      email: profileInfo.email,
       phone: profileInfo.phone,
       dob: profileInfo.dob,
       image: req.file ? req.file.path : "uploads/default-profile.png", // Default image fallback
@@ -538,30 +504,66 @@ app.post("/saveProfile", upload.single("image"), async (req, res) => {
 // Save Address Route
 
 
-// app.post("/address", async (req, res) => {
-//   const { name, email, phone, address, city, state, pin, country, isDefaultAddress } = req.body;
-//   if (!name || !email || !address || !city || !state || !pin || !country) {
-//     return res.status(400).json({ message: "All address fields are required" });
-//   }
-//   try {
-//     const newAddress = new Address({
-//       name,
-//       email,
-//       phone,
-//       address,
-//       city,
-//       state,
-//       pin,
-//       country,
-//       isDefaultAddress,
-//     });
-//     const savedAddress = await newAddress.save();
-//     res.status(201).json({ message: "Address saved successfully", savedAddress });
-//   } catch (error) {
-//     console.error("Error saving address:", error);
-//     res.status(500).json({ message: "Internal Server Error", error: error.message });
-//   }
-// });
+const addressSchema = new mongoose.Schema({
+  name: String,
+  email: String,
+  phone: String,
+  address: String,
+  city: String,
+  state: String,
+  pin: String,
+  country: String,
+  isDefaultAddress: Boolean,
+});
+const Address = mongoose.model("Address", addressSchema);
+
+
+
+
+app.post("/address", async (req, res) => {
+  const { name, email, phone, address, city, state, pin, country, isDefaultAddress } = req.body;
+  if (!name || !email || !address || !city || !state || !pin || !country) {
+    return res.status(400).json({ message: "All address fields are required" });
+  }
+  try {
+    const newAddress = new Address({
+      name,
+      email,
+      phone,
+      address,
+      city,
+      state,
+      pin,
+      country,
+      isDefaultAddress,
+    });
+    const savedAddress = await newAddress.save();
+    res.status(201).json({ message: "Address saved successfully", savedAddress });
+  } catch (error) {
+    console.error("Error saving address:", error);
+    res.status(500).json({ message: "Internal Server Error", error: error.message });
+  }
+});
+
+
+
+app.get("/address", async (req, res) => {
+  try {
+    const address = await Address.findOne().sort({ _id: -1 }); // Fetch latest address
+    if (!address) {
+      return res.status(404).json({ success: false, message: "Address not found" });
+    }
+    res.status(200).json({ success: true, data: address });
+  } catch (error) {
+    console.error("Error fetching address:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+});
+
+
+
+
+
 
 
 
@@ -823,6 +825,7 @@ const userSchema = new mongoose.Schema({
   address: {
     street: String,
     city: String,
+    state: String,
     postalCode: String,
     country: String
   },
@@ -844,7 +847,7 @@ const userSchema = new mongoose.Schema({
   ]
 }, { timestamps: true });
 
-const User = mongoose.model("users", userSchema);
+const Customer = mongoose.model("customer", userSchema);
 
 
 
@@ -871,7 +874,7 @@ const profileSchema = new mongoose.Schema({
   dob: String,
   image: String, // Store image file path
 });
-profileSchema.index({ email: 1 }); 
+profileSchema.index({ email: 1 });
 const Profile = mongoose.model("Profile", profileSchema);
 
 
@@ -888,7 +891,7 @@ app.post("/login", async (req, res) => {
 
   try {
     // Find user in User collection
-    const user = await User.findOne({ email });
+    const user = await Customer.findOne({ email });
     if (!user) {
       return res.status(400).json({ message: "User not found" });
     }
@@ -934,7 +937,7 @@ app.post("/signup", async (req, res) => {
   }
 
   try {
-    const existingUser = await User.findOne({ email });
+    const existingUser = await Customer.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
@@ -983,25 +986,25 @@ const transporter = nodemailer.createTransport({
 
 
 // :white_tick: Function to Send Email (Improved)
-async function sendMail(to, subject, text, html) {
-  try {
-    const info = await transporter.sendMail({
-      from: `"Anant Ki Drishti" <${process.env.EMAIL_USER}>`,
-      to,
-      subject,
-      text,
-      html,
-    });
-    console.log(":e-mail: Email sent successfully:", info.messageId);
-    return { success: true, message: "Email sent successfully" };
-  }
+// async function sendMail(to, subject, text, html) {
+//   try {
+//     const info = await transporter.sendMail({
+//       from: `"Anant Ki Drishti" <${process.env.EMAIL_USER}>`,
+//       to,
+//       subject,
+//       text,
+//       html,
+//     });
+//     console.log(":e-mail: Email sent successfully:", info.messageId);
+//     return { success: true, message: "Email sent successfully" };
+//   }
 
-  catch (error) {
+//   catch (error) {
 
-    console.error(":x: Error sending email:", error);
-    return { success: false, message: "Failed to send email", error: error.message };
-  }
-}
+//     console.error(":x: Error sending email:", error);
+//     return { success: false, message: "Failed to send email", error: error.message };
+//   }
+// }
 
 
 
@@ -1197,71 +1200,205 @@ app.get('/dashboard', (req, res) => {
 
 
 
+
+
+
+
+
 // my order api and schema
 
+// const orderSchema = new mongoose.Schema({
+//   orderDetails: {
+//     type: Object,
+//     required: true,
+//   }, // You can specify subfields if necessary
+//   paymentDetails: {
+//     type: Object,
+//     required: true,
+//   }, // Same here if you know the structure
+//   status: {
+//     type: String,
+//     enum: ['Pending', 'Completed', 'Failed'], // List of possible statuses
+//     default: 'Pending',
+//   },
+//   createdAt: { type: Date, default: Date.now },
+// });
+
+// const Order = mongoose.model('Order', orderSchema);
+
+
+
+
+// app.post('/save-order', async (req, res) => {
+//   const { orderDetails, paymentDetails } = req.body;
+//   try {
+//     const newOrder = new Order({
+//       orderDetails: orderDetails,
+//       paymentDetails: paymentDetails,
+//       status: 'Pending', // Example status, can be adjusted
+//     });
+
+//     await newOrder.save();
+
+//     // Send back the order ID in the response
+//     res.json({ success: true, orderId: newOrder._id.toString() }); // Make sure to send orderId as a string
+//   } catch (error) {
+//     console.error('Error saving order:', error);
+//     res.json({ success: false, message: 'Failed to save order' });
+//   }
+// });
+
+
+
+
+
+
+
+// // Assuming you're using Express and Mongoose
+// app.get("/get-orders", async (req, res) => {
+//   try {
+//     const orders = await Order.find({}); // Fetch all orders
+
+//     if (!orders || orders.length === 0) {
+//       return res.json({ success: true, data: [] }); // Return empty array
+//     }
+
+//     res.json({ success: true, data: orders });
+//   } catch (error) {
+//     console.error("Error fetching orders:", error);
+//     res.status(500).json({ success: false, message: "Error fetching orders" });
+//   }
+// });
+
+
+
+
+
+
+
+// Order Schema
 const orderSchema = new mongoose.Schema({
-  orderDetails: {
-    type: Object,
-    required: true,
-  }, // You can specify subfields if necessary
+  orderId: { type: String, unique: true }, // Custom Order ID
+  customerName: String,
+  customerEmail: String,
+  customerPhone: String,
+  orderDetails: Array,
   paymentDetails: {
-    type: Object,
-    required: true,
-  }, // Same here if you know the structure
-  status: {
-    type: String,
-    enum: ['Pending', 'Completed', 'Failed'], // List of possible statuses
-    default: 'Pending',
+      method: String,
+      amount: Number,
+      transactionId: String,
+      status: String,
+      timestamp: Date
   },
-  createdAt: { type: Date, default: Date.now },
+  createdAt: { type: Date, default: Date.now }
 });
 
-const Order = mongoose.model('Order', orderSchema);
+const Order = mongoose.model("Order", orderSchema);
 
 
 
 
-app.post('/save-order', async (req, res) => {
-  const { orderDetails, paymentDetails } = req.body;
+
+// Save order after payment success
+app.post("/save-order", async (req, res) => {
   try {
-    const newOrder = new Order({
-      orderDetails: orderDetails,
-      paymentDetails: paymentDetails,
-      status: 'Pending', // Example status, can be adjusted
-    });
+    // Get the last order to determine the latest orderId
+    const lastOrder = await Order.findOne().sort({ createdAt: -1 });
+
+    let newOrderId = "ORD001"; // Default if no orders exist
+
+    if (lastOrder && lastOrder.orderId) {
+      // Extract numeric part from last orderId (ORD001 → 1)
+      const lastNumber = parseInt(lastOrder.orderId.replace("ORD", ""), 10);
+      const nextNumber = lastNumber + 1;
+      
+      // Format next order ID (ORD002, ORD010, ORD100)
+      newOrderId = `ORD${String(nextNumber).padStart(3, "0")}`;
+    }
+
+    // Create order with the new orderId
+    const newOrder = new Order({ ...req.body, orderId: newOrderId });
 
     await newOrder.save();
 
-    // Send back the order ID in the response
-    res.json({ success: true, orderId: newOrder._id.toString() }); // Make sure to send orderId as a string
+    res.json({ success: true, orderId: newOrder.orderId });
   } catch (error) {
-    console.error('Error saving order:', error);
-    res.json({ success: false, message: 'Failed to save order' });
+    console.error("Error saving order:", error);
+    res.status(500).json({ success: false, message: "Failed to save order" });
   }
 });
 
 
 
 
+// Fetch orders for a customer
+// app.get("/orders/:email", async (req, res) => {
+//   try {
+//       const orders = await Order.find({ customerEmail: req.params.email }).sort({ createdAt: -1 });
+//       res.json({ success: true, orders });
+//   } catch (error) {
+//       console.error("Error fetching orders:", error);
+//       res.status(500).json({ success: false, message: "Failed to fetch orders" });
+//   }
+// });
 
 
 
-// Assuming you're using Express and Mongoose
-app.get('/get-order/:orderId', async (req, res) => {
-  const { orderId } = req.params;
-  try {
-      const order = await Order.findById(orderId);  // Replace Order with your Mongoose model
-      if (!order) {
-          return res.status(404).json({ success: false, message: 'Order not found' });
-      }
-      res.json({ success: true, ...order.toObject() });
-  } catch (error) {
-      console.error('Error fetching order:', error);
-      res.status(500).json({ success: false, message: 'Error fetching order' });
-  }
-});
+
+// GET route to retrieve a specific order by ID
+// app.get('/api/order/:orderId', async (req, res) => {
+//   try {
+//       const { orderId } = req.params;
+
+//       // Validate MongoDB ObjectId
+//       if (!mongoose.Types.ObjectId.isValid(orderId)) {
+//           return res.status(400).json({ 
+//               success: false, 
+//               message: 'Invalid order ID' 
+//           });
+//       }
+
+//       const order = await Order.findById(orderId);
+
+//       if (!order) {
+//           return res.status(404).json({ 
+//               success: false, 
+//               message: 'Order not found' 
+//           });
+//       }
+
+//       res.status(200).json({
+//           success: true,
+//           order: order
+//       });
+//   } catch (error) {
+//       console.error('Fetching order error:', error);
+//       res.status(500).json({ 
+//           success: false, 
+//           message: 'Error fetching order',
+//           error: error.message 
+//       });
+//   }
+// });
 
 
+
+
+
+// app.post("/webhook/cashfree", async (req, res) => {
+//   const { orderId, status } = req.body;
+
+//   if (status === "SUCCESS") {
+//       const pendingOrder = await findPendingOrder(orderId); // Fetch pending order from DB
+
+//       if (pendingOrder) {
+//           await saveOrderToDatabase(pendingOrder);
+//           console.log(`Order ${orderId} saved successfully.`);
+//       }
+//   }
+
+//   res.sendStatus(200);
+// });
 
 
 
@@ -1269,9 +1406,9 @@ app.get('/get-order/:orderId', async (req, res) => {
 // Start Server
 
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+// app.listen(PORT, () => {
+//   console.log(`Server running on http://localhost:${PORT}`);
+// });
 
 
 

@@ -10,7 +10,6 @@
     <link rel="stylesheet" href="./index.css">
     <link rel="stylesheet" href="./payment.css">
     <link rel="stylesheet" href="cart.css">
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
 
 <body>
@@ -56,9 +55,9 @@
                             <h3>Select Payment Method</h3>
                             <div class="payment-methods mt-3 razor-icons">
                                 <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="paymentMethod" id="razorpay"
-                                        value="razorpay" checked>
-                                    <label class="form-check-label" for="razorpay">
+                                    <input class="form-check-input" type="radio" name="paymentMethod" id="cashfree"
+                                        value="cashfree" checked>
+                                    <label class="form-check-label" for="cashfree">
                                         Cashfree
                                     </label>
                                 </div>
@@ -69,10 +68,10 @@
                             </div>
 
                             <div class="payment-btn mt-4">
-                     
-                                    <button type="button" id="payButton" class="btn btn-primary">Proceed to
-                                        Payment</button>
-                            
+
+                                <button type="button" id="payButton" class="btn btn-primary">Proceed to
+                                    Payment</button>
+
                             </div>
                         </div>
                     </div>
@@ -103,46 +102,118 @@
 
 
     <script>
+document.addEventListener('DOMContentLoaded', async () => {
+    const pendingOrderData = localStorage.getItem('pendingOrder');
 
-document.getElementById('payButton').addEventListener('click', async function () {
-            const orderDetails = JSON.parse(localStorage.getItem('cart')) || [];
-            const paymentDetails = {
-                method: document.querySelector('input[name="paymentMethod"]:checked').value,
-                amount: document.getElementById('total-price').innerText.trim(),
-                shippingMethod: document.querySelector('input[name="shippingMethod"]:checked').value
-            };
+    if (!pendingOrderData) return;
 
-            const orderData = {
-                orderDetails,
-                paymentDetails
-            };
+    try {
+        const orderData = JSON.parse(pendingOrderData);
 
-            try {
-                const response = await fetch(`${CONFIG.API_URL}/save-order`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(orderData)
-                });
+        const urlParams = new URLSearchParams(window.location.search);
+        const transactionId = urlParams.get('transaction_id');
+        const paymentStatus = urlParams.get('payment_status');
 
-                const result = await response.json();
-                console.log('Response from backend:', result);  // Debugging log
-                if (result.success) {
-                    console.log('Redirecting to orders page with orderId:', result.orderId);
-                    if (result.orderId) {
-                        // Redirect to orders.html with orderId in query parameter
-                        window.location.href = `orders.html?orderId=${result.orderId}`;
-                    } else {
-                        alert('Order ID not found in response');
-                    }
-                } else {
-                    alert('Error saving order: ' + result.message);
-                }
-
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Payment or order saving failed');
+        const completeOrderData = {
+            ...orderData,
+            paymentDetails: {
+                ...orderData.paymentDetails,
+                transactionId,
+                status: paymentStatus,
+                timestamp: new Date().toISOString()
             }
+        };
+
+        const response = await fetch(`${CONFIG.API_URL}/save-order"`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(completeOrderData)
         });
+
+        const result = await response.json();
+
+        if (result.success) {
+            localStorage.removeItem('pendingOrder');
+            localStorage.removeItem('cart');
+
+            document.getElementById('orderConfirmation').innerHTML = `
+                <h2>Order Successful!</h2>
+                <p>Order ID: ${result.orderId}</p>
+                <p>Transaction ID: ${transactionId}</p>
+                <p>Total Amount: Rs. ${orderData.paymentDetails.amount}</p>
+            `;
+        } else {
+            throw new Error('Failed to save order');
+        }
+    } catch (error) {
+        console.error('Error processing order:', error);
+        document.getElementById('orderConfirmation').innerHTML = `
+            <h2>Order Processing Error</h2>
+            <p>Please contact customer support.</p>
+        `;
+    }
+});
+
+
+
+
+
+document.getElementById("payButton").addEventListener("click", async function () {
+    const orderDetails = JSON.parse(localStorage.getItem("cart")) || [];
+    const selectedAddress = JSON.parse(localStorage.getItem("selectedAddress"));
+
+    if (!selectedAddress) {
+        alert("Please select an address before proceeding!");
+        return;
+    }
+
+    const amount = parseFloat(document.getElementById("total-price").innerText.trim());
+    if (isNaN(amount) || amount <= 0) {
+        alert("Invalid total amount!");
+        return;
+    }
+
+    const paymentDetails = {
+        method: document.querySelector('input[name="paymentMethod"]:checked').value,
+        shippingMethod: document.querySelector('input[name="shippingMethod"]:checked').value,
+        amount
+    };
+
+    const orderData = {
+        customerName: selectedAddress.name,
+        customerEmail: selectedAddress.email,
+        customerPhone: selectedAddress.phone,
+        orderDetails,
+        paymentDetails
+    };
+
+    try {
+        const response = await fetch(`${CONFIG.API_URL}/create-payment-link`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                customer_name: selectedAddress.name,
+                customer_email: selectedAddress.email,
+                customer_phone: selectedAddress.phone,
+                amount,
+                success_url: window.location.origin + "/success.html"
+            })
+        });
+
+        const result = await response.json();
+        if (result.link_url) {
+            localStorage.setItem("pendingOrder", JSON.stringify(orderData));
+            window.location.href = result.link_url;
+        } else {
+            alert("Payment Link creation failed!");
+        }
+    } catch (error) {
+        console.error("Error:", error);
+        alert("Error in payment process");
+    }
+});
+
+
 
 
 
@@ -164,7 +235,7 @@ document.getElementById('payButton').addEventListener('click', async function ()
         //     }
 
         //     try {
-        //         const response = await fetch(`${CONFIG.API_URL}/create-payment-link`, {
+        //         const response = await fetch(${CONFIG.API_URL}/create-payment-link, {
         //             method: "POST",
         //             headers: { "Content-Type": "application/json" },
         //             body: JSON.stringify({
@@ -188,6 +259,17 @@ document.getElementById('payButton').addEventListener('click', async function ()
         //         alert("Error in payment process");
         //     }
         // });
+
+
+
+
+
+
+
+
+
+
+     
 
 
 
@@ -285,44 +367,29 @@ document.getElementById('payButton').addEventListener('click', async function ()
         updateTotalPrice();
     </script>
 
+
+
+
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // Load the saved addresses from localStorage
-            function loadSavedAddresses() {
-                const savedAddresses = JSON.parse(localStorage.getItem('savedAddresses')) || [];
-                const selectedAddressDiv = document.getElementById('selectedAddress');
-                const addressDetails = document.getElementById('addressDetails');
 
-                if (savedAddresses.length === 0) {
-                    addressDetails.textContent = "No saved address available.";
-                } else {
-                    // Display the first saved address as selected by default
-                    const firstAddress = savedAddresses[0];
-                    addressDetails.innerHTML = `
-                    <div class="the-address">
-                        <p><strong>Name:</strong> ${firstAddress.name}</p>
-                        <p><strong>Email:</strong> ${firstAddress.email}</p>
-                        <p><strong>Phone:</strong> ${firstAddress.phone}</p>
-                        <p><strong>Address:</strong> ${firstAddress.address}, ${firstAddress.city}, ${firstAddress.state}, ${firstAddress.pin}, ${firstAddress.country}</p>
-                        </div>
-                    `;
-                }
-            }
+document.addEventListener("DOMContentLoaded", () => {
+    const addressDetails = document.getElementById("addressDetails");
 
-            loadSavedAddresses();
+    const selectedAddress = JSON.parse(localStorage.getItem("selectedAddress"));
 
-            const proceedToPaymentButton = document.getElementById('proceedToPayment');
+    if (selectedAddress) {
+        addressDetails.innerHTML = `
+            <p><strong>Name:</strong> ${selectedAddress.name}</p>
+            <p><strong>Email:</strong> ${selectedAddress.email}</p>
+            <p><strong>Phone:</strong> ${selectedAddress.phone}</p>
+            <p><strong>Address:</strong> ${selectedAddress.address}, ${selectedAddress.city}, ${selectedAddress.state}, ${selectedAddress.pin}, ${selectedAddress.country}</p>
+        `;
+    } else {
+        addressDetails.textContent = "Please select an address to proceed.";
+    }
+});
 
-            // Enable/Disable the "Proceed to Payment" button based on address selection
-            const addressRadios = document.querySelectorAll('input[name="selectedAddress"]');
 
-            addressRadios.forEach(radio => {
-                radio.addEventListener('change', () => {
-                    const isAnyAddressSelected = document.querySelector('input[name="selectedAddress"]:checked');
-                    proceedToPaymentButton.disabled = !isAnyAddressSelected;
-                });
-            });
-        });
 
 
 
@@ -354,3 +421,8 @@ document.getElementById('payButton').addEventListener('click', async function ()
 </body>
 
 </html>
+
+
+
+
+

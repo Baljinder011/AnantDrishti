@@ -12,7 +12,6 @@
     <link rel="stylesheet" href="./index.css">
     <link rel="stylesheet" href="./address.css">
     <style>
-    
         .popup {
             display: none;
             position: fixed;
@@ -24,7 +23,7 @@
             padding: 20px;
             background-color: #fff;
             border-radius: 8px;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
             z-index: 1000;
         }
 
@@ -35,7 +34,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0,0,0,0.5);
+            background-color: rgba(0, 0, 0, 0.5);
             z-index: 999;
         }
 
@@ -48,7 +47,7 @@
         }
 
         .popup.custom-bg {
-            background-color: #f8f9fa; 
+            background-color: #f8f9fa;
         }
 
         .popup .closePopup {
@@ -60,11 +59,11 @@
             float: right;
         }
 
-      
+
         .form-control:invalid {
             border-color: rgb(52, 51, 51);
             background-color: #ffffff;
-            width:100%
+            width: 100%
         }
 
         .form-control:valid {
@@ -72,13 +71,14 @@
             background-color: #e6ffe6;
         }
 
-       
+
         @media (max-width: 768px) {
             .container.mt-5 {
                 margin-top: 20px;
             }
 
-            .btn-2, .btn-1 {
+            .btn-2,
+            .btn-1 {
                 width: 100%;
             }
         }
@@ -90,10 +90,10 @@
     <div id="nav-placeholder"></div>
 
     <script>
-        $(function(){
-          $("#nav-placeholder").load("nav.html" , function () {
-            updateCartCounter(); // Ensure counter updates after loading nav
-          });
+        $(function () {
+            $("#nav-placeholder").load("nav.html", function () {
+                updateCartCounter(); // Ensure counter updates after loading nav
+            });
         });
     </script>
 
@@ -105,7 +105,7 @@
             </div>
             <div class="mt-4 center-buttons add-btn">
                 <div class="add btn">
-                    <a href="#shipping" >
+                    <a href="#shipping">
                         <button id="openAddressPopup" class="custom-add-btn">Add New Address</button>
                     </a>
                 </div>
@@ -127,32 +127,34 @@
             <div class="mb-3">
                 <label for="name" class="form-label">Full Name</label><br>
                 <input type="text" class="form-control" id="name" placeholder="Enter your full name" required>
-                
+
             </div>
             <div class="mb-3">
                 <label for="email" class="form-label">Email Address</label><br>
                 <input type="email" class="form-control" id="email" placeholder="Enter your email" required>
-            
+
             </div>
             <div class="mb-3">
                 <label for="phone" class="form-label">Phone Number</label><br>
-                <input type="tel" class="form-control" id="phone" placeholder="Enter your phone number" required pattern="[0-9]{10}">
-  
+                <input type="tel" class="form-control" id="phone" placeholder="Enter your phone number" required
+                    pattern="[0-9]{10}">
+
             </div>
             <div class="mb-3">
                 <label for="address" class="form-label">Address</label><br>
                 <input type="text" class="form-control" id="address" placeholder="Enter your address" required>
-             
+
             </div>
             <div class="mb-3">
                 <label for="zip" class="form-label">PIN Code</label><br>
-                <input type="text" class="form-control" id="pin" placeholder="Enter your PIN code" required pattern="[0-9]{6}">
-              
+                <input type="text" class="form-control" id="pin" placeholder="Enter your PIN code" required
+                    pattern="[0-9]{6}">
+
             </div>
             <div class="mb-3">
                 <label for="city" class="form-label">City</label><br>
                 <input type="text" class="form-control" id="city" placeholder="Enter your city" required>
-         
+
             </div>
             <div class="mb-3">
                 <label for="state" class="form-label">State</label><br>
@@ -188,7 +190,8 @@
                     <option value="West Bengal">West Bengal</option>
                     <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
                     <option value="Chandigarh">Chandigarh</option>
-                    <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
+                    <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu
+                    </option>
                     <option value="Delhi">Delhi</option>
                     <option value="Lakshadweep">Lakshadweep</option>
                     <option value="Puducherry">Puducherry</option>
@@ -198,7 +201,7 @@
             <div class="mb-3">
                 <label for="country" class="form-label">Country</label><br>
                 <input type="text" class="form-control" id="country" placeholder="Enter your country" required>
-     
+
             </div>
             <div class="mb-3 checkbox">
                 <input type="checkbox" class="custom-checkbox" id="defaultAddressCheckbox">
@@ -219,6 +222,7 @@
             const addressPopup = document.getElementById('addressPopup');
             const popupOverlay = document.getElementById('popupOverlay');
             const closePopupButton = document.querySelector('.closePopup');
+            const proceedToPaymentButton = document.getElementById('proceedToPayment');
 
             openAddressPopupButton.addEventListener('click', () => {
                 addressPopup.classList.add('custom-bg');
@@ -236,186 +240,170 @@
                 popupOverlay.classList.remove('show');
             });
 
-            const addressForm = document.getElementById('addressForm');
-            addressForm.addEventListener('submit', function(event) {
-                event.preventDefault();
+            addressForm.addEventListener('submit', function (event) {
+    event.preventDefault();
 
-                if (!addressForm.checkValidity()) {
-                    addressForm.classList.add('was-validated');
-                    return;
-                }
+    if (!addressForm.checkValidity()) {
+        addressForm.classList.add('was-validated');
+        return;
+    }
 
-                const name = document.getElementById('name').value;
-                const email = document.getElementById('email').value;
-                const phone = document.getElementById('phone').value;
-                const address = document.getElementById('address').value;
-                const city = document.getElementById('city').value;
-                const state = document.getElementById('state').value;
-                const pin = document.getElementById('pin').value;
-                const country = document.getElementById('country').value;
-                const isDefaultAddress = document.getElementById('defaultAddressCheckbox').checked;
+    let savedAddresses = JSON.parse(localStorage.getItem('savedAddresses')) || [];
+    
+    const newAddress = {
+        name: document.getElementById('name').value,
+        email: document.getElementById('email').value,
+        phone: document.getElementById('phone').value,
+        address: document.getElementById('address').value,
+        city: document.getElementById('city').value,
+        state: document.getElementById('state').value,
+        pin: document.getElementById('pin').value,
+        country: document.getElementById('country').value,
+        isDefaultAddress: document.getElementById('defaultAddressCheckbox').checked,
+    };
 
-                const newAddress = {
-                    name,
-                    email,
-                    phone,
-                    address,
-                    city,
-                    state,
-                    pin,
-                    country,
-                    isDefaultAddress
-                };
+    // If the new address is set as default, remove the default flag from other addresses
+    if (newAddress.isDefaultAddress) {
+        savedAddresses.forEach(address => address.isDefaultAddress = false);
+        localStorage.setItem('defaultAddress', JSON.stringify(newAddress));
+    }
 
-                const savedAddresses = JSON.parse(localStorage.getItem('savedAddresses')) || [];
-                savedAddresses.push(newAddress);
-                localStorage.setItem('savedAddresses', JSON.stringify(savedAddresses));
+    savedAddresses.push(newAddress);
+    localStorage.setItem('savedAddresses', JSON.stringify(savedAddresses));
 
-                if (isDefaultAddress) {
-                    localStorage.setItem('defaultAddress', JSON.stringify(newAddress));
-                } else {
-                    localStorage.removeItem('defaultAddress');
-                }
+    addressForm.reset();
+    addressPopup.style.display = 'none';
+    popupOverlay.classList.remove('show');
+    loadSavedAddresses();
+});
 
-                addressForm.reset();
-                addressForm.classList.remove('was-validated');
-                addressPopup.style.display = 'none';
-                popupOverlay.classList.remove('show');
-                loadSavedAddresses();
-            });
+function loadSavedAddresses() {
+    const savedAddressesDiv = document.getElementById('savedAddresses');
+    let savedAddresses = JSON.parse(localStorage.getItem('savedAddresses')) || [];
+    savedAddressesDiv.innerHTML = '';
 
-            function loadSavedAddresses() {
-                const savedAddressesDiv = document.getElementById('savedAddresses');
-                const savedAddresses = JSON.parse(localStorage.getItem('savedAddresses')) || [];
-                savedAddressesDiv.innerHTML = '';
+    if (savedAddresses.length === 0) {
+        savedAddressesDiv.innerHTML = '<p class="text-muted">No saved addresses yet.</p>';
+        return;
+    }
 
-                if (savedAddresses.length === 0) {
-                    savedAddressesDiv.innerHTML = '<p class="text-muted">No saved addresses yet.</p>';
-                } else {
-                    savedAddresses.forEach((address, index) => {
-                        const addressHTML = `
-                            <div class="saved-address-card">
-                                <input class="form-check-input" type="radio" name="selectedAddress" id="address-${index}" value="${index}">
-                                <label class="address-content" for="address-${index}">
-                                    <p><strong>Name:</strong> ${address.name}</p>
-                                    <p><strong>Email:</strong> ${address.email}</p>
-                                    <p><strong>Phone:</strong> ${address.phone}</p>
-                                    <p><strong>Address:</strong> ${address.address}, ${address.city}, ${address.state}, ${address.pin}, ${address.country}</p>
-                                    <button class="btn btn-danger btn-sm remove-btn" data-index="${index}">Remove</button>
-                                </label>
-                            </div>
-                        `;
-                        savedAddressesDiv.innerHTML += addressHTML;
-                    });
+    const defaultAddress = JSON.parse(localStorage.getItem('defaultAddress'));
 
-                    // Automatically select the default address if it exists
-                    const defaultAddress = JSON.parse(localStorage.getItem('defaultAddress'));
-                    if (defaultAddress) {
-                        const defaultIndex = savedAddresses.findIndex(addr => 
-                            addr.name === defaultAddress.name &&
-                            addr.email === defaultAddress.email &&
-                            addr.phone === defaultAddress.phone &&
-                            addr.address === defaultAddress.address &&
-                            addr.city === defaultAddress.city &&
-                            addr.state === defaultAddress.state &&
-                            addr.pin === defaultAddress.pin &&
-                            addr.country === defaultAddress.country
-                        );
-                        
-                        if (defaultIndex >= 0) {
-                            document.getElementById(`address-${defaultIndex}`).checked = true;
-                        }
-                    }
+    savedAddresses.forEach((address, index) => {
+        const isChecked = defaultAddress && defaultAddress.address === address.address ? 'checked' : '';
+        const addressHTML = `
+            <div class="saved-address-card">
+                <input class="form-check-input" type="radio" name="selectedAddress" id="address-${index}" value="${index}" ${isChecked}>
+                <label class="address-content" for="address-${index}">
+                    <p><strong>Name:</strong> ${address.name}</p>
+                    <p><strong>Email:</strong> ${address.email}</p>
+                    <p><strong>Phone:</strong> ${address.phone}</p>
+                    <p><strong>Address:</strong> ${address.address}, ${address.city}, ${address.state}, ${address.pin}, ${address.country}</p>
+                    <button class="btn btn-danger btn-sm remove-btn" data-index="${index}">Remove</button>
+                </label>
+            </div>
+        `;
+        savedAddressesDiv.innerHTML += addressHTML;
+    });
 
-                    const removeButtons = document.querySelectorAll('.remove-btn');
-                    removeButtons.forEach(button => {
-                        button.addEventListener('click', removeSavedAddress);
-                    });
-                }
-            }
+    document.querySelectorAll('.remove-btn').forEach(button => {
+        button.addEventListener('click', removeSavedAddress);
+    });
+}
+
 
             function removeSavedAddress(event) {
                 const index = event.target.dataset.index;
                 const savedAddresses = JSON.parse(localStorage.getItem('savedAddresses')) || [];
                 savedAddresses.splice(index, 1);
                 localStorage.setItem('savedAddresses', JSON.stringify(savedAddresses));
-
                 loadSavedAddresses();
             }
 
             loadSavedAddresses();
 
-            // Function to fetch address details using PIN code
-        function fetchAddressDetails(pinCode) {
-            const apiURL = `https://api.postalpincode.in/pincode/${pinCode}`;
+            // Proceed to Payment with Selected Address
+            proceedToPaymentButton.addEventListener('click', () => {
+                const selectedAddressIndex = document.querySelector('input[name="selectedAddress"]:checked');
+                if (!selectedAddressIndex) {
+                    alert("Please select an address before proceeding to payment.");
+                    return;
+                }
 
-            fetch(apiURL)
-                .then(response => response.json())
-                .then(data => {
-                    if (data[0].Status === "Success") {
-                        const details = data[0].PostOffice[0];
-                        document.getElementById('city').value = details.District;
-                        document.getElementById('state').value = details.State;
-                        document.getElementById('country').value = details.Country;
-                    } else {
-                        alert('Invalid PIN code! Please enter a valid PIN code.');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching PIN code details:', error);
-                    alert('Something went wrong while fetching details. Please try again.');
-                });
-        }
+                const savedAddresses = JSON.parse(localStorage.getItem('savedAddresses')) || [];
+                const selectedAddress = savedAddresses[selectedAddressIndex.value];
 
-       
-        document.getElementById('pin').addEventListener('input', function() {
-            const pinCode = this.value.trim();
-            if (pinCode.length === 6) {
-                fetchAddressDetails(pinCode);
-            } else {
-            
-                document.getElementById('city').value = '';
-                document.getElementById('state').value = '';
-                document.getElementById('country').value = '';
+                localStorage.setItem("selectedAddress", JSON.stringify(selectedAddress));
+                window.location.href = "payment.html";
+            });
+
+            // Auto-fill address details using PIN code
+            function fetchAddressDetails(pinCode) {
+                const apiURL = `https://api.postalpincode.in/pincode/${pinCode}`;
+
+                fetch(apiURL)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data[0].Status === "Success") {
+                            const details = data[0].PostOffice[0];
+                            document.getElementById('city').value = details.District;
+                            document.getElementById('state').value = details.State;
+                            document.getElementById('country').value = details.Country;
+                        } else {
+                            alert('Invalid PIN code! Please enter a valid PIN code.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching PIN code details:', error);
+                        alert('Something went wrong while fetching details. Please try again.');
+                    });
             }
+
+            document.getElementById('pin').addEventListener('input', function () {
+                const pinCode = this.value.trim();
+                if (pinCode.length === 6) {
+                    fetchAddressDetails(pinCode);
+                } else {
+                    document.getElementById('city').value = '';
+                    document.getElementById('state').value = '';
+                    document.getElementById('country').value = '';
+                }
+            });
         });
-        });
+
 
         addressForm.addEventListener('submit', function (event) {
-  event.preventDefault();
+            event.preventDefault();
 
-  const newAddress = {
-    name: document.getElementById('name').value,
-    email: document.getElementById('email').value,
-    phone: document.getElementById('phone').value,
-    address: document.getElementById('address').value,
-    city: document.getElementById('city').value,
-    state: document.getElementById('state').value,
-    pin: document.getElementById('pin').value,
-    country: document.getElementById('country').value,
-    isDefaultAddress: document.getElementById('defaultAddressCheckbox').checked,
-  };
+            const newAddress = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                address: document.getElementById('address').value,
+                city: document.getElementById('city').value,
+                state: document.getElementById('state').value,
+                pin: document.getElementById('pin').value,
+                country: document.getElementById('country').value,
+                isDefaultAddress: document.getElementById('defaultAddressCheckbox').checked,
+            };
 
-  fetch(`${CONFIG.API_URL}/address`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(newAddress),
-  })
-    .then(response => response.json())
-    .then(data => {
-      console.log('Address saved:', data);
-      addressPopup.style.display = 'none';
-      popupOverlay.classList.remove('show');
-      loadSavedAddresses();
-    })
-    .catch(error => console.error('Error saving address:', error));
-});
+            fetch(`${CONFIG.API_URL}/address`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newAddress),
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Address saved:', data);
+                    addressPopup.style.display = 'none';
+                    popupOverlay.classList.remove('show');
+                    loadSavedAddresses();
+                })
+                .catch(error => console.error('Error saving address:', error));
+        });
 
     </script>
     <script src="config.js"></script>
 </body>
 
 </html>
-
-
-

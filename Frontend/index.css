@@ -483,12 +483,6 @@ body {
   padding-inline-end: 100px;
 }
 
-@media screen and (max-width: 768px) {
-  .products-container-1 {
-    padding-inline-start: 10px;
-    padding-inline-end: 10px;
-  }
-}
 .products-container-1 h5 {
   margin-top: 10px;
 }
@@ -571,6 +565,12 @@ body {
   padding: 20px;
 }
 
+@media screen and (max-width: 768px) {
+  .the-card {
+    box-shadow: 0 0 0 0;
+    padding: 0;
+  }
+}
 .the-card img {
   width: 100%;
 }

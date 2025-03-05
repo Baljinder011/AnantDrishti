@@ -5,16 +5,16 @@
 
 }
 
-body button{
+body button {
     cursor: pointer;
 }
 
-body button{
+body button {
     transition: 0.5s;
 }
 
-body button:hover{
-    transform:scale(1.1)
+body button:hover {
+    transform: scale(1.1)
 }
 
 
@@ -23,8 +23,8 @@ body i {
     transition: 0.5s;
 }
 
-body i:hover{
-    transform:scale(1.1)
+body i:hover {
+    transform: scale(1.1)
 }
 
 body {
@@ -125,7 +125,7 @@ body {
     height: 100%;
     object-fit: cover;
     z-index: -1;
-    
+
 }
 
 
@@ -642,8 +642,8 @@ body {
 
 @media screen and (max-width:768px) {
     .products-container-1 {
-        padding-inline-start: 10px;
-        padding-inline-end: 10px;
+        // padding-inline-start: 10px;
+        // padding-inline-end: 10px;
     }
 }
 
@@ -713,20 +713,20 @@ body {
     display: grid;
     grid-template-columns: auto auto auto auto;
     // gap: 20px;
-    width:100%;
+    width: 100%;
     flex-wrap: wrap;
     // padding-inline-start: 100px;
     // padding-inline-end: 100px;
 }
 
-@media screen and (max-width:1550px){
-    .product-list{
+@media screen and (max-width:1550px) {
+    .product-list {
         grid-template-columns: auto auto auto;
     }
 }
 
-@media screen and (max-width:1200px){
-    .product-list{
+@media screen and (max-width:1200px) {
+    .product-list {
         grid-template-columns: auto auto;
     }
 }
@@ -748,29 +748,35 @@ body {
 
 .the-card {
     // display: flex;
-  
+
     width: 400px;
     text-align: start;
     margin-bottom: 50px;
     background-color: #ffffff;
     box-shadow: 0 12px 10px 8px rgba(160, 160, 160, 0.2);
     padding: 20px
-  }
+}
+
+@media screen and (max-width:768px) {
+    .the-card {
+        box-shadow: 0 0 0 0;
+        padding: 0;
+    }
+}
 
 
-  
-  .the-card img {
+.the-card img {
     width: 100%;
-    
-  }
-  
-  .the-card a {
+
+}
+
+.the-card a {
     color: white;
     text-decoration: none;
-  }
-  
-  
-  .the-card button {
+}
+
+
+.the-card button {
     width: 100%;
     max-width: 100px;
     padding: 12px;
@@ -781,44 +787,44 @@ body {
     font-size: 16px;
     cursor: pointer;
     transition: 0.5s;
-  
-  }
-  
-  .the-card button:hover {
+
+}
+
+.the-card button:hover {
     background-color: rgb(92, 47, 114);
     transform: matrix(1);
-  }
-  
-  .the-card h5 {
+}
+
+.the-card h5 {
     margin-top: 10px
-  }
+}
 
 
 
-  
-  
-  @media screen and (max-width:1000px) {
+
+
+@media screen and (max-width:1000px) {
     .card-body {
-      width: 100%;
-      max-width: 300px;
-    //   padding-inline-start: 10px;
-    //   padding-inline-end: 10px;
+        width: 100%;
+        max-width: 300px;
+        //   padding-inline-start: 10px;
+        //   padding-inline-end: 10px;
     }
-  
+
     .the-card {
-      width: 300px
+        width: 300px
     }
-  }
+}
 
 
-  @media screen and (max-width:700px){
-    .the-card{
+@media screen and (max-width:700px) {
+    .the-card {
         max-width: 200px;
     }
-  }
-  
-  @media screen and (max-width:440px){
-    .the-card{
+}
+
+@media screen and (max-width:440px) {
+    .the-card {
         max-width: 150px;
     }
 }

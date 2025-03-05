@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Page</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+    <link rel="stylesheet" href="./index.css">
+    <link rel="stylesheet" href="./payment.css">
+    <link rel="stylesheet" href="cart.css">
+</head>
+
+<body>
+
+    <div id="nav-placeholder"></div>
+    <script>
+        $(function () {
+            $("#nav-placeholder").load("nav.html", function () {
+                updateCartCounter(); // Ensure counter updates after loading nav
+            });
+        });
+    </script>
+
+    <div class="parent">
+        <div class="container pay-btn">
+
+            <div class="mt-4">
+                <div id="selectedAddress" class="selected-address mt-4 p-3 border rounded pay-">
+                    <h3>Selected Address</h3><br>
+                    <p id="addressDetails">Please select an address to proceed</p>
+                    <a href="./address.html">
+                        <button>Change Address</button></a><br><br>
+                    <div class="line"></div><br>
+                    <div class="method">
+                        <h3>Select Shipping Method</h3>
+                        <br>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="shippingMethod" id="standard"
+                                value="standard" checked>
+                            <label class="form-check-label" for="standard">
+                                Standard Delivery
+                            </label>
+                        </div>
+                        <br>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="shippingMethod" id="express"
+                                value="express">
+                            <label class="form-check-label" for="express">
+                                Express Delivery
+                            </label>
+                        </div>
+                        <div class="mt-4 payment">
+                            <h3>Select Payment Method</h3>
+                            <div class="payment-methods mt-3 razor-icons">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="paymentMethod" id="cashfree"
+                                        value="cashfree" checked>
+                                    <label class="form-check-label" for="cashfree">
+                                        Cashfree
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <i class="fa-brands fa-cc-mastercard mastercard-icon"></i>
+                                    <i class="fa-brands fa-cc-visa visa-icon"></i>
+                                </div>
+                            </div>
+
+                            <div class="payment-btn mt-4">
+                     
+                                    <button type="button" id="payButton" class="btn btn-primary">Proceed to
+                                        Payment</button>
+                            
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="parent-2">
+            <div class="container mt-5 container-1">
+                <h2 class="text-center">Order Summary</h2>
+                <div class="cart-items">
+
+                </div>
+                <div id="cart-summary">
+                    <p>Subtotal: Rs. <span id="subtotal-price">0</span></p>
+                    <p>GST (18%): Rs. <span id="gst-price">0</span></p>
+                    <p>Shipping Charge: Rs. <span id="shipping-charge">0</span></p>
+                    <br>
+                    <hr />
+                    <h2>Total: Rs. <span id="total-price">0</span></h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <br><br>
+
+
+    <script>
+
+document.getElementById('payButton').addEventListener('click', async function () {
+            const orderDetails = JSON.parse(localStorage.getItem('cart')) || [];
+            const paymentDetails = {
+                method: document.querySelector('input[name="paymentMethod"]:checked').value,
+                amount: document.getElementById('total-price').innerText.trim(),
+                shippingMethod: document.querySelector('input[name="shippingMethod"]:checked').value
+            };
+
+            const orderData = {
+                orderDetails,
+                paymentDetails
+            };
+
+            try {
+                const response = await fetch(`${CONFIG.API_URL}/save-order`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(orderData)
+                });
+
+                const result = await response.json();
+                console.log('Response from backend:', result);  // Debugging log
+                if (result.success) {
+                    console.log('Redirecting to orders page with orderId:', result.orderId);
+                    if (result.orderId) {
+                        // Redirect to orders.html with orderId in query parameter
+                        // window.location.href = `orders.html?orderId=${result.orderId}`;
+                    } else {
+                        alert('Order ID not found in response');
+                    }
+                } else {
+                    alert('Error saving order: ' + result.message);
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Payment or order saving failed');
+            }
+        });
+
+
+
+        document.getElementById("payButton").addEventListener("click", async function () {
+    const customerName = "John Doe";
+    const customerEmail = "johndoe@example.com";
+    const customerPhone = "9999999999";
+    const amount = document.getElementById("total-price").innerText.trim();
+
+    if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
+        alert("Invalid total amount: " + amount);
+        return;
+    }
+
+    try {
+        const response = await fetch(`${CONFIG.API_URL}/create-payment-link`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                customer_name: customerName,
+                customer_email: customerEmail,
+                customer_phone: customerPhone,
+                amount: parseFloat(amount),
+                success_url: window.location.origin + "/success.html"  // Redirect to success page
+            })
+        });
+
+        const result = await response.json();
+        if (result.link_url) {
+            // Store order details before redirection
+            localStorage.setItem("pendingOrder", JSON.stringify({
+                customerName,
+                customerEmail,
+                customerPhone,
+                amount
+            }));
+
+            // Redirect to Cashfree Payment Page
+            window.location.href = result.link_url;
+        } else {
+            alert("Payment Link creation failed!");
+        }
+    } catch (error) {
+        console.error("Error:", error);
+        alert("Error in payment process");
+    }
+});
+
+
+
+
+
+
+
+        // document.getElementById("payButton").addEventListener("click", async function () {
+        //     const customerName = "John Doe";
+        //     const customerEmail = "johndoe@example.com";
+        //     const customerPhone = "9999999999";
+
+        //     const amount = document.getElementById("total-price").innerText.trim(); 
+        //     console.log("Total Price:", amount); // Debugging log
+
+        //     if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
+        //         alert("Invalid total amount: " + amount);
+        //         return;
+        //     }
+
+        //     try {
+        //         const response = await fetch(`${CONFIG.API_URL}/create-payment-link`, {
+        //             method: "POST",
+        //             headers: { "Content-Type": "application/json" },
+        //             body: JSON.stringify({
+        //                 customer_name: customerName,
+        //                 customer_email: customerEmail,
+        //                 customer_phone: customerPhone,
+        //                 amount: parseFloat(amount)
+        //             })
+        //         });
+
+        //         const result = await response.json();
+        //         console.log("Response:", result); // Debugging log
+
+        //         if (result.link_url) {
+        //             window.location.href = result.link_url;
+        //         } else {
+        //             alert("Payment Link creation failed!");
+        //         }
+        //     } catch (error) {
+        //         console.error("Error:", error);
+        //         alert("Error in payment process");
+        //     }
+        // });
+
+
+
+
+
+
+
+
+        // Function to display items in the cart
+        function displayCartItems() {
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const cartItemsContainer = document.querySelector('.cart-items');
+            cartItemsContainer.innerHTML = '';
+            let subtotalPrice = 0;
+
+            if (cart.length === 0) {
+                cartItemsContainer.innerHTML = '<p class="text-center">Your cart is empty.</p>';
+                document.getElementById('subtotal-price').textContent = '0';
+                document.getElementById('gst-price').textContent = '0';
+                document.getElementById('total-price').textContent = '0';
+            } else {
+                cart.forEach(item => {
+                    const { id, name, price, color, size, quantity, image } = item;
+                    subtotalPrice += price * quantity;
+
+                    cartItemsContainer.innerHTML += ` 
+                        <div class="cart-item row mb-3 summary">
+                            <div class="col-md-4">
+                                <img src="${image}" alt="${name}" class="img-fluid mb-2" style="width: 100px; height: 100px; object-fit: cover;">
+                            </div>
+                            <div class="col-md-4">
+                                <p>${name} - Color: ${color} - Size: ${size}</p>
+                           
+                        
+                                <p>Rs.${price}</p>
+                        
+                       
+                                <p>Qty: ${quantity}</p>
+                           
+                        </div>
+                    `;
+                });
+
+                const gstPrice = (subtotalPrice * 0.18).toFixed(2);
+                const totalPrice = (subtotalPrice + parseFloat(gstPrice)).toFixed(2);
+
+                document.getElementById('subtotal-price').textContent = subtotalPrice.toFixed(2);
+                document.getElementById('gst-price').textContent = gstPrice;
+                document.getElementById('total-price').textContent = totalPrice;
+            }
+        }
+
+        // Function to update cart counter in the navbar
+        function updateCartCounter() {
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const cartCounter = document.getElementById('cart-count');
+            if (cartCounter) cartCounter.textContent = cart.length;
+        }
+
+        // Function to update total price including shipping charge
+        function updateTotalPrice() {
+            const standardDeliveryCharge = 100;
+            const expressDeliveryCharge = 300;
+            let shippingCharge = 0;
+
+            // Get selected shipping method
+            const shippingRadios = document.querySelectorAll('input[name="shippingMethod"]');
+            shippingRadios.forEach(radio => {
+                if (radio.checked) {
+                    if (radio.value === 'express') {
+                        shippingCharge = expressDeliveryCharge;
+                    } else {
+                        shippingCharge = standardDeliveryCharge;
+                    }
+                }
+            });
+
+            let subtotalPrice = parseFloat(document.getElementById('subtotal-price').textContent);
+            let gstPrice = (subtotalPrice * 0.18).toFixed(2);
+            let totalPrice = (subtotalPrice + parseFloat(gstPrice) + shippingCharge).toFixed(2);
+
+            // Update the prices in the UI
+            document.getElementById('shipping-charge').textContent = shippingCharge;
+            document.getElementById('gst-price').textContent = gstPrice;
+            document.getElementById('total-price').textContent = totalPrice;
+        }
+
+        // Add event listeners for shipping method changes
+        document.querySelectorAll('input[name="shippingMethod"]').forEach(radio => {
+            radio.addEventListener('change', updateTotalPrice);
+        });
+
+        // Call functions to load the cart and initialize prices
+        displayCartItems();
+        updateTotalPrice();
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load the saved addresses from localStorage
+            function loadSavedAddresses() {
+                const savedAddresses = JSON.parse(localStorage.getItem('savedAddresses')) || [];
+                const selectedAddressDiv = document.getElementById('selectedAddress');
+                const addressDetails = document.getElementById('addressDetails');
+
+                if (savedAddresses.length === 0) {
+                    addressDetails.textContent = "No saved address available.";
+                } else {
+                    // Display the first saved address as selected by default
+                    const firstAddress = savedAddresses[0];
+                    addressDetails.innerHTML = `
+                    <div class="the-address">
+                        <p><strong>Name:</strong> ${firstAddress.name}</p>
+                        <p><strong>Email:</strong> ${firstAddress.email}</p>
+                        <p><strong>Phone:</strong> ${firstAddress.phone}</p>
+                        <p><strong>Address:</strong> ${firstAddress.address}, ${firstAddress.city}, ${firstAddress.state}, ${firstAddress.pin}, ${firstAddress.country}</p>
+                        </div>
+                    `;
+                }
+            }
+
+            loadSavedAddresses();
+
+            const proceedToPaymentButton = document.getElementById('proceedToPayment');
+
+            // Enable/Disable the "Proceed to Payment" button based on address selection
+            const addressRadios = document.querySelectorAll('input[name="selectedAddress"]');
+
+            addressRadios.forEach(radio => {
+                radio.addEventListener('change', () => {
+                    const isAnyAddressSelected = document.querySelector('input[name="selectedAddress"]:checked');
+                    proceedToPaymentButton.disabled = !isAnyAddressSelected;
+                });
+            });
+        });
+
+
+
+        // Function to scroll cart items while fixing the cart summary
+        function fixCartSummary() {
+            const cartItems = document.querySelector('.cart-items');
+            const cartSummary = document.getElementById('cart-summary');
+
+            // Ensure the cart-summary remains fixed
+            cartSummary.style.position = 'sticky';
+            cartSummary.style.top = '20px'; // Space from top
+
+            // Enable scroll on cart-items
+            cartItems.style.overflowY = 'auto';
+
+            // Set a maximum height for the cart items container to make it scrollable
+            cartItems.style.maxHeight = '380px';
+        }
+
+        // Call the function when the page loads
+        window.onload = fixCartSummary;
+
+
+    </script>
+
+    <!-- <script src="popup.js"></script> -->
+    <script src="config.js"></script>
+
+</body>
+
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//cashfreee payment gateway
+
+
+
+// document.getElementById("payButton").addEventListener("click", async function () {
+    //     const customerName = "John Doe";
+    //     const customerEmail = "johndoe@example.com";
+    //     const customerPhone = "9999999999";
+
+    //     const amount = document.getElementById("total-price").innerText.trim(); 
+    //     console.log("Total Price:", amount); // Debugging log
+
+    //     if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
+    //         alert("Invalid total amount: " + amount);
+    //         return;
+    //     }
+
+    //     try {
+    //         const response = await fetch(`${CONFIG.API_URL}/create-payment-link`, {
+    //             method: "POST",
+    //             headers: { "Content-Type": "application/json" },
+    //             body: JSON.stringify({
+    //                 customer_name: customerName,
+    //                 customer_email: customerEmail,
+    //                 customer_phone: customerPhone,
+    //                 amount: parseFloat(amount)
+    //             })
+    //         });
+
+    //         const result = await response.json();
+    //         console.log("Response:", result); // Debugging log
+
+    //         if (result.link_url) {
+    //             window.location.href = result.link_url;
+    //         } else {
+    //             alert("Payment Link creation failed!");
+    //         }
+    //     } catch (error) {
+    //         console.error("Error:", error);
+    //         alert("Error in payment process");
+    //     }
+    // });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//ordere.html
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Orders</title>
+    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+    <link rel="stylesheet" href="index.css">
+    <script src="config.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 30px auto;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        .container h1 {
+            text-align: center;
+            font-size: 2.2rem;
+            color: #333;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            border-bottom: 2px solid #eee;
+            padding-top: 20px;
+        }
+
+        .tab {
+            cursor: pointer;
+            padding: 10px 20px;
+            margin: 0 10px;
+            font-weight: bold;
+            color: #555;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            padding: 12px;
+            background-color: rgba(175, 82, 222, 1);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.5s;
+        }
+
+        .tab:hover {
+            background-color: rgb(137, 47, 182);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .filter-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        select {
+            padding: 7px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            background: white;
+        }
+
+        .orders-list {
+            margin-top: 20px;
+        }
+
+        .order-item {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .order-header,
+        .order-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: #555;
+            padding-bottom: 5px;
+        }
+
+        .order-info p {
+            margin: 5px 0;
+            font-size: 0.95rem;
+        }
+
+        .order-products {
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .product {
+            display: flex;
+            align-items: center;
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .product img {
+            width: 70px;
+            height: 70px;
+            object-fit: cover;
+            border-radius: 5px;
+            margin-right: 15px;
+        }
+
+        .product-details {
+            flex-grow: 1;
+            font-size: 0.9rem;
+            color: #333;
+        }
+
+        .product-details p {
+            margin-top: 10px
+        }
+
+        .product-buttons button {
+            padding: 12px;
+            background-color: rgba(175, 82, 222, 1);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .product-buttons button:hover {
+            background-color: rgb(91, 22, 126);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                width: 95%;
+                padding: 15px;
+            }
+
+            .filter-container {
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="nav-placeholder"></div>
+    <script>
+        $(function () {
+            $("#nav-placeholder").load("profileNav.html", function () {
+                updateCartCounter(); // Ensure counter updates after loading nav
+            });
+        });
+    </script>
+
+    <div class="container">
+        <h1>Your Orders</h1>
+        <div class="tabs">
+            <span class="tab active" data-type="Orders">Orders</span>
+            <span class="tab" data-type="Buy Again">Buy Again</span>
+            <span class="tab" data-type="Not Yet Shipped">Not Yet Shipped</span>
+            <span class="tab" data-type="Cancelled Orders">Cancelled Orders</span>
+        </div>
+
+        <div class="filter-container">
+            <p><strong id="order-count">0</strong> orders placed in</p>
+            <select id="time-filter">
+                <option>past 3 months</option>
+                <option>past 6 months</option>
+                <option>past year</option>
+            </select>
+
+            <label for="status-filter">Filter by Status:</label>
+            <select id="status-filter">
+                <option value="All">All</option>
+                <option value="Pending">Pending</option>
+                <option value="Shipped">Shipped</option>
+                <option value="Delivered">Delivered</option>
+                <option value="Cancelled">Cancelled</option>
+                <option value="Return">Return</option>
+                <option value="Refund">Refund</option>
+            </select>
+        </div>
+
+        <div id="orderDetails"></div>
+    </div>
+
+    <script>
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const response = await fetch(`${CONFIG.API_URL}/get-orders`);
+        const orders = await response.json();
+
+        console.log("Fetched Orders:", orders); // Debugging log
+
+        if (orders.success && orders.data.length > 0) {
+            displayOrders(orders.data);
+        } else {
+            document.getElementById('orderDetails').innerHTML = '<p>No orders found.</p>';
+        }
+    } catch (error) {
+        console.error('Error fetching orders:', error);
+        alert('Failed to fetch orders');
+    }
+});
+
+
+function displayOrders(orders) {
+    const orderDetailsContainer = document.getElementById('orderDetails');
+
+    orderDetailsContainer.innerHTML = orders.map(order => {
+        // Handle missing paymentDetails or orderDetails
+        const payment = order.paymentDetails || {};
+        const orderItems = order.orderDetails || [];
+
+        return `
+            <div class="order">
+                <h3>Order ID: ${order._id}</h3>
+                <p><strong>Payment Method:</strong> ${payment.method || "N/A"}</p>
+                <p><strong>Shipping Method:</strong> ${payment.shippingMethod || "N/A"}</p>
+                <h4>Order Items:</h4>
+                <ul>
+                    ${orderItems.map(item => `
+                        <li>
+                            <div class="product">
+                                <img src="${item.image || 'placeholder.jpg'}" alt="${item.name || 'Unknown'}">
+                                <div class="product-details">
+                                    <p><strong>${item.name || 'Unknown'}</strong></p>
+                                    <p>Rs. ${item.price || 0} x ${item.quantity || 1}</p>
+                                </div>
+                            </div>
+                        </li>
+                    `).join('')}
+                </ul>
+                <h4>Total: Rs. ${payment.amount || 0}</h4>
+            </div>
+        `;
+    }).join('');
+}
+
+    </script>
+
+
+</body>
+
+</html>
