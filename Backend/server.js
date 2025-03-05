@@ -9,8 +9,15 @@ require('dotenv').config();
 const crypto = require("crypto");
 const axios = require("axios");
 const nodemailer = require("nodemailer");
-const https = require("https");
 const fs = require("fs");
+const dotenv=require("dotenv")
+dotenv.config();
+
+const https = require("https");
+
+
+
+
 
 
 const app = express();
@@ -28,7 +35,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 
 
-const PORT = process.env.PORT || 4001 
+const PORT = process.env.PORT || 4000
 
 
 const options = {
@@ -574,9 +581,9 @@ app.get("/products/search", async (req, res) => {
     if (!query) {
       return res.status(400).json({ message: "Search query is required" });
     }
-
+    
     const products = await Product.find({ name: { $regex: query, $options: "i" } });
-
+    
     if (products.length === 0) {
       return res.status(404).json({ message: "No products found" });
     }
