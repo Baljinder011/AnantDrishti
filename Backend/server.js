@@ -28,7 +28,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 
 
-const PORT = process.env.PORT || 4000
+const PORT = process.env.PORT || 4001 
 
 
 const options = {
