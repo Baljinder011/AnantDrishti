@@ -82,7 +82,10 @@
 <body>
     <div class="container">
         <h2>Order Details</h2>
-        <div id="orderAddress">Loading address...</div>
+        <div class="order-section">
+            <h3>Shipping Address</h3>
+            <div id="orderAddress">Loading address...</div>
+        </div>
         <div id="orderDetailsContainer"></div>
         <a href="orders.html" class="back-button">Back to Orders</a>
     </div>
@@ -93,28 +96,27 @@
             const orderId = urlParams.get("orderId");
 
             // Retrieve selected address from localStorage
-            const storedAddress = localStorage.getItem("selectedAddress");
-            if (!storedAddress) {
-                console.warn("No address found in localStorage!");
+            let address = {};
+            try {
+                const storedAddress = localStorage.getItem("selectedAddress");
+                if (storedAddress) {
+                    address = JSON.parse(storedAddress);
+                } else {
+                    console.warn("No address found in localStorage!");
+                }
+            } catch (error) {
+                console.error("Error parsing address from localStorage:", error);
             }
-
-            const address = storedAddress ? JSON.parse(storedAddress) : {};
 
             // Update address section
-            const addressContainer = document.getElementById("orderAddress");
-            if (addressContainer) {
-                addressContainer.innerHTML = `
-                    <h3>Shipping Address</h3>
-                    <p><strong>Name:</strong> ${address.name || "N/A"}</p>
-                    <p><strong>Phone:</strong> ${address.phone || "N/A"}</p>
-                    <p><strong>Email:</strong> ${address.email || "N/A"}</p>
-                    <p><strong>Address:</strong> ${address.address || "N/A"}, ${address.city || "N/A"}</p>
-                    <p><strong>State:</strong> ${address.state || "N/A"}, ${address.pin || "N/A"}</p>
-                    <p><strong>Country:</strong> ${address.country || "N/A"}</p>
-                `;
-            } else {
-                console.error("Element with ID 'orderAddress' not found!");
-            }
+            document.getElementById("orderAddress").innerHTML = `
+                <p><strong>Name:</strong> ${address.name || "N/A"}</p>
+                <p><strong>Phone:</strong> ${address.phone || "N/A"}</p>
+                <p><strong>Email:</strong> ${address.email || "N/A"}</p>
+                <p><strong>Address:</strong> ${address.address || "N/A"}, ${address.city || "N/A"}</p>
+                <p><strong>State:</strong> ${address.state || "N/A"}, ${address.pin || "N/A"}</p>
+                <p><strong>Country:</strong> ${address.country || "N/A"}</p>
+            `;
 
             // If orderId is missing, show error message
             if (!orderId) {
@@ -127,7 +129,7 @@
                 const orderResponse = await fetch(`${CONFIG.API_URL}/get-order/${orderId}`);
                 const order = await orderResponse.json();
 
-                if (!order.success) {
+                if (!order.success || !order.data) {
                     document.getElementById("orderDetailsContainer").innerHTML = "<p>Order details not found.</p>";
                     return;
                 }
@@ -151,7 +153,7 @@
 
                     <div class="order-section">
                         <h3>Products</h3>
-                        ${orderItems.map(item => `
+                        ${orderItems.length > 0 ? orderItems.map(item => `
                             <div class="product">
                                 <img src="${item.image || 'placeholder.jpg'}" alt="${item.name || 'Unknown'}">
                                 <div class="product-details">
@@ -159,7 +161,7 @@
                                     <p>Rs. ${item.price || 0} x ${item.quantity || 1}</p>
                                 </div>
                             </div>
-                        `).join('')}
+                        `).join('') : "<p>No products found.</p>"}
                     </div>
                 `;
             } catch (error) {

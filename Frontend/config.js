@@ -1,3 +1,3 @@
 const CONFIG = {
-    API_URL: "http://localhost:4000",
+    API_URL: "https://indraq.tech:4000",
 }

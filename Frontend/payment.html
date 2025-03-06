@@ -102,108 +102,142 @@
 
 
     <script>
-document.addEventListener('DOMContentLoaded', async () => {
-    const pendingOrderData = localStorage.getItem('pendingOrder');
 
-    if (!pendingOrderData) return;
 
-    try {
-        const orderData = JSON.parse(pendingOrderData);
+//   document.getElementById("payButton").addEventListener("click", async function () {
+//     const selectedAddress = JSON.parse(localStorage.getItem("selectedAddress"));
+//     if (!selectedAddress) {
+//         alert("Please select an address before proceeding.");
+//         return;
+//     }
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const transactionId = urlParams.get('transaction_id');
-        const paymentStatus = urlParams.get('payment_status');
+//     const customerName = selectedAddress.name;
+//     const customerEmail = selectedAddress.email;
+//     const customerPhone = selectedAddress.phone;
+//     const amount = document.getElementById("total-price").innerText.trim();
 
-        const completeOrderData = {
-            ...orderData,
-            paymentDetails: {
-                ...orderData.paymentDetails,
-                transactionId,
-                status: paymentStatus,
-                timestamp: new Date().toISOString()
-            }
-        };
+//     if (!customerName || !customerEmail || !customerPhone) {
+//         alert("Missing customer details. Please select an address.");
+//         return;
+//     }
 
-        const response = await fetch(`${CONFIG.API_URL}/save-order"`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(completeOrderData)
-        });
+//     if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
+//         alert("Invalid total amount: " + amount);
+//         return;
+//     }
 
-        const result = await response.json();
+//     try {
+//         // Step 1: Create Cashfree Payment Link
+//         const response = await fetch(`${CONFIG.API_URL}/create-payment-link`, {
+//             method: "POST",
+//             headers: { "Content-Type": "application/json" },
+//             body: JSON.stringify({
+//                 customer_name: customerName,
+//                 customer_email: customerEmail,
+//                 customer_phone: customerPhone,
+//                 amount: parseFloat(amount),
+//                 success_url: window.location.origin + "/orders.html"
+//             })
+//         });
 
-        if (result.success) {
-            localStorage.removeItem('pendingOrder');
-            localStorage.removeItem('cart');
+//         const result = await response.json();
 
-            document.getElementById('orderConfirmation').innerHTML = `
-                <h2>Order Successful!</h2>
-                <p>Order ID: ${result.orderId}</p>
-                <p>Transaction ID: ${transactionId}</p>
-                <p>Total Amount: Rs. ${orderData.paymentDetails.amount}</p>
-            `;
-        } else {
-            throw new Error('Failed to save order');
-        }
-    } catch (error) {
-        console.error('Error processing order:', error);
-        document.getElementById('orderConfirmation').innerHTML = `
-            <h2>Order Processing Error</h2>
-            <p>Please contact customer support.</p>
-        `;
-    }
-});
+//         if (result.link_url) {
+//             // Step 2: Save Order Details Before Redirecting to Cashfree
+//             const orderDetails = JSON.parse(localStorage.getItem("cart")) || [];
+//             const paymentDetails = {
+//                 method: "cashfree",
+//                 amount: parseFloat(amount),
+//                 shippingMethod: document.querySelector('input[name="shippingMethod"]:checked').value
+//             };
+
+//             const orderData = { 
+//                 orderDetails, 
+//                 paymentDetails,
+//                 customerName,
+//                 customerEmail,
+//                 customerPhone
+//             };
+
+//             // Step 3: Save Order to Backend Before Redirecting
+//             const saveOrderResponse = await fetch(`${CONFIG.API_URL}/save-order`, {
+//                 method: "POST",
+//                 headers: { "Content-Type": "application/json" },
+//                 body: JSON.stringify(orderData)
+//             });
+
+//             const saveOrderResult = await saveOrderResponse.json();
+
+//             if (saveOrderResult.success) {
+//                 // Step 4: Store Order ID in Local Storage
+//                 localStorage.setItem("orderId", saveOrderResult.orderId);
+                
+//                 // Step 5: Redirect to Cashfree Payment Page
+//                 window.location.href = result.link_url;
+//             } else {
+//                 alert("Order saving failed: " + saveOrderResult.message);
+//             }
+//         } else {
+//             alert("Payment Link creation failed!");
+//         }
+//     } catch (error) {
+//         console.error("Error:", error);
+//         alert("Error in payment process");
+//     }
+// });
+
+
 
 
 
 
 
 document.getElementById("payButton").addEventListener("click", async function () {
-    const orderDetails = JSON.parse(localStorage.getItem("cart")) || [];
     const selectedAddress = JSON.parse(localStorage.getItem("selectedAddress"));
-
     if (!selectedAddress) {
-        alert("Please select an address before proceeding!");
+        alert("Please select an address before proceeding.");
         return;
     }
 
-    const amount = parseFloat(document.getElementById("total-price").innerText.trim());
-    if (isNaN(amount) || amount <= 0) {
-        alert("Invalid total amount!");
-        return;
-    }
-
+    const customerName = selectedAddress.name;
+    const customerEmail = selectedAddress.email;
+    const customerPhone = selectedAddress.phone;
+    const amount = document.getElementById("total-price").innerText.trim();
+    const orderDetails = JSON.parse(localStorage.getItem("cart")) || [];
     const paymentDetails = {
-        method: document.querySelector('input[name="paymentMethod"]:checked').value,
-        shippingMethod: document.querySelector('input[name="shippingMethod"]:checked').value,
-        amount
+        method: "cashfree",
+        amount: parseFloat(amount),
+        shippingMethod: document.querySelector('input[name="shippingMethod"]:checked').value
     };
 
-    const orderData = {
-        customerName: selectedAddress.name,
-        customerEmail: selectedAddress.email,
-        customerPhone: selectedAddress.phone,
-        orderDetails,
-        paymentDetails
+    const orderData = { 
+        customerName, 
+        customerEmail, 
+        customerPhone, 
+        orderDetails, 
+        paymentDetails 
     };
+
+    // Save order in sessionStorage (persists even after redirect)
+    sessionStorage.setItem("pendingOrder", JSON.stringify(orderData));
 
     try {
+        // Step 1: Create Payment Link
         const response = await fetch(`${CONFIG.API_URL}/create-payment-link`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                customer_name: selectedAddress.name,
-                customer_email: selectedAddress.email,
-                customer_phone: selectedAddress.phone,
-                amount,
+                customer_name: customerName,
+                customer_email: customerEmail,
+                customer_phone: customerPhone,
+                amount: parseFloat(amount),
                 success_url: window.location.origin + "/success.html"
             })
         });
 
         const result = await response.json();
         if (result.link_url) {
-            localStorage.setItem("pendingOrder", JSON.stringify(orderData));
-            window.location.href = result.link_url;
+            window.location.href = result.link_url; // Redirect to payment page
         } else {
             alert("Payment Link creation failed!");
         }
@@ -212,59 +246,6 @@ document.getElementById("payButton").addEventListener("click", async function ()
         alert("Error in payment process");
     }
 });
-
-
-
-
-
-
-
-
-
-        // document.getElementById("payButton").addEventListener("click", async function () {
-        //     const customerName = "John Doe";
-        //     const customerEmail = "johndoe@example.com";
-        //     const customerPhone = "9999999999";
-
-        //     const amount = document.getElementById("total-price").innerText.trim(); 
-        //     console.log("Total Price:", amount); // Debugging log
-
-        //     if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
-        //         alert("Invalid total amount: " + amount);
-        //         return;
-        //     }
-
-        //     try {
-        //         const response = await fetch(${CONFIG.API_URL}/create-payment-link, {
-        //             method: "POST",
-        //             headers: { "Content-Type": "application/json" },
-        //             body: JSON.stringify({
-        //                 customer_name: customerName,
-        //                 customer_email: customerEmail,
-        //                 customer_phone: customerPhone,
-        //                 amount: parseFloat(amount)
-        //             })
-        //         });
-
-        //         const result = await response.json();
-        //         console.log("Response:", result); // Debugging log
-
-        //         if (result.link_url) {
-        //             window.location.href = result.link_url;
-        //         } else {
-        //             alert("Payment Link creation failed!");
-        //         }
-        //     } catch (error) {
-        //         console.error("Error:", error);
-        //         alert("Error in payment process");
-        //     }
-        // });
-
-
-
-
-
-
 
 
 

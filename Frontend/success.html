@@ -59,39 +59,56 @@
 
     <script src="config.js"></script>
     <script src="config.js"></script>
+
+
     <script>
-        document.addEventListener("DOMContentLoaded", async function () {
-            const pendingOrder = JSON.parse(localStorage.getItem("pendingOrder"));
-    
-            if (!pendingOrder) {
-                console.error("No pending order found!");
-                return;
-            }
-    
-            try {
-                const response = await fetch(`${CONFIG.API_URL}/save-order`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(pendingOrder)
-                });
-    
-                const result = await response.json();
-                if (result.success) {
-                    console.log("Order saved successfully:", result);
-                    localStorage.removeItem("pendingOrder"); // Clear stored order
-                    window.location.href = `orders.html?orderId=${result.orderId}`;
-                } else {
-                    console.error("Failed to save order:", result.message);
-                    alert("Order save failed. Please contact support.");
-                }
-            } catch (error) {
-                console.error("Error saving order:", error);
-                alert("Error processing your order.");
-            }
+
+document.addEventListener("DOMContentLoaded", async function () {
+    const pendingOrder = JSON.parse(sessionStorage.getItem("pendingOrder"));
+
+    if (!pendingOrder) {
+        alert("No order found! Redirecting to home...");
+        window.location.href = "/";
+        return;
+    }
+
+    // Get transaction ID from URL (if provided by Cashfree)
+    const urlParams = new URLSearchParams(window.location.search);
+    const transactionId = urlParams.get("transaction_id");
+
+    if (transactionId) {
+        pendingOrder.paymentDetails.transactionId = transactionId;
+    }
+
+    // Send order to backend
+    try {
+        const response = await fetch(`${CONFIG.API_URL}/save-order`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(pendingOrder)
         });
+
+        const result = await response.json();
+
+        if (result.success) {
+            sessionStorage.removeItem("pendingOrder"); // Clear order
+            localStorage.removeItem("cart"); // Clear cart
+            alert("Order saved successfully!");
+        } else {
+            alert("Order saving failed: " + result.message);
+        }
+    } catch (error) {
+        console.error("Error:", error);
+        alert("Failed to save order.");
+    }
+});
+
+
+
+
     </script>
-    
-        
+
+
 
 </body>
 
