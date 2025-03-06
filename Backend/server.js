@@ -161,71 +161,6 @@ app.get("/check-payment-status", async (req, res) => {
 
 
 
-
-// Order Schema
-const orderSchema = new mongoose.Schema({
-  customerName: String,
-  customerEmail: String,
-  customerPhone: String,
-  orderDetails: Array,
-  paymentDetails: {
-      method: String,
-      amount: Number,
-      shippingMethod: String,
-      transactionId: String
-  },
-  createdAt: { type: Date, default: Date.now }
-});
-
-const Order = mongoose.model("Order", orderSchema);
-
-// Save Order API
-app.post("/save-order", async (req, res) => {
-  try {
-      const orderData = req.body;
-
-      if (!orderData || !orderData.customerEmail || !orderData.orderDetails.length) {
-          return res.status(400).json({ success: false, message: "Invalid order data" });
-      }
-
-      const newOrder = new Order(orderData);
-      await newOrder.save();
-
-      res.json({ success: true, message: "Order saved successfully!" });
-  } catch (error) {
-      console.error("Error saving order:", error);
-      res.status(500).json({ success: false, message: "Internal Server Error" });
-  }
-});
-
-
-
-// Fetch orders and payment details
-app.get("/get-orders", async (req, res) => {
-  try {
-    const orders = await Order.find().sort({ createdAt: -1 }); // Get orders sorted by latest first
-    res.json({ success: true, orders });
-  } catch (error) {
-    console.error("Error fetching orders:", error);
-    res.status(500).json({ success: false, message: "Failed to fetch orders" });
-  }
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // **Serve Static HTML Pages from "frontend" folder**
 // const frontendPath = path.join(__dirname, "../frontend");
 
@@ -821,6 +756,85 @@ app.put('/products/:id/status', async (req, res) => {
 
 
 
+
+// Order Schema
+// Order Schema
+const orderSchema = new mongoose.Schema({
+  orderId: { type: String, unique: true }, // Custom Order ID
+  customerName: String,
+  customerEmail: String,
+  customerPhone: String,
+  orderDetails: Array,
+  paymentDetails: {
+      method: String,
+      amount: Number,
+      transactionId: String,
+      status: String,
+      timestamp: Date
+  },
+  status: { type: String, default: 'pending' },  // New field for order status
+  createdAt: { type: Date, default: Date.now }
+});
+
+const Order = mongoose.model("Order", orderSchema);
+
+
+
+
+
+
+// Save order after payment success
+// Save order after payment success
+app.post("/save-order", async (req, res) => {
+  try {
+    const { customerName, customerEmail, customerPhone } = req.body;
+
+    if (!customerName || !customerEmail || !customerPhone) {
+      return res.status(400).json({ success: false, message: "Customer details are required" });
+    }
+
+    // Get the last order to determine the latest orderId
+    const lastOrder = await Order.findOne().sort({ createdAt: -1 });
+
+    let newOrderId = "ORD001"; // Default if no orders exist
+    if (lastOrder && lastOrder.orderId) {
+      const lastNumber = parseInt(lastOrder.orderId.replace("ORD", ""), 10);
+      if (!isNaN(lastNumber)) {
+        newOrderId = `ORD${String(lastNumber + 1).padStart(3, "0")}`;
+      }
+    }
+
+    // Create order with customer details
+    const newOrder = new Order({
+      ...req.body,
+      orderId: newOrderId,
+      customerName,
+      customerEmail,
+      customerPhone
+    });
+
+    await newOrder.save();
+
+    res.json({ success: true, orderId: newOrder.orderId });
+  } catch (error) {
+    console.error("Error saving order:", error);
+    res.status(500).json({ success: false, message: "Failed to save order" });
+  }
+});
+
+
+
+
+// Fetch orders and payment details
+app.get("/get-orders", async (req, res) => {
+  try {
+    const orders = await Order.find().sort({ createdAt: -1 }); // Get orders sorted by latest first
+    res.json({ success: true, orders });
+  } catch (error) {
+    console.error("Error fetching orders:", error);
+    res.status(500).json({ success: false, message: "Failed to fetch orders" });
+  }
+});
 
 
 
