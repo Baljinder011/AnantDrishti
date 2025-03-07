@@ -4,63 +4,76 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checking Payment Status...</title>
+    <script src="config.js"></script> <!-- Ensure config is loaded first -->
 </head>
 <body>
-    <h1>Redirecting in <span id="countdown">2</span> seconds...</h1>
+    <h1>Checking Payment Status... Redirecting in <span id="countdown">2</span> seconds...</h1>
 
     <script>
-        // Function to extract query parameters from URL
+        // Function to get query parameters from URL
         function getQueryParam(name) {
             const params = new URLSearchParams(window.location.search);
             return params.get(name);
         }
 
-        // Extract link_id from the URL
-        const linkId = getQueryParam("link_id");
-        if (!linkId) {
-            document.body.innerHTML = "<h2>Error: Missing Payment Link ID</h2>";
-            throw new Error("Missing Payment Link ID in URL");
+        // Get orderId and linkId from URL
+        const orderId = getQueryParam("orderId");
+        const linkId = getQueryParam("linkId");
+
+        if (!orderId || !linkId) {
+            document.body.innerHTML = "<h2>Error: Missing Order ID or Link ID</h2>";
+            throw new Error("Missing orderId or linkId in URL");
         }
 
-        let timeLeft = 2; // Countdown starts from 5 seconds
+        // Countdown Timer
+        let timeLeft = 2;
         const countdownElement = document.getElementById("countdown");
-
         const countdownTimer = setInterval(() => {
             timeLeft--;
             countdownElement.textContent = timeLeft;
-            
             if (timeLeft <= 0) {
                 clearInterval(countdownTimer);
-
-                // Call backend to check payment status
-                fetch(`${CONFIG.API_URL}/check-payment-status?link_id=${linkId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log("Payment Status Response:", data);
-
-                        if (data.error) {
-                            document.body.innerHTML = `<h2>Error: ${data.error}</h2>`;
-                            return;
-                        }
-
-                        if (data.link_status === "PAID") {
-                            // Redirect to success page
-                            window.location.href = `${CONFIG.API_URL}/success.html`;
-                        } else {
-                            // Redirect to failure page
-                            window.location.href = `${CONFIG.API_URL}/failure.html`;
-                        }
-                    })
-                    .catch(error => {
-                        console.error("Error fetching payment status:", error);
-                        document.body.innerHTML = "<h2>Error checking payment status. Please try again.</h2>";
-                    });
+                checkPaymentStatus();
             }
         }, 1000);
+
+        // Function to check payment status and update order
+        async function checkPaymentStatus() {
+            try {
+                const response = await fetch(`${CONFIG.API_URL}/check-payment-status?orderId=${orderId}&linkId=${linkId}`);
+                const data = await response.json();
+
+                console.log("Payment Status Response:", data);
+
+                if (data.error) {
+                    document.body.innerHTML = `<h2>Error: ${data.error}</h2>`;
+                    return;
+                }
+
+                if (data.status === "successful") {
+                    window.location.href = "/success.html"; // Redirect to success page
+                } else {
+                    window.location.href = "/failure.html"; // Redirect to failure page
+                }
+            } catch (error) {
+                console.error("Error checking payment status:", error);
+                document.body.innerHTML = "<h2>Error checking payment status. Please try again.</h2>";
+            }
+        }
+
+        // Function to fetch order details
+        async function getOrderDetails() {
+            try {
+                const response = await fetch(`${CONFIG.API_URL}/order?orderId=${orderId}`);
+                const data = await response.json();
+                console.log("Order Details:", data);
+            } catch (error) {
+                console.error("Error fetching order:", error);
+            }
+        }
+
+        // Fetch order details
+        getOrderDetails();
     </script>
-
-<script src="config.js"></script>
-
-
 </body>
 </html>

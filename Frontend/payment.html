@@ -69,8 +69,7 @@
 
                             <div class="payment-btn mt-4">
 
-                                <button type="button" id="payButton" class="btn btn-primary">Proceed to
-                                    Payment</button>
+                                <button type="button" id="payButton" class="btn btn-primary">Pay Now</button>
 
                             </div>
                         </div>
@@ -104,7 +103,93 @@
     <script>
 
 
-  document.getElementById("payButton").addEventListener("click", async function () {
+//   document.getElementById("payButton").addEventListener("click", async function () {
+//     const selectedAddress = JSON.parse(localStorage.getItem("selectedAddress"));
+//     if (!selectedAddress) {
+//         alert("Please select an address before proceeding.");
+//         return;
+//     }
+
+//     const customerName = selectedAddress.name;
+//     const customerEmail = selectedAddress.email;
+//     const customerPhone = selectedAddress.phone;
+//     const amount = document.getElementById("total-price").innerText.trim();
+
+//     if (!customerName || !customerEmail || !customerPhone) {
+//         alert("Missing customer details. Please select an address.");
+//         return;
+//     }
+
+//     if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
+//         alert("Invalid total amount: " + amount);
+//         return;
+//     }
+
+//     try {
+//         // Step 1: Create Cashfree Payment Link
+//         const response = await fetch(`${CONFIG.API_URL}/create-payment-link`, {
+//             method: "POST",
+//             headers: { "Content-Type": "application/json" },
+//             body: JSON.stringify({
+//                 customer_name: customerName,
+//                 customer_email: customerEmail,
+//                 customer_phone: customerPhone,
+//                 amount: parseFloat(amount),
+//                 success_url: window.location.origin + "/orders.html"
+//             })
+//         });
+
+//         const result = await response.json();
+
+//         if (result.link_url) {
+//             // Step 2: Save Order Details Before Redirecting to Cashfree
+//             const orderDetails = JSON.parse(localStorage.getItem("cart")) || [];
+//             const paymentDetails = {
+//                 method: "cashfree",
+//                 amount: parseFloat(amount),
+//                 shippingMethod: document.querySelector('input[name="shippingMethod"]:checked').value
+//             };
+
+//             const orderData = { 
+//                 orderDetails, 
+//                 paymentDetails,
+//                 customerName,
+//                 customerEmail,
+//                 customerPhone
+//             };
+
+//             // Step 3: Save Order to Backend Before Redirecting
+//             const saveOrderResponse = await fetch(`${CONFIG.API_URL}/save-order`, {
+//                 method: "POST",
+//                 headers: { "Content-Type": "application/json" },
+//                 body: JSON.stringify(orderData)
+//             });
+
+//             const saveOrderResult = await saveOrderResponse.json();
+
+//             if (saveOrderResult.success) {
+//                 // Step 4: Store Order ID in Local Storage
+//                 localStorage.setItem("orderId", saveOrderResult.orderId);
+                
+//                 // Step 5: Redirect to Cashfree Payment Page
+//                 window.location.href = result.link_url;
+//             } else {
+//                 alert("Order saving failed: " + saveOrderResult.message);
+//             }
+//         } else {
+//             alert("Payment Link creation failed!");
+//         }
+//     } catch (error) {
+//         console.error("Error:", error);
+//         alert("Error in payment process");
+//     }
+// });
+
+
+
+
+
+document.getElementById("payButton").addEventListener("click", async function () {
     const selectedAddress = JSON.parse(localStorage.getItem("selectedAddress"));
     if (!selectedAddress) {
         alert("Please select an address before proceeding.");
@@ -126,70 +211,80 @@
         return;
     }
 
+    const orderDetails = JSON.parse(localStorage.getItem("cart")) || [];
+    if (orderDetails.length === 0) {
+        alert("Your cart is empty. Please add items before proceeding.");
+        return;
+    }
+
+    const shippingMethodElement = document.querySelector('input[name="shippingMethod"]:checked');
+    if (!shippingMethodElement) {
+        alert("Please select a shipping method.");
+        return;
+    }
+    const shippingMethod = shippingMethodElement.value;
+
     try {
-        // Step 1: Create Cashfree Payment Link
-        const response = await fetch(`${CONFIG.API_URL}/create-payment-link`, {
+        // Step 1: Create Payment Link
+        const paymentResponse = await fetch(`${CONFIG.API_URL}/create-payment-link`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 customer_name: customerName,
                 customer_email: customerEmail,
                 customer_phone: customerPhone,
-                amount: parseFloat(amount),
-                success_url: window.location.origin + "/orders.html"
+                amount: parseFloat(amount)
             })
         });
 
-        const result = await response.json();
+        if (!paymentResponse.ok) {
+            throw new Error("Failed to create payment link");
+        }
 
-        if (result.link_url) {
-            // Step 2: Save Order Details Before Redirecting to Cashfree
-            const orderDetails = JSON.parse(localStorage.getItem("cart")) || [];
-            const paymentDetails = {
+        const paymentResult = await paymentResponse.json();
+
+        if (!paymentResult.success || !paymentResult.linkUrl || !paymentResult.orderId) {
+            alert("Payment Link creation failed!");
+            return;
+        }
+
+        // Step 2: Save Order to Backend Before Redirecting
+        const orderData = {
+            orderId: paymentResult.orderId,
+            customerName,
+            customerEmail,
+            customerPhone,
+            orderDetails,
+            paymentDetails: {
                 method: "cashfree",
                 amount: parseFloat(amount),
-                shippingMethod: document.querySelector('input[name="shippingMethod"]:checked').value
-            };
-
-            const orderData = { 
-                orderDetails, 
-                paymentDetails,
-                customerName,
-                customerEmail,
-                customerPhone
-            };
-
-            // Step 3: Save Order to Backend Before Redirecting
-            const saveOrderResponse = await fetch(`${CONFIG.API_URL}/save-order`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(orderData)
-            });
-
-            const saveOrderResult = await saveOrderResponse.json();
-
-            if (saveOrderResult.success) {
-                // Step 4: Store Order ID in Local Storage
-                localStorage.setItem("orderId", saveOrderResult.orderId);
-                
-                // Step 5: Redirect to Cashfree Payment Page
-                window.location.href = result.link_url;
-            } else {
-                alert("Order saving failed: " + saveOrderResult.message);
+                shippingMethod
             }
-        } else {
-            alert("Payment Link creation failed!");
+        };
+
+        const saveOrderResponse = await fetch(`${CONFIG.API_URL}/save-order`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(orderData)
+        });
+
+        const saveOrderResult = await saveOrderResponse.json();
+
+        if (!saveOrderResult.success) {
+            alert("Failed to save order: " + saveOrderResult.message);
+            return;
         }
+
+        // Step 3: Store Order ID in Local Storage
+        localStorage.setItem("orderId", paymentResult.orderId);
+
+        // Step 4: Redirect to Cashfree Payment Page
+        window.location.href = paymentResult.linkUrl;
     } catch (error) {
         console.error("Error:", error);
-        alert("Error in payment process");
+        alert("Error in payment process: " + error.message);
     }
 });
-
-
-
-
-
 
 
      

@@ -10,10 +10,10 @@ const crypto = require("crypto");
 const axios = require("axios");
 const nodemailer = require("nodemailer");
 const fs = require("fs");
-const dotenv=require("dotenv")
+const dotenv = require("dotenv")
 dotenv.config();
 
-const https = require("https");
+// const https = require("https");
 
 
 
@@ -38,22 +38,22 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 const PORT = process.env.PORT || 4000
 
 
-const options = {
-  key: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/privkey.pem"),
-  cert: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/fullchain.pem"),
-};
+// const options = {
+//   key: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/privkey.pem"),
+//   cert: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/fullchain.pem"),
+// };
 
 
 
 // Enforce HTTPS middleware
 
 
-app.use((req, res, next) => {
-  if (req.protocol !== "https") {
-    return res.redirect("https://" + req.headers.host + req.url);
-  }
-  next();
-});
+// app.use((req, res, next) => {
+//   if (req.protocol !== "https") {
+//     return res.redirect("https://" + req.headers.host + req.url);
+//   }
+//   next();
+// });
 
 
 
@@ -85,79 +85,304 @@ function getExpiryTime() {
   return now.toISOString();
 }
 
-// Create Payment Link API
+
+// Generate Order ID (ORD001, ORD002...)
+async function generateOrderId() {
+  const lastOrder = await Order.findOne().sort({ createdAt: -1 });
+  if (lastOrder && lastOrder.orderId) {
+    const lastNumber = parseInt(lastOrder.orderId.replace("ORD", ""), 10);
+    return `ORD${String(lastNumber + 1).padStart(3, '0')}`;
+  }
+  return "ORD001";
+}
+
+
+
+// Create Order & Payment Link
+// Create Payment Link & Save Order with linkId
 app.post("/create-payment-link", async (req, res) => {
   try {
-    const { customer_name, customer_email, customer_phone, amount } = req.body;
-
-    if (!customer_name || !customer_email || !customer_phone || !amount) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
-
-    const link_id = `CF_${crypto.randomBytes(8).toString("hex")}`;
-    const apiUrl = "https://sandbox.cashfree.com/pg/links";
-
-    const payload = {
-      link_id,
-      customer_details: { customer_name, customer_email, customer_phone },
-      link_amount: amount,
-      link_currency: "INR",
-      link_purpose: "E-commerce Purchase",
-      link_notify: { send_email: true, send_sms: true },
-      link_auto_reminders: true,
-      link_expiry_time: getExpiryTime(),
-      link_meta: {
-        return_url: `http://localhost:${PORT}/redirect.html?link_id=${link_id}`
-        // return_url: `https://indraq.tech/redirect.html?link_id=${link_id}`
-
+      const { customer_name, customer_email, customer_phone, amount } = req.body;
+      if (!customer_name || !customer_email || !customer_phone || !amount) {
+          return res.status(400).json({ error: "Missing required fields" });
       }
-    };
 
-    const response = await axios.post(apiUrl, payload, {
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-version": "2022-09-01",
-        "x-client-id": APP_ID,
-        "x-client-secret": SECRET_KEY
-      }
-    });
+      const orderId = await generateOrderId();
+      const linkId = `CF_${crypto.randomBytes(8).toString("hex")}`; // Generate Unique linkId
 
-    res.json({ link_id: response.data.link_id, link_url: response.data.link_url });
+      const payload = {
+          order_id: orderId, // Store orderId in Cashfree
+          link_id: linkId, // Pass generated linkId
+          customer_details: { customer_name, customer_email, customer_phone },
+          link_amount: amount,
+          link_currency: "INR",
+          link_purpose: "E-commerce Purchase",
+          link_notify: { send_email: true, send_sms: true },
+          link_auto_reminders: true,
+          link_expiry_time: new Date(Date.now() + 3600 * 1000).toISOString(), // 1-hour expiry
+          link_meta: {
+              return_url: `http://localhost:${PORT}/redirect.html?orderId=${orderId}&linkId=${linkId}`,
+          },
+      };
+
+      const response = await axios.post("https://sandbox.cashfree.com/pg/links", payload, {
+          headers: {
+              "x-api-version": "2022-09-01",
+              "x-client-id": APP_ID,
+              "x-client-secret": SECRET_KEY,
+          },
+      });
+
+      // Save Order in MongoDB including linkId
+      const newOrder = new Order({
+          orderId,
+          linkId, // Store Cashfree linkId
+          customerName: customer_name,
+          customerEmail: customer_email,
+          customerPhone: customer_phone,
+          amount,
+          status: "pending",
+      });
+
+      await newOrder.save();
+      res.json({ success: true, orderId, linkId, linkUrl: response.data.link_url });
   } catch (error) {
-    console.error("Cashfree API Error:", error.response?.data || error.message);
-    res.status(500).json({ error: "Failed to create payment link", details: error.response?.data || error.message });
+      console.error("Cashfree Error:", error.response?.data || error.message);
+      res.status(500).json({ error: "Failed to create payment link" });
   }
 });
 
 
 
-
-
-
-// **Check Payment Status**
+// Check Payment Status & Update Order
 app.get("/check-payment-status", async (req, res) => {
-  const linkId = req.query.link_id;
-  if (!linkId) {
-    return res.status(400).json({ error: "Missing Payment Link ID" });
-  }
+    try {
+        const { orderId, linkId } = req.query;
+        if (!orderId || !linkId) {
+            return res.status(400).json({ error: "Missing orderId or linkId" });
+        }
 
-  try {
-    const response = await axios.get(`https://sandbox.cashfree.com/pg/links/${linkId}`, {
-      headers: {
-        "x-api-version": "2022-09-01",
-        "x-client-id": APP_ID,
-        "x-client-secret": SECRET_KEY
-      }
-    });
+        const order = await Order.findOne({ orderId, linkId });
+        if (!order) {
+            return res.status(404).json({ error: "Order not found" });
+        }
 
-    res.json({ link_status: response.data.link_status });
-  } catch (error) {
-    res.status(500).json({
-      error: "Error checking payment status",
-      details: error.response?.data || error.message || "Unknown error occurred"
-    });
-  }
+        console.log(`Checking payment status for Order: ${orderId}, Link ID: ${linkId}`);
+
+        // Use linkId to fetch payment status
+        const cashfreeResponse = await axios.get(
+            `https://sandbox.cashfree.com/pg/links/${linkId}`,
+            {
+                headers: {
+                    "x-api-version": "2022-09-01",
+                    "x-client-id": APP_ID,
+                    "x-client-secret": SECRET_KEY,
+                },
+            }
+        );
+
+        console.log("Cashfree API Response:", cashfreeResponse.data);
+
+        const linkStatus = cashfreeResponse.data.link_status;
+        let orderStatus = "pending";
+        let paymentStatus = "pending";
+        let paid = false;
+
+        if (linkStatus === "PAID") {
+            orderStatus = "successful";
+            paymentStatus = "PAID";
+            paid = true;
+        } else if (linkStatus === "EXPIRED" || linkStatus === "CANCELLED") {
+            orderStatus = "failed";
+            paymentStatus = linkStatus.toLowerCase();
+        }
+
+        await Order.updateOne(
+            { orderId, linkId },
+            {
+                $set: {
+                    status: orderStatus,
+                    "paymentDetails.status": paymentStatus,
+                    "paymentDetails.paid": paid,
+                    "paymentDetails.transactionId": cashfreeResponse.data.reference_id || "",
+                    "paymentDetails.timestamp": new Date(),
+                },
+            }
+        );
+
+        res.json({ success: orderStatus === "successful", status: orderStatus });
+    } catch (error) {
+        console.error("Error checking payment status:", error.response?.data || error.message);
+        res.status(500).json({ error: "Failed to check payment status" });
+    }
 });
+
+// Fetch Order by Order ID
+app.get("/order", async (req, res) => {
+    try {
+        const { orderId } = req.query;
+        if (!orderId) {
+            return res.status(400).json({ error: "Missing orderId" });
+        }
+
+        const order = await Order.findOne({ orderId });
+        if (!order) {
+            return res.status(404).json({ error: "Order not found" });
+        }
+
+        res.json({ success: true, order });
+    } catch (error) {
+        console.error("Error fetching order:", error);
+        res.status(500).json({ error: "Failed to fetch order" });
+    }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Serve Static Pages
+app.get("/redirect.html", (req, res) => res.sendFile(path.join(frontendPath, "redirect.html")));
+app.get("/success.html", (req, res) => res.sendFile(path.join(frontendPath, "success.html")));
+app.get("/failure.html", (req, res) => res.sendFile(path.join(frontendPath, "failure.html")));
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Create Payment Link API
+// app.post("/create-payment-link", async (req, res) => {
+//   try {
+//     const { customer_name, customer_email, customer_phone, amount } = req.body;
+
+//     if (!customer_name || !customer_email || !customer_phone || !amount) {
+//       return res.status(400).json({ error: "Missing required fields" });
+//     }
+
+//     const link_id = `CF_${crypto.randomBytes(8).toString("hex")}`;
+//     const apiUrl = "https://sandbox.cashfree.com/pg/links";
+
+//     const payload = {
+//       order_id,
+//       link_id,
+//       customer_details: { customer_name, customer_email, customer_phone },
+//       link_amount: amount,
+//       link_currency: "INR",
+//       link_purpose: "E-commerce Purchase",
+//       link_notify: { send_email: true, send_sms: true },
+//       link_auto_reminders: true,
+//       link_expiry_time: getExpiryTime(),
+//       link_meta: {
+//         return_url: `http://localhost:${PORT}/redirect.html?link_id=${order_id}`
+
+//         // return_url: `http://localhost:${PORT}/redirect.html?link_id=${link_id}`
+//         // return_url: `https://indraq.tech/redirect.html?link_id=${link_id}`
+
+//       }
+//     };
+
+//     const response = await axios.post(apiUrl, payload, {
+//       headers: {
+//         "Content-Type": "application/json",
+//         "x-api-version": "2022-09-01",
+//         "x-client-id": APP_ID,
+//         "x-client-secret": SECRET_KEY
+//       }
+//     });
+
+//     res.json({ link_id: response.data.link_id, link_url: response.data.link_url });
+//   } catch (error) {
+//     console.error("Cashfree API Error:", error.response?.data || error.message);
+//     res.status(500).json({ error: "Failed to create payment link", details: error.response?.data || error.message });
+//   }
+// });
+
+
+
+
+
+
+// // **Check Payment Status**
+// app.get("/check-payment-status", async (req, res) => {
+//   const linkId = req.query.link_id;
+//   if (!linkId) {
+//     return res.status(400).json({ error: "Missing Payment Link ID" });
+//   }
+
+//   try {
+//     // Call Cashfree API
+//     const response = await axios.get(`https://sandbox.cashfree.com/pg/links/${linkId}`, {
+//       headers: {
+//         "x-api-version": "2022-09-01",
+//         "x-client-id": APP_ID,
+//         "x-client-secret": SECRET_KEY,
+//       },
+//     });
+
+//     const linkStatus = response.data.link_status;
+
+//     // Determine payment status based on `link_status`
+//     let orderStatus = "pending";
+//     let paymentStatus = "pending";
+//     let paid = false;
+
+//     if (linkStatus === "PAID") {
+//       orderStatus = "successful";
+//       paymentStatus = "completed";
+//       paid = true;
+//     } else if (linkStatus === "EXPIRED") {
+//       orderStatus = "failed";
+//       paymentStatus = "expired";
+//     } else if (linkStatus === "CANCELLED") {
+//       orderStatus = "failed";
+//       paymentStatus = "cancelled";
+//     }
+
+//     // Update Order in MongoDB
+//     const order = await Order.findOneAndUpdate(
+//       { linkId },
+//       {
+//         status: orderStatus,
+//         "paymentDetails.status": paymentStatus,
+//         "paymentDetails.paid": paid,
+//         "paymentDetails.timestamp": new Date(),
+//       },
+//       { new: true }
+//     );
+
+//     if (!order) {
+//       return res.status(404).json({ success: false, message: "Order not found" });
+//     }
+
+//     res.json({ success: order.status === "successful", status: order.status });
+//   } catch (error) {
+//     console.error("Error checking payment status:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Internal server error",
+//       details: error.response?.data || error.message || "Unknown error occurred",
+//     });
+//   }
+// });
 
 
 
@@ -165,34 +390,34 @@ app.get("/check-payment-status", async (req, res) => {
 // const frontendPath = path.join(__dirname, "../frontend");
 
 // Serve `payment.html`
-app.get("/redirect.html", (req, res) => {
-  res.sendFile(path.join(frontendPath, "redirect.html"), (err) => {
-    if (err) {
-      console.error("Error serving payment.html:", err);
-      res.status(404).send("Payment page not found");
-    }
-  });
-});
+// app.get("/redirect.html", (req, res) => {
+//   res.sendFile(path.join(frontendPath, "redirect.html"), (err) => {
+//     if (err) {
+//       console.error("Error serving payment.html:", err);
+//       res.status(404).send("Payment page not found");
+//     }
+//   });
+// });
 
-// Serve `success.html`
-app.get("/success.html", (req, res) => {
-  res.sendFile(path.join(frontendPath, "success.html"), (err) => {
-    if (err) {
-      console.error("Error serving success.html:", err);
-      res.status(404).send("Success page not found");
-    }
-  });
-});
+// // Serve `success.html`
+// app.get("/success.html", (req, res) => {
+//   res.sendFile(path.join(frontendPath, "success.html"), (err) => {
+//     if (err) {
+//       console.error("Error serving success.html:", err);
+//       res.status(404).send("Success page not found");
+//     }
+//   });
+// });
 
-// Serve `failure.html`
-app.get("/failure.html", (req, res) => {
-  res.sendFile(path.join(frontendPath, "failure.html"), (err) => {
-    if (err) {
-      console.error("Error serving failure.html:", err);
-      res.status(404).send("Failure page not found");
-    }
-  });
-});
+// // Serve `failure.html`
+// app.get("/failure.html", (req, res) => {
+//   res.sendFile(path.join(frontendPath, "failure.html"), (err) => {
+//     if (err) {
+//       console.error("Error serving failure.html:", err);
+//       res.status(404).send("Failure page not found");
+//     }
+//   });
+// });
 
 
 
@@ -206,7 +431,8 @@ if (!fs.existsSync(uploadDir)) {
 
 // File upload setup
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {cb(null, "uploads/"); // Save to uploads folder
+  destination: (req, file, cb) => {
+    cb(null, "uploads/"); // Save to uploads folder
   }, filename: (req, file, cb) => {
     cb(null, Date.now() + path.extname(file.originalname)); // Unique file name
   },
@@ -245,7 +471,7 @@ const userSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
-userSchema.index({ email: 1 }); 
+userSchema.index({ email: 1 });
 const User = mongoose.model("User", userSchema);
 
 
@@ -533,9 +759,9 @@ app.get("/products/search", async (req, res) => {
     if (!query) {
       return res.status(400).json({ message: "Search query is required" });
     }
-    
+
     const products = await Product.find({ name: { $regex: query, $options: "i" } });
-    
+
     if (products.length === 0) {
       return res.status(404).json({ message: "No products found" });
     }
@@ -758,19 +984,20 @@ app.put('/products/:id/status', async (req, res) => {
 
 
 // Order Schema
-// Order Schema
 const orderSchema = new mongoose.Schema({
   orderId: { type: String, unique: true }, // Custom Order ID
+  linkId: String,
   customerName: String,
   customerEmail: String,
   customerPhone: String,
   orderDetails: Array,
   paymentDetails: {
-      method: String,
-      amount: Number,
-      transactionId: String,
-      status: String,
-      timestamp: Date
+    method: String,
+    amount: Number,
+    transactionId: String,
+    status: { type: String, default: 'pending' }, // Payment status
+    paid: { type: Boolean, default: false }, // New field indicating if payment is made
+    timestamp: Date
   },
   status: { type: String, default: 'pending' },  // New field for order status
   createdAt: { type: Date, default: Date.now }
@@ -783,44 +1010,96 @@ const Order = mongoose.model("Order", orderSchema);
 
 
 
-// Save order after payment success
-// Save order after payment success
+
+// Save Order Before Payment
 app.post("/save-order", async (req, res) => {
   try {
-    const { customerName, customerEmail, customerPhone } = req.body;
+    const { orderId, customerName, customerEmail, customerPhone, orderDetails, paymentDetails } = req.body;
 
-    if (!customerName || !customerEmail || !customerPhone) {
-      return res.status(400).json({ success: false, message: "Customer details are required" });
+    if (!orderId || !customerName || !customerEmail || !customerPhone || !orderDetails || orderDetails.length === 0) {
+      return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // Get the last order to determine the latest orderId
-    const lastOrder = await Order.findOne().sort({ createdAt: -1 });
-
-    let newOrderId = "ORD001"; // Default if no orders exist
-    if (lastOrder && lastOrder.orderId) {
-      const lastNumber = parseInt(lastOrder.orderId.replace("ORD", ""), 10);
-      if (!isNaN(lastNumber)) {
-        newOrderId = `ORD${String(lastNumber + 1).padStart(3, "0")}`;
-      }
+    const existingOrder = await Order.findOne({ orderId });
+    if (existingOrder) {
+      return res.json({ success: true, message: "Order already exists", orderId });
     }
 
-    // Create order with customer details
     const newOrder = new Order({
-      ...req.body,
-      orderId: newOrderId,
-      customerName,
-      customerEmail,
-      customerPhone
+      orderId,
+      linkId,  // ✅ Make sure this is saved!
+      customerName: customer_name,
+      customerEmail: customer_email,
+      customerPhone: customer_phone,
+      amount,
+      status: 'pending'
     });
-
     await newOrder.save();
 
-    res.json({ success: true, orderId: newOrder.orderId });
+    res.json({ success: true, orderId });
   } catch (error) {
     console.error("Error saving order:", error);
-    res.status(500).json({ success: false, message: "Failed to save order" });
+    res.status(500).json({ error: "Failed to save order" });
   }
 });
+
+
+
+
+// Check Payment Status & Update Order (on redirect page load)
+// app.get("/check-payment-status", async (req, res) => {
+//   const { linkId } = req.query;
+//   if (!linkId) {
+//     return res.status(400).json({ success: false, message: "Missing linkId" });
+//   }
+//   try {
+//     const cashfreeResponse = await fetch(`https://api.cashfree.com/api/v1/link/${linkId}`, {
+//       method: 'GET',
+//       headers: {
+//         'x-client-id': process.env.CASHFREE_CLIENT_ID,
+//         'x-client-secret': process.env.CASHFREE_CLIENT_SECRET,
+//         'Content-Type': 'application/json'
+//       }
+//     });
+//     const cashfreeData = await cashfreeResponse.json();
+//     if (!cashfreeData || !cashfreeData.link_status) {
+//       return res.status(500).json({ success: false, message: "Failed to fetch payment status" });
+//     }
+//     let orderStatus = 'pending';
+//     let paymentStatus = 'pending';
+//     let paid = false;
+//     if (cashfreeData.link_status === 'PAID') {
+//       orderStatus = 'successful';
+//       paymentStatus = 'successful';
+//       paid = true;
+//     } else if (cashfreeData.link_status === 'EXPIRED' || cashfreeData.link_status === 'CANCELLED') {
+//       orderStatus = 'failed';
+//       paymentStatus = 'failed';
+//       paid = false;
+//     }
+//     // Update Order in MongoDB
+//     const order = await Order.findOneAndUpdate(
+//       { linkId },
+//       {
+//         status: orderStatus,
+//         'paymentDetails.status': paymentStatus,
+//         'paymentDetails.paid': paid,
+//         'paymentDetails.timestamp': new Date()
+//       },
+//       { new: true }
+//     );
+//     if (!order) {
+//       return res.status(404).json({ success: false, message: "Order not found" });
+//     }
+//     res.json({ success: order.status === 'successful', status: order.status });
+//   } catch (error) {
+//     console.error("Error checking payment status:", error);
+//     res.status(500).json({ success: false, message: "Internal server error" });
+//   }
+// });
+
+
+
 
 
 
@@ -841,17 +1120,17 @@ app.get("/get-orders", async (req, res) => {
 
 app.delete("/delete-order/:orderId", async (req, res) => {
   try {
-      const { orderId } = req.params;
-      const deletedOrder = await Order.findOneAndDelete({ orderId });
+    const { orderId } = req.params;
+    const deletedOrder = await Order.findOneAndDelete({ orderId });
 
-      if (!deletedOrder) {
-          return res.status(404).json({ success: false, message: "Order not found" });
-      }
+    if (!deletedOrder) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
 
-      res.json({ success: true, message: "Order deleted successfully" });
+    res.json({ success: true, message: "Order deleted successfully" });
   } catch (error) {
-      console.error("Error deleting order:", error);
-      res.status(500).json({ success: false, message: "Server error" });
+    console.error("Error deleting order:", error);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
@@ -865,15 +1144,15 @@ app.delete("/delete-order/:orderId", async (req, res) => {
 // Start Server
 
 
-// app.listen(PORT, () => {
-//   console.log(`Server running on http://localhost:${PORT}`);
-// });
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});
 
 
 
 // Start HTTPS server
 
 
-https.createServer(options, app).listen(PORT, () => {
-  console.log(`Secure server running on HTTPS at port ${PORT}`);
-});
+// https.createServer(options, app).listen(PORT, () => {
+//   console.log(`Secure server running on HTTPS at port ${PORT}`);
+// });

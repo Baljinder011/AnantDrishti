@@ -10,7 +10,6 @@
     <link rel="stylesheet" href="orders.css">
 
     <script src="config.js"></script>
-   
 </head>
 
 <body>
@@ -23,91 +22,128 @@
             });
         });
 
+        // Fetch orders from backend
         async function fetchOrders() {
-    try {
-        const response = await fetch(`${CONFIG.API_URL}/get-orders`);
-        const data = await response.json();
+            try {
+                const response = await fetch(`${CONFIG.API_URL}/get-orders`);
+                const data = await response.json();
 
-        if (data.success) {
-            const orderContainer = document.getElementById("orderDetails");
-            orderContainer.innerHTML = "";
+                if (data.success) {
+                    const orderContainer = document.getElementById("orderDetails");
+                    orderContainer.innerHTML = "";
 
-            if (data.orders.length === 0) {
-                orderContainer.innerHTML = "<p>No orders found.</p>";
-                return;
-            }
-
-            data.orders.forEach(order => {
-                const orderElement = document.createElement("div");
-                orderElement.classList.add("order");
-                orderElement.innerHTML = `
-                    <h3>Order ID: ${order.orderId}</h3>
-                    <p><strong>Name:</strong> ${order.customerName}</p>
-                    <p><strong>Email:</strong> ${order.customerEmail}</p>
-                    <p><strong>Phone:</strong> ${order.customerPhone}</p>
-                    <p><strong>Payment Method:</strong> ${order.paymentDetails.method}</p>
-                    <p><strong>Amount Paid:</strong> ₹${order.paymentDetails.amount}</p>
-                    <p><strong>Transaction ID:</strong> ${order.paymentDetails.transactionId}</p>
-                    <p><strong>Status:</strong> ${order.paymentDetails.status}</p>
-                    <p><strong>Order Date:</strong> ${new Date(order.createdAt).toLocaleString()}</p>
-                    <h4>Products:</h4>
-                    <ul>
-                        ${order.orderDetails.map(item => `
-                            <li>
-                                <img src="${item.image || 'placeholder.jpg'}" alt="${item.name}">
-                                <div class="product-details">
-                                    <p><strong>Product:</strong> ${item.name}</p>
-                                    <p><strong>Quantity:</strong> ${item.quantity}</p>
-                                    <p><strong>Price:</strong> ₹${item.price}</p>
-                                </div>
-                            </li>
-                        `).join('')}
-                    </ul>
-                    <a href="ordersdetails.html?orderId=${order.orderId}">
-                        <button class="view-details-btn">View Details</button>
-                    </a>
-                    <button class="remove-order-btn" data-order-id="${order.orderId}">Remove Order</button>
-                `;
-                orderContainer.appendChild(orderElement);
-            });
-
-            // Attach event listeners for delete buttons
-            document.querySelectorAll(".remove-order-btn").forEach(button => {
-                button.addEventListener("click", async function () {
-                    const orderId = this.getAttribute("data-order-id");
-                    if (confirm("Are you sure you want to delete this order?")) {
-                        await deleteOrder(orderId);
+                    if (data.orders.length === 0) {
+                        orderContainer.innerHTML = "<p>No orders found.</p>";
+                        return;
                     }
+
+                    data.orders.forEach(order => {
+                        const orderElement = document.createElement("div");
+                        orderElement.classList.add("order");
+                        orderElement.innerHTML = `
+                            <h3>Order ID: ${order.orderId}</h3>
+                            <p><strong>Name:</strong> ${order.customerName}</p>
+                            <p><strong>Email:</strong> ${order.customerEmail}</p>
+                            <p><strong>Phone:</strong> ${order.customerPhone}</p>
+                            <p><strong>Payment Method:</strong> Cashfree</p>
+                            <p><strong>Amount Paid:</strong> ₹${order.paymentDetails.amount}</p>
+                            <p><strong>Transaction ID:</strong> ${order.paymentDetails.transactionId}</p>
+                            <p><strong>Payment Status:</strong> ${order.paymentDetails.status}</p>
+                            <p><strong>Order Date:</strong> ${new Date(order.createdAt).toLocaleString()}</p>
+                            <h4>Products:</h4>
+                            <ul>
+                                ${order.orderDetails.map(item => `
+                                    <li>
+                                        <img src="${item.image || 'placeholder.jpg'}" alt="${item.name}">
+                                        <div class="product-details">
+                                            <p><strong>Product:</strong> ${item.name}</p>
+                                            <p><strong>Quantity:</strong> ${item.quantity}</p>
+                                            <p><strong>Price:</strong> ₹${item.price}</p>
+                                        </div>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                            <a href="ordersdetails.html?orderId=${order.orderId}">
+                                <button class="view-details-btn">View Details</button>
+                            </a>
+                            <button class="remove-order-btn" data-order-id="${order.orderId}">Remove Order</button>
+                        `;
+                        orderContainer.appendChild(orderElement);
+                    });
+
+                    // Attach event listeners for delete buttons
+                    document.querySelectorAll(".remove-order-btn").forEach(button => {
+                        button.addEventListener("click", async function () {
+                            const orderId = this.getAttribute("data-order-id");
+                            if (confirm("Are you sure you want to delete this order?")) {
+                                await deleteOrder(orderId);
+                            }
+                        });
+                    });
+                } else {
+                    alert("Failed to fetch orders.");
+                }
+            } catch (error) {
+                console.error("Error fetching orders:", error);
+            }
+        }
+
+        // Function to delete order
+        async function deleteOrder(orderId) {
+            try {
+                const response = await fetch(`${CONFIG.API_URL}/delete-order/${orderId}`, {
+                    method: "DELETE",
                 });
-            });
-        } else {
-            alert("Failed to fetch orders.");
-        }
-    } catch (error) {
-        console.error("Error fetching orders:", error);
-    }
-}
 
-// Function to delete order
-async function deleteOrder(orderId) {
-    try {
-        const response = await fetch(`${CONFIG.API_URL}/delete-order/${orderId}`, {
-            method: "DELETE",
+                const result = await response.json();
+                if (result.success) {
+                    alert("Order deleted successfully!");
+                    fetchOrders(); // Refresh the order list
+                } else {
+                    alert("Failed to delete order.");
+                }
+            } catch (error) {
+                console.error("Error deleting order:", error);
+            }
+        }
+
+        // Check payment status and update order if payment is successful
+        async function checkPaymentStatus() {
+            const orderId = localStorage.getItem("orderId"); // Assuming you've saved the orderId before redirecting for payment
+            const paymentStatus = new URLSearchParams(window.location.search).get("paymentStatus");
+
+            if (paymentStatus === "SUCCESS") {
+                try {
+                    // Call API to update the payment status to "paid"
+                    const response = await fetch(`${CONFIG.API_URL}/update-order-status`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            orderId: orderId,
+                            status: "paid"  // Change status to 'paid' when payment is successful
+                        })
+                    });
+
+                    const result = await response.json();
+                    if (result.success) {
+                        alert("Payment Successful! Your order is now paid.");
+                    } else {
+                        alert("Failed to update payment status.");
+                    }
+                } catch (error) {
+                    console.error("Error updating payment status:", error);
+                    alert("Error verifying payment or updating order status.");
+                }
+            } else {
+                // alert("Payment failed or was not completed.");
+            }
+        }
+
+        // Fetch orders and check payment status on page load
+        document.addEventListener("DOMContentLoaded", async function () {
+            fetchOrders();
+            checkPaymentStatus();
         });
-
-        const result = await response.json();
-        if (result.success) {
-            alert("Order deleted successfully!");
-            fetchOrders(); // Refresh the order list
-        } else {
-            alert("Failed to delete order.");
-        }
-    } catch (error) {
-        console.error("Error deleting order:", error);
-    }
-}
-
-document.addEventListener("DOMContentLoaded", fetchOrders);
 
     </script>
 
