@@ -72,19 +72,19 @@
     }
 
     function saveProfile() {
-      const name = document.getElementById('name').value.trim();
+      const fullName = document.getElementById('name').value.trim();
       const email = document.getElementById('email').value.trim();
       const phone = document.getElementById('phone').value.trim();
       const dob = document.getElementById('dob').value;
       const image = document.getElementById('profile-image').files[0];
 
-      if (!name || !email) {
+      if (!fullName || !email) {
         alert('Name and Email are required.');
         return;
       }
 
       const formData = new FormData();
-      formData.append('name', name);
+      formData.append('name', fullName);
       formData.append('email', email);
       formData.append('phone', phone);
       formData.append('dob', dob);
@@ -105,7 +105,7 @@
         .then(response => response.json())
         .then(data => {
           alert(data.message || 'Profile saved successfully!');
-          saveToLocalStorage({ name, email, phone, dob });
+          saveToLocalStorage({ fullName, email, phone, dob });
           if (image) {
             const reader = new FileReader();
             reader.onload = function (e) {
@@ -149,7 +149,7 @@
       const savedImage = localStorage.getItem('profileImage');
 
       if (savedProfile) {
-        document.getElementById('name').value = savedProfile.name;
+        document.getElementById('name').value = savedProfile.fullName;
         document.getElementById('email').value = savedProfile.email;
         document.getElementById('phone').value = savedProfile.phone;
         document.getElementById('dob').value = savedProfile.dob;

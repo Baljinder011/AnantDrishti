@@ -462,17 +462,7 @@ const upload = multer({
 // Define the User Schema
 
 
-const userSchema = new mongoose.Schema({
-  email: { type: String, required: true, unique: true, lowercase: true },
-  password: { type: String, required: true, minlength: 6 },
-  fullName: { type: String, required: true },
-  dob: { type: Date, required: true },
-  phone: { type: String, required: true, match: /^[0-9]{10}$/ },
-  createdAt: { type: Date, default: Date.now },
-});
 
-userSchema.index({ email: 1 });
-const User = mongoose.model("User", userSchema);
 
 
 
@@ -547,6 +537,17 @@ const Address = mongoose.model("Address", addressSchema);
 
 
 
+const userSchema = new mongoose.Schema({
+  email: { type: String, required: true, unique: true, lowercase: true },
+  password: { type: String, required: true, minlength: 6 },
+  fullName: { type: String, required: true },
+  dob: { type: Date, required: true },
+  phone: { type: String, required: true, match: /^[0-9]{10}$/ },
+  createdAt: { type: Date, default: Date.now },
+});
+
+const User = mongoose.model("User", userSchema);
+
 
 
 // My Login api
@@ -560,23 +561,22 @@ app.post("/login", async (req, res) => {
 
   try {
     // Find user in User collection
-    const user = await Customer.findOne({ email });
+    const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ message: "User not found" });
     }
 
-    // Check password
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) {
+    // Check password (plain text comparison)
+    if (user.password !== password) {
       return res.status(400).json({ message: "Invalid password" });
     }
 
-    // Find user profile to get the image
+    // Find user profile to get the image (if Profile model exists)
     const profile = await Profile.findOne({ email });
 
     // Return user profile data with image
     const userProfile = {
-      name: user.name,
+      fullName: user.fullName,
       email: user.email,
       dob: user.dob,
       phone: user.phone,
@@ -599,27 +599,31 @@ app.post("/login", async (req, res) => {
 
 
 app.post("/signup", async (req, res) => {
-  const { email, password, name, dob, phone, image } = req.body;
+  console.log("Received request body:", req.body); // Debugging Step 1
 
-  if (!email || !password || !name || !dob || !phone) {
+  const { email, password, fullName, dob, phone } = req.body;
+
+  if (!email || !password || !fullName || !dob || !phone) {
     return res.status(400).json({ message: "All fields are required" });
   }
 
   try {
-    const existingUser = await Customer.findOne({ email });
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Convert dob to Date object
+    const formattedDOB = new Date(dob);
+    if (isNaN(formattedDOB.getTime())) {
+      return res.status(400).json({ message: "Invalid Date of Birth" });
+    }
 
     // Create and save user
-    const newUser = new User({ email, password: hashedPassword, name, dob, phone });
+    const newUser = new User({ email, password, fullName, dob: formattedDOB, phone });
     await newUser.save();
 
-    // Create and save profile with image
-    const newProfile = new Profile({ email, name, phone, dob, image: image || "" });
-    await newProfile.save();
+    console.log("User saved successfully:", newUser); // Debugging Step 2
 
     res.status(201).json({ message: "User registered successfully" });
   } catch (error) {

@@ -82,80 +82,109 @@
       </form>
     </div>
   </div>
-  <script>
-    // Toggle visibility for Password and Confirm Password fields
-    function togglePasswordVisibility(inputId, iconId) {
-      const inputField = document.getElementById(inputId);
-      const icon = document.getElementById(iconId);
-      if (inputField.type === 'password') {
-        inputField.type = 'text';
-        icon.classList.remove('fa-eye');
-        icon.classList.add('fa-eye-slash');
-      } else {
-        inputField.type = 'password';
-        icon.classList.remove('fa-eye-slash');
-        icon.classList.add('fa-eye');
-      }
+
+
+ <script>
+  const registerForm = document.getElementById('registerForm');
+  const formError = document.getElementById('formError');
+
+  registerForm.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    
+    // Get input values and trim spaces
+    const fullName = document.getElementById('name').value.trim();
+    const dob = document.getElementById('dob').value;
+    const phone = document.getElementById('phone').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const confirmPassword = document.getElementById('confirmPassword').value.trim();
+    const termsAccepted = document.getElementById('terms').checked;
+
+    // Check if any field is empty
+    if (!fullName || !dob || !phone || !email || !password || !confirmPassword) {
+      showError("All fields are required.");
+      return;
     }
-    document.getElementById('togglePassword').addEventListener('click', function () {
-      togglePasswordVisibility('password', 'togglePassword');
-    });
-    document.getElementById('toggleConfirmPassword').addEventListener('click', function () {
-      togglePasswordVisibility('confirmPassword', 'toggleConfirmPassword');
-    });
-    const registerForm = document.getElementById('registerForm');
-    const formError = document.getElementById('formError');
-    registerForm.addEventListener('submit', async function (e) {
-      e.preventDefault();
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value.trim();
-      const confirmPassword = document.getElementById('confirmPassword').value.trim();
-      const name = document.getElementById('name').value.trim();
-      const dob = document.getElementById('dob').value;
-      const phone = document.getElementById('phone').value.trim();
-      if (password !== confirmPassword) {
-        formError.textContent = "Passwords do not match.";
-        return;
-      }
-      const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/;
-      if (!passwordRegex.test(password)) {
-        formError.textContent = "Password must be at least 6 characters long, and contain at least one letter and one number.";
-        return;
-      }
-      try {
-        const response = await fetch(`${CONFIG.API_URL}/signup`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password, name: name, dob, phone }),
-        });
-        const data = await response.json();
-        if (data.message) {
-          if (data.message === "User already exists") {
-            formError.textContent = "A user with this email already exists. Please try a different email.";
-            return;
-          }
-          localStorage.setItem('userProfile', JSON.stringify({ email, name, dob, phone }));
-          localStorage.setItem('isLoggedIn', 'true');
-          alert(data.message);
-          window.location.href = "./index.html";
-        } else {
-          formError.textContent = data.message || "Registration failed. Please try again.";
+
+    // Validate Date of Birth
+    if (isNaN(new Date(dob).getTime())) {
+      showError("Please enter a valid Date of Birth.");
+      return;
+    }
+
+    // Validate phone number (should be 10 digits)
+    if (!/^\d{10}$/.test(phone)) {
+      showError("Phone number must be exactly 10 digits.");
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      showError("Please enter a valid email address.");
+      return;
+    }
+
+    // Validate password and confirm password
+    if (password !== confirmPassword) {
+      showError("Passwords do not match.");
+      return;
+    }
+
+    // Validate password strength
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/;
+    if (!passwordRegex.test(password)) {
+      showError("Password must be at least 6 characters long, containing at least one letter and one number.");
+      return;
+    }
+
+    // Ensure terms and conditions are accepted
+    if (!termsAccepted) {
+      showError("You must agree to the terms and conditions.");
+      return;
+    }
+
+    // Clear errors before submitting
+    clearError();
+
+    try {
+      const response = await fetch(`${CONFIG.API_URL}/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, fullName, dob, phone }) // Fixed "name" to "fullName"
+      });
+
+      const data = await response.json();
+
+      if (data.message) {
+        if (data.message === "User already exists") {
+          showError("A user with this email already exists. Please try a different email.");
+          return;
         }
-      } catch (error) {
-        formError.textContent = "Error connecting to the server.";
+        // Save user data in localStorage and redirect
+        localStorage.setItem('userProfile', JSON.stringify({ email, fullName, dob, phone }));
+        localStorage.setItem('isLoggedIn', 'true');
+        alert("Registration successful!");
+        window.location.href = "./index.html";
+      } else {
+        showError(data.message || "Registration failed. Please try again.");
       }
-    });
-    function showError(message) {
-  formError.textContent = message;
-  formError.classList.add('show');
-}
-function clearError() {
-  formError.textContent = '';
-  formError.classList.remove('show');
-}
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-    crossorigin="anonymous"></script>
+    } catch (error) {
+      showError("Error connecting to the server.");
+    }
+  });
+
+  function showError(message) {
+    formError.textContent = message;
+    formError.classList.add('show');
+  }
+
+  function clearError() {
+    formError.textContent = '';
+    formError.classList.remove('show');
+  }
+</script>
+
 
     <script src="config.js"></script>
 
