@@ -105,10 +105,11 @@
             </div>
             <div class="mt-4 center-buttons add-btn">
                 <div class="add btn">
-                    <a href="#shipping">
-                        <button id="openAddressPopup" class="custom-add-btn">Add New Address</button>
-                    </a>
+                    <button id="openAddressPopup" class="custom-add-btn">Add New Address</button>
                 </div>
+
+
+
                 <div class="add btn">
                     <a href="./payment.html">
                         <button id="proceedToPayment" class="custom-pay-btn">Go to Payment</button>
@@ -217,190 +218,169 @@
     <div id="popupOverlay" class="popup-overlay"></div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const openAddressPopupButton = document.getElementById('openAddressPopup');
-            const addressPopup = document.getElementById('addressPopup');
-            const popupOverlay = document.getElementById('popupOverlay');
-            const closePopupButton = document.querySelector('.closePopup');
-            const proceedToPaymentButton = document.getElementById('proceedToPayment');
-
-            openAddressPopupButton.addEventListener('click', () => {
-                addressPopup.classList.add('custom-bg');
-                addressPopup.style.display = 'block';
-                popupOverlay.classList.add('show');
-            });
-
-            closePopupButton.addEventListener('click', () => {
-                addressPopup.style.display = 'none';
-                popupOverlay.classList.remove('show');
-            });
-
-            popupOverlay.addEventListener('click', () => {
-                addressPopup.style.display = 'none';
-                popupOverlay.classList.remove('show');
-            });
-
-            addressForm.addEventListener('submit', function (event) {
-    event.preventDefault();
-
-    if (!addressForm.checkValidity()) {
-        addressForm.classList.add('was-validated');
-        return;
-    }
-
-    let savedAddresses = JSON.parse(localStorage.getItem('savedAddresses')) || [];
-    
-    const newAddress = {
-        name: document.getElementById('name').value,
-        email: document.getElementById('email').value,
-        phone: document.getElementById('phone').value,
-        address: document.getElementById('address').value,
-        city: document.getElementById('city').value,
-        state: document.getElementById('state').value,
-        pin: document.getElementById('pin').value,
-        country: document.getElementById('country').value,
-        isDefaultAddress: document.getElementById('defaultAddressCheckbox').checked,
-    };
-
-    // If the new address is set as default, remove the default flag from other addresses
-    if (newAddress.isDefaultAddress) {
-        savedAddresses.forEach(address => address.isDefaultAddress = false);
-        localStorage.setItem('defaultAddress', JSON.stringify(newAddress));
-    }
-
-    savedAddresses.push(newAddress);
-    localStorage.setItem('savedAddresses', JSON.stringify(savedAddresses));
-
-    addressForm.reset();
-    addressPopup.style.display = 'none';
-    popupOverlay.classList.remove('show');
-    loadSavedAddresses();
-});
-
-function loadSavedAddresses() {
+      document.addEventListener('DOMContentLoaded', async () => {
+    const openPopupBtn = document.getElementById('openAddressPopup');
+    const popup = document.getElementById('addressPopup');
+    const popupOverlay = document.getElementById('popupOverlay');
+    const closePopupBtn = document.querySelector('.closePopup');
     const savedAddressesDiv = document.getElementById('savedAddresses');
-    let savedAddresses = JSON.parse(localStorage.getItem('savedAddresses')) || [];
-    savedAddressesDiv.innerHTML = '';
+    const addressForm = document.getElementById('addressForm');
+    const proceedToPaymentBtn = document.getElementById('proceedToPayment');
 
-    if (savedAddresses.length === 0) {
-        savedAddressesDiv.innerHTML = '<p class="text-muted">No saved addresses yet.</p>';
+    const userEmail = localStorage.getItem("userEmail"); // Fetch email from localStorage
+
+    if (!userEmail) {
+        alert("No user logged in. Redirecting to login...");
+        window.location.href = "login.html";
         return;
     }
 
-    const defaultAddress = JSON.parse(localStorage.getItem('defaultAddress'));
-
-    savedAddresses.forEach((address, index) => {
-        const isChecked = defaultAddress && defaultAddress.address === address.address ? 'checked' : '';
-        const addressHTML = `
-            <div class="saved-address-card">
-                <input class="form-check-input" type="radio" name="selectedAddress" id="address-${index}" value="${index}" ${isChecked}>
-                <label class="address-content" for="address-${index}">
-                    <p><strong>Name:</strong> ${address.name}</p>
-                    <p><strong>Email:</strong> ${address.email}</p>
-                    <p><strong>Phone:</strong> ${address.phone}</p>
-                    <p><strong>Address:</strong> ${address.address}, ${address.city}, ${address.state}, ${address.pin}, ${address.country}</p>
-                    <button class="btn btn-danger btn-sm remove-btn" data-index="${index}">Remove</button>
-                </label>
-            </div>
-        `;
-        savedAddressesDiv.innerHTML += addressHTML;
+    openPopupBtn.addEventListener('click', () => {
+        popup.classList.add('show');
+        popupOverlay.classList.add('show');
     });
 
-    document.querySelectorAll('.remove-btn').forEach(button => {
-        button.addEventListener('click', removeSavedAddress);
+    closePopupBtn.addEventListener('click', () => {
+        popup.classList.remove('show');
+        popupOverlay.classList.remove('show');
     });
-}
 
+    popupOverlay.addEventListener('click', () => {
+        popup.classList.remove('show');
+        popupOverlay.classList.remove('show');
+    });
 
-            function removeSavedAddress(event) {
-                const index = event.target.dataset.index;
-                const savedAddresses = JSON.parse(localStorage.getItem('savedAddresses')) || [];
-                savedAddresses.splice(index, 1);
-                localStorage.setItem('savedAddresses', JSON.stringify(savedAddresses));
-                loadSavedAddresses();
+    // 🔹 Fetch User Details and Addresses
+    async function loadAddresses() {
+        try {
+            const response = await fetch(`${CONFIG.API_URL}/get-user?email=${userEmail}`);
+            if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+
+            const user = await response.json();
+            savedAddressesDiv.innerHTML = '';
+
+            if (!user.address || user.address.length === 0) {
+                savedAddressesDiv.innerHTML = '<p>No saved addresses.</p>';
+                return;
             }
 
-            loadSavedAddresses();
+            let hasDefault = false;
+            let addressHTML = '';
 
-            // Proceed to Payment with Selected Address
-            proceedToPaymentButton.addEventListener('click', () => {
-                const selectedAddressIndex = document.querySelector('input[name="selectedAddress"]:checked');
-                if (!selectedAddressIndex) {
-                    alert("Please select an address before proceeding to payment.");
-                    return;
-                }
+            user.address.forEach((address, index) => {
+                const isChecked = address.isDefaultAddress || (!hasDefault && index === 0);
+                if (isChecked) hasDefault = true;
 
-                const savedAddresses = JSON.parse(localStorage.getItem('savedAddresses')) || [];
-                const selectedAddress = savedAddresses[selectedAddressIndex.value];
-
-                localStorage.setItem("selectedAddress", JSON.stringify(selectedAddress));
-                window.location.href = "payment.html";
+                addressHTML += `
+                <div class="saved-address-card">
+                    <input type="radio" name="selectedAddress" value="${index}" id="address-${index}" ${isChecked ? "checked" : ""} required>
+                    <label for="address-${index}">
+                        <p><strong>${user.firstName} ${user.lastName}</strong></p>
+                        <p>${address.address}, ${address.city}, ${address.state}, ${address.pin}, ${address.country}</p>
+                        <p>Phone: ${user.phone}</p>
+                        <p>Email: ${user.email}</p>
+                        <p><strong>${address.isDefaultAddress ? "Default Address" : ""}</strong></p>
+                    </label>
+                </div>`;
             });
 
-            // Auto-fill address details using PIN code
-            function fetchAddressDetails(pinCode) {
-                const apiURL = `https://api.postalpincode.in/pincode/${pinCode}`;
+            savedAddressesDiv.innerHTML = addressHTML;
+        } catch (error) {
+            console.error('Error fetching user details:', error);
+        }
+    }
 
-                fetch(apiURL)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data[0].Status === "Success") {
-                            const details = data[0].PostOffice[0];
-                            document.getElementById('city').value = details.District;
-                            document.getElementById('state').value = details.State;
-                            document.getElementById('country').value = details.Country;
-                        } else {
-                            alert('Invalid PIN code! Please enter a valid PIN code.');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error fetching PIN code details:', error);
-                        alert('Something went wrong while fetching details. Please try again.');
-                    });
-            }
+    // 🔹 Add New Address
+    addressForm.addEventListener('submit', async function (event) {
+        event.preventDefault();
 
-            document.getElementById('pin').addEventListener('input', function () {
-                const pinCode = this.value.trim();
-                if (pinCode.length === 6) {
-                    fetchAddressDetails(pinCode);
-                } else {
-                    document.getElementById('city').value = '';
-                    document.getElementById('state').value = '';
-                    document.getElementById('country').value = '';
-                }
-            });
-        });
+        const newAddress = {
+            address: document.getElementById('address').value,
+            city: document.getElementById('city').value,
+            state: document.getElementById('state').value,
+            pin: document.getElementById('pin').value,
+            country: document.getElementById('country').value,
+            isDefaultAddress: document.getElementById('defaultAddressCheckbox').checked
+        };
 
-
-        addressForm.addEventListener('submit', function (event) {
-            event.preventDefault();
-
-            const newAddress = {
-                name: document.getElementById('name').value,
-                email: document.getElementById('email').value,
-                phone: document.getElementById('phone').value,
-                address: document.getElementById('address').value,
-                city: document.getElementById('city').value,
-                state: document.getElementById('state').value,
-                pin: document.getElementById('pin').value,
-                country: document.getElementById('country').value,
-                isDefaultAddress: document.getElementById('defaultAddressCheckbox').checked,
-            };
-
-            fetch(`${CONFIG.API_URL}/address`, {
+        try {
+            const response = await fetch(`${CONFIG.API_URL}/update-user-address`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newAddress),
-            })
-                .then(response => response.json())
-                .then(data => {
-                    console.log('Address saved:', data);
-                    addressPopup.style.display = 'none';
-                    popupOverlay.classList.remove('show');
-                    loadSavedAddresses();
-                })
-                .catch(error => console.error('Error saving address:', error));
+                body: JSON.stringify({ email: userEmail, newAddress })
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                console.log("Address saved successfully:", data);
+                popup.classList.remove('show');
+                popupOverlay.classList.remove('show');
+                addressForm.reset();
+                loadAddresses();
+            } else {
+                alert("Failed to save address. Please try again.");
+            }
+        } catch (error) {
+            console.error("Error saving address:", error);
+        }
+    });
+
+    // 🔹 Proceed to Payment
+    proceedToPaymentBtn.addEventListener('click', () => {
+        const selectedAddress = document.querySelector('input[name="selectedAddress"]:checked');
+        if (!selectedAddress) {
+            alert("Select an address before proceeding.");
+            return;
+        }
+
+        // Get selected address details
+        const addressIndex = selectedAddress.value;
+        const addressElement = selectedAddress.closest('.saved-address-card');
+        const name = encodeURIComponent(addressElement.querySelector('p strong').innerText);
+        const details = encodeURIComponent(addressElement.querySelectorAll('p')[1].innerText);
+        const phone = encodeURIComponent(addressElement.querySelectorAll('p')[2].innerText.replace("Phone: ", ""));
+        const email = encodeURIComponent(addressElement.querySelectorAll('p')[3].innerText.replace("Email: ", ""));
+
+        // Redirect to payment page with address data in URL
+        window.location.href = `payment.html?name=${name}&details=${details}&phone=${phone}&email=${email}`;
+    });
+
+    loadAddresses(); // Load addresses on page load
+});
+
+// 🔹 Auto-fill Address Details using PIN Code
+function fetchAddressDetails(pinCode) {
+    const apiURL = `https://api.postalpincode.in/pincode/${pinCode}`;
+
+    fetch(apiURL)
+        .then(response => response.json())
+        .then(data => {
+            if (data[0].Status === "Success") {
+                const details = data[0].PostOffice[0];
+                document.getElementById('city').value = details.District;
+                document.getElementById('state').value = details.State;
+                document.getElementById('country').value = details.Country;
+            } else {
+                alert('Invalid PIN code! Please enter a valid PIN code.');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching PIN code details:', error);
+            alert('Something went wrong while fetching details. Please try again.');
         });
+}
+
+document.getElementById('pin').addEventListener('input', function () {
+    const pinCode = this.value.trim();
+    if (pinCode.length === 6) {
+        fetchAddressDetails(pinCode);
+    } else {
+        document.getElementById('city').value = '';
+        document.getElementById('state').value = '';
+        document.getElementById('country').value = '';
+    }
+});
+
 
     </script>
     <script src="config.js"></script>

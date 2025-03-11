@@ -17,23 +17,17 @@ const https = require("https");
 
 
 
-
-
-
 const app = express();
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
-
 const frontendPath = path.join(__dirname, "..", "Frontend"); // Adjust if needed
 app.use(express.static(path.join(__dirname, frontendPath)));
 app.use(express.static(frontendPath));
 app.use(bodyParser.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
-
 
 const PORT = process.env.PORT || 4000
 
@@ -85,7 +79,6 @@ function getExpiryTime() {
   return now.toISOString();
 }
 
-
 // Generate Order ID (ORD001, ORD002...)
 async function generateOrderId() {
   const lastOrder = await Order.findOne().sort({ createdAt: -1 });
@@ -97,8 +90,6 @@ async function generateOrderId() {
 }
 
 
-
-// Create Order & Payment Link
 // Create Payment Link & Save Order with linkId
 app.post("/create-payment-link", async (req, res) => {
   try {
@@ -121,8 +112,8 @@ app.post("/create-payment-link", async (req, res) => {
           link_auto_reminders: true,
           link_expiry_time: new Date(Date.now() + 3600 * 1000).toISOString(), // 1-hour expiry
           link_meta: {
-              // return_url: `http://localhost:${PORT}/redirect.html?orderId=${orderId}&linkId=${linkId}`,
-              return_url: `https://indraq.tech/redirect.html?orderId=${orderId}&linkId=${linkId}`,
+              return_url: `http://localhost:${PORT}/redirect.html?orderId=${orderId}&linkId=${linkId}`,
+              // return_url: `https://indraq.tech/redirect.html?orderId=${orderId}&linkId=${linkId}`,
 
           },
       };
@@ -219,6 +210,7 @@ app.get("/check-payment-status", async (req, res) => {
     }
 });
 
+
 // Fetch Order by Order ID
 app.get("/order", async (req, res) => {
     try {
@@ -243,15 +235,6 @@ app.get("/order", async (req, res) => {
 
 
 
-
-
-
-
-
-
-
-
-
 // Serve Static Pages
 app.get("/redirect.html", (req, res) => res.sendFile(path.join(frontendPath, "redirect.html")));
 app.get("/success.html", (req, res) => res.sendFile(path.join(frontendPath, "success.html")));
@@ -267,195 +250,21 @@ app.get("/failure.html", (req, res) => res.sendFile(path.join(frontendPath, "fai
 
 
 
+// const upload = multer({
+//   storage: storage,
+//   limits: { fileSize: 5 * 1024 * 1024 }, // Limit file size to 5 MB
+//   fileFilter: (req, file, cb) => {
+//     const fileTypes = /jpeg|jpg|png|gif/;
+//     const extname = fileTypes.test(path.extname(file.originalname).toLowerCase());
+//     const mimeType = fileTypes.test(file.mimetype);
 
-
-
-
-// Create Payment Link API
-// app.post("/create-payment-link", async (req, res) => {
-//   try {
-//     const { customer_name, customer_email, customer_phone, amount } = req.body;
-
-//     if (!customer_name || !customer_email || !customer_phone || !amount) {
-//       return res.status(400).json({ error: "Missing required fields" });
+//     if (extname && mimeType) {
+//       return cb(null, true);
+//     } else {
+//       return cb(new Error("Only image files are allowed (jpeg, jpg, png, gif)"), false);
 //     }
-
-//     const link_id = `CF_${crypto.randomBytes(8).toString("hex")}`;
-//     const apiUrl = "https://sandbox.cashfree.com/pg/links";
-
-//     const payload = {
-//       order_id,
-//       link_id,
-//       customer_details: { customer_name, customer_email, customer_phone },
-//       link_amount: amount,
-//       link_currency: "INR",
-//       link_purpose: "E-commerce Purchase",
-//       link_notify: { send_email: true, send_sms: true },
-//       link_auto_reminders: true,
-//       link_expiry_time: getExpiryTime(),
-//       link_meta: {
-//         return_url: `http://localhost:${PORT}/redirect.html?link_id=${order_id}`
-
-//         // return_url: `http://localhost:${PORT}/redirect.html?link_id=${link_id}`
-//         // return_url: `https://indraq.tech/redirect.html?link_id=${link_id}`
-
-//       }
-//     };
-
-//     const response = await axios.post(apiUrl, payload, {
-//       headers: {
-//         "Content-Type": "application/json",
-//         "x-api-version": "2022-09-01",
-//         "x-client-id": APP_ID,
-//         "x-client-secret": SECRET_KEY
-//       }
-//     });
-
-//     res.json({ link_id: response.data.link_id, link_url: response.data.link_url });
-//   } catch (error) {
-//     console.error("Cashfree API Error:", error.response?.data || error.message);
-//     res.status(500).json({ error: "Failed to create payment link", details: error.response?.data || error.message });
-//   }
+//   },
 // });
-
-
-
-
-
-
-// // **Check Payment Status**
-// app.get("/check-payment-status", async (req, res) => {
-//   const linkId = req.query.link_id;
-//   if (!linkId) {
-//     return res.status(400).json({ error: "Missing Payment Link ID" });
-//   }
-
-//   try {
-//     // Call Cashfree API
-//     const response = await axios.get(`https://sandbox.cashfree.com/pg/links/${linkId}`, {
-//       headers: {
-//         "x-api-version": "2022-09-01",
-//         "x-client-id": APP_ID,
-//         "x-client-secret": SECRET_KEY,
-//       },
-//     });
-
-//     const linkStatus = response.data.link_status;
-
-//     // Determine payment status based on `link_status`
-//     let orderStatus = "pending";
-//     let paymentStatus = "pending";
-//     let paid = false;
-
-//     if (linkStatus === "PAID") {
-//       orderStatus = "successful";
-//       paymentStatus = "completed";
-//       paid = true;
-//     } else if (linkStatus === "EXPIRED") {
-//       orderStatus = "failed";
-//       paymentStatus = "expired";
-//     } else if (linkStatus === "CANCELLED") {
-//       orderStatus = "failed";
-//       paymentStatus = "cancelled";
-//     }
-
-//     // Update Order in MongoDB
-//     const order = await Order.findOneAndUpdate(
-//       { linkId },
-//       {
-//         status: orderStatus,
-//         "paymentDetails.status": paymentStatus,
-//         "paymentDetails.paid": paid,
-//         "paymentDetails.timestamp": new Date(),
-//       },
-//       { new: true }
-//     );
-
-//     if (!order) {
-//       return res.status(404).json({ success: false, message: "Order not found" });
-//     }
-
-//     res.json({ success: order.status === "successful", status: order.status });
-//   } catch (error) {
-//     console.error("Error checking payment status:", error);
-//     res.status(500).json({
-//       success: false,
-//       message: "Internal server error",
-//       details: error.response?.data || error.message || "Unknown error occurred",
-//     });
-//   }
-// });
-
-
-
-// **Serve Static HTML Pages from "frontend" folder**
-// const frontendPath = path.join(__dirname, "../frontend");
-
-// Serve `payment.html`
-// app.get("/redirect.html", (req, res) => {
-//   res.sendFile(path.join(frontendPath, "redirect.html"), (err) => {
-//     if (err) {
-//       console.error("Error serving payment.html:", err);
-//       res.status(404).send("Payment page not found");
-//     }
-//   });
-// });
-
-// // Serve `success.html`
-// app.get("/success.html", (req, res) => {
-//   res.sendFile(path.join(frontendPath, "success.html"), (err) => {
-//     if (err) {
-//       console.error("Error serving success.html:", err);
-//       res.status(404).send("Success page not found");
-//     }
-//   });
-// });
-
-// // Serve `failure.html`
-// app.get("/failure.html", (req, res) => {
-//   res.sendFile(path.join(frontendPath, "failure.html"), (err) => {
-//     if (err) {
-//       console.error("Error serving failure.html:", err);
-//       res.status(404).send("Failure page not found");
-//     }
-//   });
-// });
-
-
-
-
-// Ensure `uploads/Products/` folder exists
-const uploadDir = "uploads/Products";
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-
-// File upload setup
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/"); // Save to uploads folder
-  }, filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname)); // Unique file name
-  },
-});
-
-
-const upload = multer({
-  storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // Limit file size to 5 MB
-  fileFilter: (req, file, cb) => {
-    const fileTypes = /jpeg|jpg|png|gif/;
-    const extname = fileTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimeType = fileTypes.test(file.mimetype);
-
-    if (extname && mimeType) {
-      return cb(null, true);
-    } else {
-      return cb(new Error("Only image files are allowed (jpeg, jpg, png, gif)"), false);
-    }
-  },
-});
 
 
 
@@ -471,39 +280,8 @@ const upload = multer({
 // Profile Schema and Model
 
 
-const profileSchema = new mongoose.Schema({
-  name: String,
-  email: { type: String, required: true, unique: true },
-  phone: String,
-  dob: String,
-  image: String, // Store image file path
-});
-profileSchema.index({ email: 1 });
-const Profile = mongoose.model("Profile", profileSchema);
 
 
-
-
-
-
-
-//mera schremaa
-
-// Product Schema and Model
-// const productSchema = new mongoose.Schema({
-//   id: { type: Number, default: 0 },
-//   name: String,
-//   price: String,
-//   image: String,
-//   description: String,
-// });
-// const ProductData = mongoose.model("products", productSchema, "products");
-
-
-
-
-
-//shelinder bhai da schema
 
 // Product Schema & Model
 const productSchema = new mongoose.Schema({
@@ -523,32 +301,206 @@ const Product = mongoose.model('products', productSchema);
 
 
 
-const addressSchema = new mongoose.Schema({
-  name: String,
-  email: String,
-  phone: String,
-  address: String,
-  city: String,
-  state: String,
-  pin: String,
-  country: String,
-  isDefaultAddress: Boolean,
-});
-const Address = mongoose.model("Address", addressSchema);
+
+
+
+// Define User Schema
+// const userSchema = new mongoose.Schema({
+//   userId: { type: String, required: true, unique: true }, // Unique user ID
+//   firstName: { type: String, required: true },
+//   lastName: { type: String, required: true },
+//   email: { type: String, required: true, unique: true, lowercase: true },
+//   password: { type: String, required: true, minlength: 6 },
+//   phone: { type: String, required: true, match: /^[0-9]{10}$/ },
+//   createdAt: { type: Date, default: Date.now },
+// });
+
+// const User = mongoose.model("User", userSchema);
 
 
 
 
+
+
+// User Schema & Model
 const userSchema = new mongoose.Schema({
-  email: { type: String, required: true, unique: true, lowercase: true },
-  password: { type: String, required: true, minlength: 6 },
-  fullName: { type: String, required: true },
-  dob: { type: Date, required: true },
-  phone: { type: String, required: true, match: /^[0-9]{10}$/ },
+  userId:{type:String , unique:true},
+  profileImage:{type:String,default:""},
+  firstName:  { type: String, required: true },
+  lastName:  { type: String, required: true },
+  email:  { type: String, required: true },
+  phone:  { type: String, required: true },
+  password: { type: String, required: true }, // Add this field
+  dob: { type: String, default: "" },
   createdAt: { type: Date, default: Date.now },
+
+  address: [{
+    address: String,
+    city: String,
+    state: String,
+    pin: String,
+    country: String,
+    isDefaultAddress: Boolean
+  }],
+  loginSessions: [
+    {
+      date: String,
+      time: String,
+      location: String
+    }
+  ],
+  orders: [
+    {
+      orderId: String,
+      productName: String,
+      price: Number,
+      date: String,
+      status: String
+    }
+  ]
+}, { timestamps: true });
+
+const User = mongoose.model("users", userSchema);
+
+
+
+
+
+
+app.post("/update-profile", async (req, res) => {
+  const { email, firstName, lastName, phone, dob, address } = req.body;
+
+  try {
+    // Find user by email
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Update user details
+    user.firstName = firstName;
+    user.lastName = lastName;
+    user.phone = phone;
+    user.dob = dob;
+    user.address = address; // Replace existing address array
+
+    // Save updated user
+    await user.save();
+
+    res.status(200).json({ message: "Profile updated successfully", user });
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    res.status(500).json({ message: "Server error" });
+  }
 });
 
-const User = mongoose.model("User", userSchema);
+
+
+
+
+
+
+
+
+// Ensure `uploads/Userprofile/` folder exists
+const uploadDir = path.join(__dirname, "uploads/Userprofile");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// File upload setup
+const userStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir); // Save images in the "uploads/Userprofile" folder
+  },
+  filename: function (req, file, cb) {
+    cb(null,file.originalname); // Unique filename
+  }
+});
+
+const uploadProfile = multer({ storage: userStorage });
+
+
+
+
+// API Route to Update Profile Image
+app.post("/upload-profile-image", uploadProfile.single("profileImage"), async (req, res) => {
+  try {
+    const { email } = req.body; // Get email from request
+    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+
+    // Find user and update profile image
+    const updatedUser = await User.findOneAndUpdate(
+      { email },
+      { profileImage: `/uploads/Userprofile/${req.file.filename}` }, // Corrected image path
+      { new: true }
+    );
+
+    if (!updatedUser) return res.status(404).json({ message: "User not found" });
+
+    res.status(200).json({ message: "Profile image updated", user: updatedUser });
+  } catch (error) {
+    console.error("Error uploading image:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+
+
+
+
+async function generateUserId(firstName) {
+  const baseId = firstName.toLowerCase(); // Use first name as prefix
+
+  const lastUser = await User.findOne().sort({ userId: -1 }); // Find last created user
+
+  if (!lastUser) {
+    return `${baseId}001`; // First user starts with their name + 001
+  }
+
+  const lastNumber = parseInt(lastUser.userId.match(/\d+$/)?.[0] || "0"); // Extract last numeric part
+  const newNumber = (lastNumber + 1).toString().padStart(3, "0"); // Increment and format
+
+  return `${baseId}${newNumber}`;
+}
+
+
+
+
+
+// Signup Route
+app.post("/signup", async (req, res) => {
+  console.log("Received request body:", req.body);
+
+  const { firstName, lastName, email, password, phone } = req.body;
+
+  if (!firstName || !lastName || !email || !password || !phone) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
+
+  try {
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "User already exists" });
+    }
+
+    // Generate global incremental userId using firstName
+    const userId = await generateUserId(firstName);
+
+    // Create and save user
+    const newUser = new User({ userId, firstName, lastName, email, password, phone });
+    await newUser.save();
+
+    console.log("User saved successfully:", newUser);
+    res.status(201).json({ message: "User registered successfully", userId });
+  } catch (error) {
+    console.error("Error during registration:", error);
+    res.status(500).json({ message: "Internal Server Error", error: error.message });
+  }
+});
+
+
 
 
 
@@ -562,7 +514,7 @@ app.post("/login", async (req, res) => {
   }
 
   try {
-    // Find user in User collection
+    // Find user in the User collection
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ message: "User not found" });
@@ -573,71 +525,28 @@ app.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Invalid password" });
     }
 
-    // Find user profile to get the image (if Profile model exists)
-    const profile = await Profile.findOne({ email });
-
-    // Return user profile data with image
-    const userProfile = {
+    // Find user profile (if exists)
+    let userProfile = {
       fullName: user.fullName,
-      email: user.email,
-      dob: user.dob,
       phone: user.phone,
-      image: profile?.image || null, // Get image from profile, or return null if not found
+      image: null, // Default to null
     };
 
-    res.json({ message: "Login successful", userProfile });
+    try {
+      const profile = await User.findOne({ email });
+      if (profile && profile.image) {
+        userProfile.image = profile.image;
+      }
+    } catch (profileError) {
+      console.warn("Profile fetch error:", profileError.message); // Non-blocking warning
+    }
+
+    res.status(200).json({ message: "Login successful", userProfile });
   } catch (error) {
     console.error("Error during login:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-});
-
-
-
-
-
-
-// My Register api
-
-
-app.post("/signup", async (req, res) => {
-  console.log("Received request body:", req.body); // Debugging Step 1
-
-  const { email, password, fullName, dob, phone } = req.body;
-
-  if (!email || !password || !fullName || !dob || !phone) {
-    return res.status(400).json({ message: "All fields are required" });
-  }
-
-  try {
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
-    }
-
-    // Convert dob to Date object
-    const formattedDOB = new Date(dob);
-    if (isNaN(formattedDOB.getTime())) {
-      return res.status(400).json({ message: "Invalid Date of Birth" });
-    }
-
-    // Create and save user
-    const newUser = new User({ email, password, fullName, dob: formattedDOB, phone });
-    await newUser.save();
-
-    console.log("User saved successfully:", newUser); // Debugging Step 2
-
-    res.status(201).json({ message: "User registered successfully" });
-  } catch (error) {
-    console.error("Error during registration:", error);
     res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 });
-
-
-
-
-
 
 
 
@@ -652,7 +561,7 @@ app.get("/getProfile", async (req, res) => {
 
   try {
     // Find profile data by email
-    const profile = await Profile.findOne({ email: email });
+    const profile = await User.findOne({ email: email });
 
     if (!profile) {
       return res.status(404).json({ message: "Profile not found" });
@@ -670,7 +579,7 @@ app.get("/getProfile", async (req, res) => {
 
 
 // Save or Update Profile Route
-app.post("/saveProfile", upload.single("image"), async (req, res) => {
+app.post("/saveProfile", uploadProfile.single("image"), async (req, res) => {
   try {
     const profileInfo = req.body;
 
@@ -682,15 +591,14 @@ app.post("/saveProfile", upload.single("image"), async (req, res) => {
       name: profileInfo.name,
       email: profileInfo.email,
       phone: profileInfo.phone,
-      dob: profileInfo.dob,
       image: req.file ? req.file.path : "uploads/default-profile.png", // Default image fallback
     };
 
-    const existingProfile = await Profile.findOne({ email: profileInfo.email });
+    const existingProfile = await User.findOne({ email: profileInfo.email });
 
     if (existingProfile) {
       // Update existing profile
-      await Profile.updateOne({ email: profileInfo.email }, profileData);
+      await User.updateOne({ email: profileInfo.email }, profileData);
       return res.status(200).json({ message: "Profile updated successfully!" });
     }
 
@@ -706,50 +614,87 @@ app.post("/saveProfile", upload.single("image"), async (req, res) => {
 
 
 
+// const addressSchema = new mongoose.Schema({
+//   userId: { type: String, required: true }, // Identify the user
+//   name: { type: String, required: true },
+//   email: { type: String, required: true },
+//   phone: Number,
+//   address: { type: String, required: true },
+//   city: { type: String, required: true },
+//   state: { type: String, required: true },
+//   pin: { type: String, required: true },
+//   country: { type: String, required: true },
+//   isDefaultAddress: { type: Boolean, default: false }
+// });
+
+// const Address = mongoose.model("Address", addressSchema);
 
 
 
 
-app.post("/address", async (req, res) => {
-  const { name, email, phone, address, city, state, pin, country, isDefaultAddress } = req.body;
-  if (!name || !email || !address || !city || !state || !pin || !country) {
-    return res.status(400).json({ message: "All address fields are required" });
-  }
+
+
+
+app.get("/address/:userId", async (req, res) => {
+  const { userId } = req.params;
   try {
-    const newAddress = new Address({
-      name,
-      email,
-      phone,
-      address,
-      city,
-      state,
-      pin,
-      country,
-      isDefaultAddress,
-    });
-    const savedAddress = await newAddress.save();
-    res.status(201).json({ message: "Address saved successfully", savedAddress });
+    const addresses = await User.find({ userId });
+    res.json(addresses);
   } catch (error) {
-    console.error("Error saving address:", error);
-    res.status(500).json({ message: "Internal Server Error", error: error.message });
+    console.error("Error fetching addresses:", error);
+    res.status(500).json({ message: "Failed to fetch addresses" });
   }
 });
 
 
 
-app.get("/address", async (req, res) => {
+
+
+
+
+app.post("/save-selected-address", async (req, res) => {
   try {
-    const address = await Address.findOne().sort({ _id: -1 }); // Fetch latest address
-    if (!address) {
-      return res.status(404).json({ success: false, message: "Address not found" });
+    const { userId, name, phone, address, city, state, pin, country } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ success: false, message: "User ID is required" });
     }
-    res.status(200).json({ success: true, data: address });
+
+    // Set other addresses to non-default
+    await Address.updateMany({ userId }, { isDefaultAddress: false });
+
+    // Find or create selected address and mark it as default
+    const updatedAddress = await User.findOneAndUpdate(
+      { userId, address, city, state, pin, country },
+      { name, phone, isDefaultAddress: true },
+      { new: true, upsert: true }
+    );
+
+    res.json({ success: true, message: "Selected address saved", address: updatedAddress });
   } catch (error) {
-    console.error("Error fetching address:", error);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
+    console.error("Error saving selected address:", error);
+    res.status(500).json({ success: false, message: "Error saving address", error });
   }
 });
 
+
+
+
+app.get("/get-selected-address/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const address = await User.findOne({ userId, isDefaultAddress: true });
+
+    if (!address) {
+      return res.status(404).json({ success: false, message: "No selected address found" });
+    }
+
+    res.json({ success: true, address });
+  } catch (error) {
+    console.error("Error fetching selected address:", error);
+    res.status(500).json({ success: false, message: "Error fetching address", error });
+  }
+});
 
 
 
@@ -789,22 +734,22 @@ app.get("/products/search", async (req, res) => {
 
 
 
-app.post('/products', upload.single('image'), async (req, res) => {
-  try {
-    const productData = {
-      ...req.body,
-      price: parseFloat(req.body.price),
-      stock: parseInt(req.body.stock),
-      discount: parseFloat(req.body.discount),
-      image: req.file ? `/uploads/${req.file.filename}` : '',
-    };
-    const product = new Product(productData);
-    await product.save();
-    res.status(201).json(product);
-  } catch (error) {
-    res.status(500).json({ message: 'Error creating product', error });
-  }
-});
+// app.post('/products', upload.single('image'), async (req, res) => {
+//   try {
+//     const productData = {
+//       ...req.body,
+//       price: parseFloat(req.body.price),
+//       stock: parseInt(req.body.stock),
+//       discount: parseFloat(req.body.discount),
+//       image: req.file ? `/uploads/${req.file.filename}` : '',
+//     };
+//     const product = new Product(productData);
+//     await product.save();
+//     res.status(201).json(product);
+//   } catch (error) {
+//     res.status(500).json({ message: 'Error creating product', error });
+//   }
+// });
 
 
 
@@ -868,115 +813,20 @@ app.put('/products/:id/status', async (req, res) => {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Product fetch route
-// app.get("/products", async (req, res) => {
-//   try {
-//     const products = await ProductData.find({});
-//     res.json(products);
-//   } catch (error) {
-//     console.error("Error fetching products:", error);
-//     res.status(500).send("Error fetching products");
-//   }
-// });
-
-
-
-
-
-
-// Save Address Route
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// User Schema & Model
-// const userSchema = new mongoose.Schema({
+// const profileSchema = new mongoose.Schema({
 //   name: String,
-//   email: String,
+//   email: { type: String, required: true, unique: true },
 //   phone: String,
-//   dob: { type: Date, required: true },
-//   password: { type: String, required: true }, // Add this field
-//   createdAt: { type: Date, default: Date.now },
-
-//   address: {
-//     street: String,
-//     city: String,
-//     state: String,
-//     postalCode: String,
-//     country: String
-//   },
-//   loginSessions: [
-//     {
-//       date: String,
-//       time: String,
-//       location: String
-//     }
-//   ],
-//   orders: [
-//     {
-//       orderId: String,
-//       productName: String,
-//       price: Number,
-//       date: String,
-//       status: String
-//     }
-//   ]
-// }, { timestamps: true });
-
-// const Customer = mongoose.model("customer", userSchema);
-
-
-
-
-
-// Order Schema & Model
-// const orderSchema = new mongoose.Schema({
-//   productName: String,
-//   price: Number,
-//   placedOn: Date,
-//   status: String,
+//   dob: String,
+//   image: String, // Store image file path
 // });
-// const Order = mongoose.model('Order', orderSchema);
+// profileSchema.index({ email: 1 });
+// const Profile = mongoose.model("Profile", profileSchema);
 
 
 
 
-//profile schema
+
 
 
 
@@ -997,9 +847,9 @@ const orderSchema = new mongoose.Schema({
   customerEmail: String,
   customerPhone: String,
   orderDetails: Array,
+  Price: Number,
   paymentDetails: {
     method: String,
-    amount: Number,
     transactionId: String,
     status: { type: String, default: 'pending' }, // Payment status
     paid: { type: Boolean, default: false }, // New field indicating if payment is made
@@ -1037,7 +887,7 @@ app.post("/save-order", async (req, res) => {
       customerName: customer_name,
       customerEmail: customer_email,
       customerPhone: customer_phone,
-      amount,
+      Price,
       status: 'pending'
     });
     await newOrder.save();
@@ -1048,65 +898,6 @@ app.post("/save-order", async (req, res) => {
     res.status(500).json({ error: "Failed to save order" });
   }
 });
-
-
-
-
-// Check Payment Status & Update Order (on redirect page load)
-// app.get("/check-payment-status", async (req, res) => {
-//   const { linkId } = req.query;
-//   if (!linkId) {
-//     return res.status(400).json({ success: false, message: "Missing linkId" });
-//   }
-//   try {
-//     const cashfreeResponse = await fetch(`https://api.cashfree.com/api/v1/link/${linkId}`, {
-//       method: 'GET',
-//       headers: {
-//         'x-client-id': process.env.CASHFREE_CLIENT_ID,
-//         'x-client-secret': process.env.CASHFREE_CLIENT_SECRET,
-//         'Content-Type': 'application/json'
-//       }
-//     });
-//     const cashfreeData = await cashfreeResponse.json();
-//     if (!cashfreeData || !cashfreeData.link_status) {
-//       return res.status(500).json({ success: false, message: "Failed to fetch payment status" });
-//     }
-//     let orderStatus = 'pending';
-//     let paymentStatus = 'pending';
-//     let paid = false;
-//     if (cashfreeData.link_status === 'PAID') {
-//       orderStatus = 'successful';
-//       paymentStatus = 'successful';
-//       paid = true;
-//     } else if (cashfreeData.link_status === 'EXPIRED' || cashfreeData.link_status === 'CANCELLED') {
-//       orderStatus = 'failed';
-//       paymentStatus = 'failed';
-//       paid = false;
-//     }
-//     // Update Order in MongoDB
-//     const order = await Order.findOneAndUpdate(
-//       { linkId },
-//       {
-//         status: orderStatus,
-//         'paymentDetails.status': paymentStatus,
-//         'paymentDetails.paid': paid,
-//         'paymentDetails.timestamp': new Date()
-//       },
-//       { new: true }
-//     );
-//     if (!order) {
-//       return res.status(404).json({ success: false, message: "Order not found" });
-//     }
-//     res.json({ success: order.status === 'successful', status: order.status });
-//   } catch (error) {
-//     console.error("Error checking payment status:", error);
-//     res.status(500).json({ success: false, message: "Internal server error" });
-//   }
-// });
-
-
-
-
 
 
 
@@ -1142,22 +933,14 @@ app.delete("/delete-order/:orderId", async (req, res) => {
 
 
 
-
-
-
-
-
 // Start Server
-
 
 // app.listen(PORT, () => {
 //   console.log(`Server running on http://localhost:${PORT}`);
 // });
 
 
-
 // Start HTTPS server
-
 
 https.createServer(options, app).listen(PORT, () => {
   console.log(`Secure server running on HTTPS at port ${PORT}`);

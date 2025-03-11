@@ -46,7 +46,7 @@
                             <p><strong>Email:</strong> ${order.customerEmail}</p>
                             <p><strong>Phone:</strong> ${order.customerPhone}</p>
                             <p><strong>Payment Method:</strong> Cashfree</p>
-                            <p><strong>Amount Paid:</strong> ₹${order.paymentDetails.amount}</p>
+                            <p><strong>Amount Paid:</strong> ₹${order.amount}</p>
                             <p><strong>Transaction ID:</strong> ${order.paymentDetails.transactionId}</p>
                             <p><strong>Payment Status:</strong> ${order.paymentDetails.status}</p>
                             <p><strong>Order Date:</strong> ${new Date(order.createdAt).toLocaleString()}</p>

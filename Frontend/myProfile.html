@@ -3,166 +3,204 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>User Profile</title>
+  <title>My Profile</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
-  <link rel="stylesheet" href="index.css">
-  <link rel="stylesheet" href="myProfile.css">
   <script src="config.js"></script>
+  <link rel="stylesheet" href="myProfile.css">
+
 </head>
-
 <body>
-
   <div id="nav-placeholder"></div>
   <script>
-    $(function(){
-      $("#nav-placeholder").load("profileNav.html" , function () {
-        updateCartCounter(); // Ensure counter updates after loading nav
-      });
+    $(function () {
+      $("#nav-placeholder").load("nav.html");
     });
-</script>
-
-  <div class="container">
-    <h1>MY PROFILE</h1>
-
-    <div class="image-upload-container">
-      <div class="photo">
-        <input type="file" id="profile-image" accept="image/*" onchange="previewImage(event)">
-        <img id="image-preview" class="image-preview" src="uploads/default-profile.png" alt="Profile Image">
-      </div>
-      <div class="photo-1">
-        <button class="upload-image-btn" onclick="document.getElementById('profile-image').click()">Upload Image</button>
-      </div>
-    </div>
-
-    <div class="profile-info">
-      <div class="profile-inputs">
-        <label for="name">Full Name:</label>
-        <input type="text" id="name" placeholder="Enter Your Name" required disabled><br>
-
-        <label for="email">Email Address:</label>
-        <input type="email" id="email" placeholder="Enter Your Email" required disabled><br>
-
-        <label for="phone">Phone Number:</label>
-        <input type="text" id="phone" placeholder="Enter Your Number" disabled><br>
-      </div>
-
-      <div class="profile-inputs">
-        <label for="dob">Date of Birth:</label>
-        <input type="date" id="dob" placeholder="Enter Your DOB" disabled><br>
-      </div>
-
-      <div class="photo-1">
-        <button class="unlock-btn" onclick="unlockInputs()">Edit Profile</button>
-        <button class="upload-btn-1" onclick="saveProfile()">Save Profile</button>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    function previewImage(event) {
-      const file = event.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function () {
-          const output = document.getElementById('image-preview');
-          output.src = reader.result;
-        };
-        reader.readAsDataURL(file);
-      }
-    }
-
-    function saveProfile() {
-      const fullName = document.getElementById('name').value.trim();
-      const email = document.getElementById('email').value.trim();
-      const phone = document.getElementById('phone').value.trim();
-      const dob = document.getElementById('dob').value;
-      const image = document.getElementById('profile-image').files[0];
-
-      if (!fullName || !email) {
-        alert('Name and Email are required.');
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append('name', fullName);
-      formData.append('email', email);
-      formData.append('phone', phone);
-      formData.append('dob', dob);
-
-      if (image) {
-        formData.append('image', image);
-      }
-
-      // Add loading state
-      const saveButton = document.querySelector('.upload-btn-1');
-      saveButton.disabled = true;
-      saveButton.textContent = 'Saving...';
-
-      fetch(`${CONFIG.API_URL}/saveProfile`, {
-        method: 'POST',
-        body: formData,
-      })
-        .then(response => response.json())
-        .then(data => {
-          alert(data.message || 'Profile saved successfully!');
-          saveToLocalStorage({ fullName, email, phone, dob });
-          if (image) {
-            const reader = new FileReader();
-            reader.onload = function (e) {
-              localStorage.setItem('profileImage', e.target.result);
-              document.getElementById('image-preview').src = e.target.result;
-            };
-            reader.readAsDataURL(image);
-          }
-          lockInputs();
-        })
-        .catch(error => {
-          console.error('Error saving profile:', error);
-          alert('Failed to save profile. Please try again later.');
-        })
-        .finally(() => {
-          saveButton.disabled = false;
-          saveButton.textContent = 'Save Profile';
-        });
-    }
-
-    function unlockInputs() {
-      document.getElementById('name').disabled = false;
-      document.getElementById('email').disabled = false;
-      document.getElementById('phone').disabled = false;
-      document.getElementById('dob').disabled = false;
-    }
-
-    function lockInputs() {
-      document.getElementById('name').disabled = true;
-      document.getElementById('email').disabled = true;
-      document.getElementById('phone').disabled = true;
-      document.getElementById('dob').disabled = true;
-    }
-
-    function saveToLocalStorage(profile) {
-      localStorage.setItem('userProfile', JSON.stringify(profile));
-    }
-
-    window.onload = function () {
-      const savedProfile = JSON.parse(localStorage.getItem('userProfile'));
-      const savedImage = localStorage.getItem('profileImage');
-
-      if (savedProfile) {
-        document.getElementById('name').value = savedProfile.fullName;
-        document.getElementById('email').value = savedProfile.email;
-        document.getElementById('phone').value = savedProfile.phone;
-        document.getElementById('dob').value = savedProfile.dob;
-      }
-
-      if (savedImage) {
-        document.getElementById('image-preview').src = savedImage;
-      }
-    };
   </script>
 
+<div class="profile-container">
+  <div class="card">
+    <div class="profile-section">
+      <img src="default-avatar.png" id="profileImage" class="profile-img" alt="Profile Picture">
+      <input type="file" id="imageUpload" class="file-input" accept="image/*">
+      <button class="upload-btn" id="uploadBtn" onclick="document.getElementById('imageUpload').click();">Upload Image</button>
+    </div>
 
+    <div class="form-container">
+      <h3 class="mb-4 text-center">My Profile</h3>
+      <form id="profileForm">
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="firstName" class="form-label">First Name</label>
+            <input type="text" id="firstName" class="form-control" required disabled>
+          </div>
+          <div class="col-md-6">
+            <label for="lastName" class="form-label">Last Name</label>
+            <input type="text" id="lastName" class="form-control" required disabled>
+          </div>
+        </div>
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" id="email" class="form-control" readonly>
+          </div>
+          <div class="col-md-6">
+            <label for="phone" class="form-label">Phone Number</label>
+            <input type="tel" id="phone" class="form-control" required disabled>
+          </div>
+        </div>
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="dob" class="form-label">Date of Birth</label>
+            <input type="date" id="dob" class="form-control" disabled>
+          </div>
+          <div class="col-md-6">
+            <label for="address" class="form-label">Address</label>
+            <input type="text" id="address" class="form-control" disabled>
+          </div>
+        </div>
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="city" class="form-label">City</label>
+            <input type="text" id="city" class="form-control" disabled>
+          </div>
+          <div class="col-md-6">
+            <label for="country" class="form-label">Country</label>
+            <input type="text" id="country" class="form-control" disabled>
+          </div>
+        </div>
+       <div class="button-container">
+  <button type="button" class="btn" id="editProfile">Edit Profile</button>
+  <button type="submit" class="btn btn-light" id="updateProfile" disabled>Update Profile</button>
+</div>
+      </form>
+      <div id="updateMessage" class="mt-3 text-success"></div>
+    </div>
+  </div>
+</div>
 
-
+  <script>
+    document.addEventListener("DOMContentLoaded", async function () {
+      let userProfile = JSON.parse(localStorage.getItem("userProfile"));
+  
+      if (!userProfile) {
+        const email = localStorage.getItem("email");
+        if (email) {
+          try {
+            const response = await fetch(`${CONFIG.API_URL}/get-user?email=${email}`);
+            const data = await response.json();
+            if (response.ok) {
+              userProfile = data.user;
+              localStorage.setItem("userProfile", JSON.stringify(userProfile));
+            }
+          } catch (error) {
+            console.error("Error fetching user details:", error);
+          }
+        }
+      }
+  
+      if (userProfile) {
+        document.getElementById("firstName").value = userProfile.firstName || "";
+        document.getElementById("lastName").value = userProfile.lastName || "";
+        document.getElementById("email").value = userProfile.email || "";
+        document.getElementById("phone").value = userProfile.phone || "";
+        document.getElementById("dob").value = userProfile.dob || "";
+        document.getElementById("address").value = userProfile.address?.[0]?.address || "";
+        document.getElementById("city").value = userProfile.address?.[0]?.city || "";
+        document.getElementById("country").value = userProfile.address?.[0]?.country || "";
+  
+        if (userProfile.profileImage) {
+          document.getElementById("profileImage").src = `${CONFIG.API_URL}${userProfile.profileImage}`;
+        }
+      }
+    });
+  
+    let isEditing = false; // Track whether editing mode is active
+  
+    document.getElementById("imageUpload").addEventListener("change", async function(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const formData = new FormData();
+        const email = document.getElementById("email").value.trim();
+        formData.append("profileImage", file);
+        formData.append("email", email);
+  
+        try {
+          const response = await fetch(`${CONFIG.API_URL}/upload-profile-image`, {
+            method: "POST",
+            body: formData,
+          });
+  
+          const data = await response.json();
+          if (response.ok) {
+            localStorage.setItem("userProfile", JSON.stringify(data.user));
+            document.getElementById("profileImage").src = `${CONFIG.API_URL}${data.user.profileImage}`;
+  
+            // Enable update button only if edit mode is active
+            if (isEditing) {
+              document.getElementById("updateProfile").removeAttribute("disabled");
+            }
+          } else {
+            alert("Image upload failed: " + data.message);
+          }
+        } catch (error) {
+          console.error("Error uploading image:", error);
+        }
+      }
+    });
+  
+    document.getElementById("editProfile").addEventListener("click", function () {
+      isEditing = true; // Set edit mode active
+      document.getElementById("firstName").removeAttribute("disabled");
+      document.getElementById("lastName").removeAttribute("disabled");
+      document.getElementById("phone").removeAttribute("disabled");
+      document.getElementById("dob").removeAttribute("disabled");
+      document.getElementById("address").removeAttribute("disabled");
+      document.getElementById("city").removeAttribute("disabled");
+      document.getElementById("country").removeAttribute("disabled");
+      document.getElementById("updateProfile").removeAttribute("disabled");
+      document.getElementById("uploadBtn").style.display = "block";
+    });
+  
+    document.getElementById("profileForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+  
+      const updatedProfile = {
+        firstName: document.getElementById("firstName").value.trim(),
+        lastName: document.getElementById("lastName").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        phone: document.getElementById("phone").value.trim(),
+        dob: document.getElementById("dob").value.trim(),
+        address: [{
+          address: document.getElementById("address").value.trim(),
+          city: document.getElementById("city").value.trim(),
+          country: document.getElementById("country").value.trim()
+        }]
+      };
+  
+      try {
+        const response = await fetch(`${CONFIG.API_URL}/update-profile`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updatedProfile),
+        });
+  
+        const data = await response.json();
+        if (response.ok) {
+          localStorage.setItem("userProfile", JSON.stringify(data.user));
+          document.getElementById("updateMessage").textContent = "Profile updated successfully!";
+          
+          // Lock the update button again after successful update
+          document.getElementById("updateProfile").setAttribute("disabled", "true");
+          isEditing = false; // Exit edit mode
+        } else {
+          alert("Failed to update profile: " + data.message);
+        }
+      } catch (error) {
+        alert("Error updating profile");
+      }
+    });
+  </script>
+  
 </body>
 </html>

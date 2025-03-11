@@ -22,21 +22,23 @@
       $("#nav-placeholder").load("nav.html");
     });
   </script>
+  
   <div class="d-flex justify-content-center align-items-center" style="height: 100vh;">
     <div class="card p-4 shadow-lg" style="width: 100%; max-width: 450px;">
       <h3 class="text-center mb-4 h3">Create Your Account</h3>
       <form id="registerForm" class="d-flex flex-column gap-3">
-        <!-- Row for Full Name and Date of Birth inputs -->
+        <!-- Row for First Name and Last Name inputs -->
         <div class="row mb-3">
           <div class="col-md-6">
-            <label for="name" class="form-label">Full Name</label>
-            <input type="text" id="name" class="form-control" placeholder="Enter your full name" required>
+            <label for="firstName" class="form-label">First Name</label>
+            <input type="text" id="firstName" class="form-control" placeholder="Enter first name" required>
           </div>
           <div class="col-md-6">
-            <label for="dob" class="form-label">Date of Birth</label>
-            <input type="date" id="dob" class="form-control" required>
+            <label for="lastName" class="form-label">Last Name</label>
+            <input type="text" id="lastName" class="form-control" placeholder="Enter last name" required>
           </div>
         </div>
+        
         <!-- Row for Phone Number and Email inputs -->
         <div class="row mb-3">
           <div class="col-md-6">
@@ -48,6 +50,7 @@
             <input type="email" id="email" class="form-control" placeholder="Enter your email" required>
           </div>
         </div>
+        
         <!-- Row for Password and Confirm Password inputs -->
         <div class="row mb-3">
           <div class="col-md-6">
@@ -68,148 +71,121 @@
             </div>
           </div>
         </div>
+        
         <!-- Terms and Conditions -->
         <div class="form-check mb-3">
           <input type="checkbox" id="terms" required>
           <label class="the-label ms-2">I agree to the <a href="./terms.html">terms and conditions</a></label>
         </div>
+        
         <!-- Register button -->
-        <button  class="register">Register</button>
+        <button class="register">Register</button>
         <small class="text-center mt-3 already">Already have an account? <a href="./login.html">Login here</a></small>
-            <!-- Error Message -->
+        
+        <!-- Error Message -->
         <div id="formError" class="text-danger mt-3 error"></div>
-        <!-- Login Link -->
       </form>
     </div>
   </div>
 
+  <script>
+    const registerForm = document.getElementById('registerForm');
+    const formError = document.getElementById('formError');
 
- <script>
-  const registerForm = document.getElementById('registerForm');
-  const formError = document.getElementById('formError');
+    registerForm.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      
+      // Get input values and trim spaces
+      const firstName = document.getElementById('firstName').value.trim();
+      const lastName = document.getElementById('lastName').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const confirmPassword = document.getElementById('confirmPassword').value.trim();
+      const termsAccepted = document.getElementById('terms').checked;
 
-  registerForm.addEventListener('submit', async function (e) {
-    e.preventDefault();
-    
-    // Get input values and trim spaces
-    const fullName = document.getElementById('name').value.trim();
-    const dob = document.getElementById('dob').value;
-    const phone = document.getElementById('phone').value.trim();
-    const email = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value.trim();
-    const confirmPassword = document.getElementById('confirmPassword').value.trim();
-    const termsAccepted = document.getElementById('terms').checked;
-
-    // Check if any field is empty
-    if (!fullName || !dob || !phone || !email || !password || !confirmPassword) {
-      showError("All fields are required.");
-      return;
-    }
-
-    // Validate Date of Birth
-    if (isNaN(new Date(dob).getTime())) {
-      showError("Please enter a valid Date of Birth.");
-      return;
-    }
-
-    // Validate phone number (should be 10 digits)
-    if (!/^\d{10}$/.test(phone)) {
-      showError("Phone number must be exactly 10 digits.");
-      return;
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      showError("Please enter a valid email address.");
-      return;
-    }
-
-    // Validate password and confirm password
-    if (password !== confirmPassword) {
-      showError("Passwords do not match.");
-      return;
-    }
-
-    // Validate password strength
-    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/;
-    if (!passwordRegex.test(password)) {
-      showError("Password must be at least 6 characters long, containing at least one letter and one number.");
-      return;
-    }
-
-    // Ensure terms and conditions are accepted
-    if (!termsAccepted) {
-      showError("You must agree to the terms and conditions.");
-      return;
-    }
-
-    // Clear errors before submitting
-    clearError();
-
-    try {
-      const response = await fetch(`${CONFIG.API_URL}/signup`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, fullName, dob, phone }) // Fixed "name" to "fullName"
-      });
-
-      const data = await response.json();
-
-      if (data.message) {
-        if (data.message === "User already exists") {
-          showError("A user with this email already exists. Please try a different email.");
-          return;
-        }
-        // Save user data in localStorage and redirect
-        localStorage.setItem('userProfile', JSON.stringify({ email, fullName, dob, phone }));
-        localStorage.setItem('isLoggedIn', 'true');
-        alert("Registration successful!");
-        window.location.href = "./index.html";
-      } else {
-        showError(data.message || "Registration failed. Please try again.");
+      // Check if any field is empty
+      if (!firstName || !lastName || !phone || !email || !password || !confirmPassword) {
+        showError("All fields are required.");
+        return;
       }
-    } catch (error) {
-      showError("Error connecting to the server.");
+
+      // Validate phone number (should be 10 digits)
+      if (!/^\d{10}$/.test(phone)) {
+        showError("Phone number must be exactly 10 digits.");
+        return;
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        showError("Please enter a valid email address.");
+        return;
+      }
+
+      // Validate password and confirm password
+      if (password !== confirmPassword) {
+        showError("Passwords do not match.");
+        return;
+      }
+
+      // Validate password strength
+      const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/;
+      if (!passwordRegex.test(password)) {
+        showError("Password must be at least 6 characters long, containing at least one letter and one number.");
+        return;
+      }
+
+      // Ensure terms and conditions are accepted
+      if (!termsAccepted) {
+        showError("You must agree to the terms and conditions.");
+        return;
+      }
+
+      // Generate userId (firstName + 001)
+      const userId = firstName.toLowerCase() + "001";
+
+      // Clear errors before submitting
+      clearError();
+
+      try {
+        const response = await fetch(`${CONFIG.API_URL}/signup`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId, firstName, lastName, email, phone, password })
+        });
+
+        const data = await response.json();
+
+        if (data.message) {
+          if (data.message === "User already exists") {
+            showError("A user with this email already exists. Please try a different email.");
+            return;
+          }
+          // Save user data in localStorage and redirect
+          localStorage.setItem('userProfile', JSON.stringify({ userId, firstName, lastName, email, phone }));
+          localStorage.setItem('isLoggedIn', 'true');
+          alert("Registration successful!");
+          window.location.href = "./index.html";
+        } else {
+          showError(data.message || "Registration failed. Please try again.");
+        }
+      } catch (error) {
+        showError("Error connecting to the server.");
+      }
+    });
+
+    function showError(message) {
+      formError.textContent = message;
+      formError.classList.add('show');
     }
-  });
 
-  function showError(message) {
-    formError.textContent = message;
-    formError.classList.add('show');
-  }
+    function clearError() {
+      formError.textContent = '';
+      formError.classList.remove('show');
+    }
+  </script>
 
-  function clearError() {
-    formError.textContent = '';
-    formError.classList.remove('show');
-  }
-</script>
-
-
-    <script src="config.js"></script>
-
-
-
+  <script src="config.js"></script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-Message Shelinder Singh
-
-
-
-
-
-
-
-
-
