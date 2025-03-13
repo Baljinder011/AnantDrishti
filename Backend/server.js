@@ -21,11 +21,12 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: "https://api.indraq.tech",  // Allow requests from localhost:3001
+  origin: "https://indraq.tech",  // Allow requests from localhost:3001
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"], // Add headers if needed
   credentials: true,  // Allow cookies/credentials
-  }));app.use(express.json());
+  }));
+  app.use(express.json());
 
 const frontendPath = path.join(__dirname, "..", "Frontend"); // Adjust if needed
 app.use(express.static(path.join(__dirname, frontendPath)));
@@ -326,11 +327,15 @@ const userSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 
   address: [{
-    address: String,
+    fullName: String,
+    phone: String,
+    pincode: String,
+    houseNumber: String,
+    area: String,
+    landmark: String,
     city: String,
     state: String,
-    pin: String,
-    country: String,
+    addressType: String,
     isDefaultAddress: Boolean
   }],
   loginSessions: [
@@ -352,6 +357,9 @@ const userSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const User = mongoose.model("users", userSchema);
+
+
+
 
 
 
@@ -624,68 +632,6 @@ app.post("/saveProfile", uploadProfile.single("image"), async (req, res) => {
 
 
 
-
-
-app.get("/address/:userId", async (req, res) => {
-  const { userId } = req.params;
-  try {
-    const addresses = await User.find({ userId });
-    res.json(addresses);
-  } catch (error) {
-    console.error("Error fetching addresses:", error);
-    res.status(500).json({ message: "Failed to fetch addresses" });
-  }
-});
-
-
-
-
-
-
-
-app.post("/save-selected-address", async (req, res) => {
-  try {
-    const { userId, name, phone, address, city, state, pin, country } = req.body;
-
-    if (!userId) {
-      return res.status(400).json({ success: false, message: "User ID is required" });
-    }
-
-    // Set other addresses to non-default
-    await Address.updateMany({ userId }, { isDefaultAddress: false });
-
-    // Find or create selected address and mark it as default
-    const updatedAddress = await User.findOneAndUpdate(
-      { userId, address, city, state, pin, country },
-      { name, phone, isDefaultAddress: true },
-      { new: true, upsert: true }
-    );
-
-    res.json({ success: true, message: "Selected address saved", address: updatedAddress });
-  } catch (error) {
-    console.error("Error saving selected address:", error);
-    res.status(500).json({ success: false, message: "Error saving address", error });
-  }
-});
-
-
-
-
-app.get("/get-selected-address/:userId", async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const address = await User.findOne({ userId, isDefaultAddress: true });
-
-    if (!address) {
-      return res.status(404).json({ success: false, message: "No selected address found" });
-    }
-
-    res.json({ success: true, address });
-  } catch (error) {
-    console.error("Error fetching selected address:", error);
-    res.status(500).json({ success: false, message: "Error fetching address", error });
-  }
-});
 
 
 
