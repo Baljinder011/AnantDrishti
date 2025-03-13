@@ -54,7 +54,20 @@
             <label for="dob" class="form-label">Date of Birth</label>
             <input type="date" id="dob" class="form-control" disabled>
           </div>
-          <div class="col-md-6">
+
+        
+            <div class="col-md-6">
+              <label for="gender" class="form-label">Gender</label>
+              <select id="gender" class="form-control" disabled>
+                <option value="">Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+      
+          
+          <!-- <div class="col-md-6">
             <label for="address" class="form-label">Address</label>
             <input type="text" id="address" class="form-control" disabled>
           </div>
@@ -63,12 +76,12 @@
           <div class="col-md-6">
             <label for="city" class="form-label">City</label>
             <input type="text" id="city" class="form-control" disabled>
-          </div>
-          <div class="col-md-6">
+          </div> -->
+          <!-- <div class="col-md-6">
             <label for="country" class="form-label">Country</label>
             <input type="text" id="country" class="form-control" disabled>
           </div>
-        </div>
+        </div> -->
        <div class="button-container">
   <button type="button" class="btn" id="editProfile">Edit Profile</button>
   <button type="submit" class="btn btn-light" id="updateProfile" disabled>Update Profile</button>
@@ -80,126 +93,117 @@
 </div>
 
   <script>
-    document.addEventListener("DOMContentLoaded", async function () {
-      let userProfile = JSON.parse(localStorage.getItem("userProfile"));
-  
-      if (!userProfile) {
-        const email = localStorage.getItem("email");
-        if (email) {
-          try {
-            const response = await fetch(`${CONFIG.API_URL}/get-user?email=${email}`);
-            const data = await response.json();
-            if (response.ok) {
-              userProfile = data.user;
-              localStorage.setItem("userProfile", JSON.stringify(userProfile));
-            }
-          } catch (error) {
-            console.error("Error fetching user details:", error);
-          }
-        }
-      }
-  
-      if (userProfile) {
-        document.getElementById("firstName").value = userProfile.firstName || "";
-        document.getElementById("lastName").value = userProfile.lastName || "";
-        document.getElementById("email").value = userProfile.email || "";
-        document.getElementById("phone").value = userProfile.phone || "";
-        document.getElementById("dob").value = userProfile.dob || "";
-        document.getElementById("address").value = userProfile.address?.[0]?.address || "";
-        document.getElementById("city").value = userProfile.address?.[0]?.city || "";
-        document.getElementById("country").value = userProfile.address?.[0]?.country || "";
-  
-        if (userProfile.profileImage) {
-          document.getElementById("profileImage").src = `${CONFIG.API_URL}${userProfile.profileImage}`;
-        }
-      }
-    });
-  
-    let isEditing = false; // Track whether editing mode is active
-  
-    document.getElementById("imageUpload").addEventListener("change", async function(event) {
-      const file = event.target.files[0];
-      if (file) {
-        const formData = new FormData();
-        const email = document.getElementById("email").value.trim();
-        formData.append("profileImage", file);
-        formData.append("email", email);
-  
-        try {
-          const response = await fetch(`${CONFIG.API_URL}/upload-profile-image`, {
-            method: "POST",
-            body: formData,
-          });
-  
-          const data = await response.json();
-          if (response.ok) {
-            localStorage.setItem("userProfile", JSON.stringify(data.user));
-            document.getElementById("profileImage").src = `${CONFIG.API_URL}${data.user.profileImage}`;
-  
-            // Enable update button only if edit mode is active
-            if (isEditing) {
-              document.getElementById("updateProfile").removeAttribute("disabled");
-            }
-          } else {
-            alert("Image upload failed: " + data.message);
-          }
-        } catch (error) {
-          console.error("Error uploading image:", error);
-        }
-      }
-    });
-  
-    document.getElementById("editProfile").addEventListener("click", function () {
-      isEditing = true; // Set edit mode active
-      document.getElementById("firstName").removeAttribute("disabled");
-      document.getElementById("lastName").removeAttribute("disabled");
-      document.getElementById("phone").removeAttribute("disabled");
-      document.getElementById("dob").removeAttribute("disabled");
-      document.getElementById("address").removeAttribute("disabled");
-      document.getElementById("city").removeAttribute("disabled");
-      document.getElementById("country").removeAttribute("disabled");
-      document.getElementById("updateProfile").removeAttribute("disabled");
-      document.getElementById("uploadBtn").style.display = "block";
-    });
-  
-    document.getElementById("profileForm").addEventListener("submit", async function (e) {
-      e.preventDefault();
-  
-      const updatedProfile = {
-        firstName: document.getElementById("firstName").value.trim(),
-        lastName: document.getElementById("lastName").value.trim(),
-        email: document.getElementById("email").value.trim(),
-        phone: document.getElementById("phone").value.trim(),
-        dob: document.getElementById("dob").value.trim(),
-        address: [{
-          address: document.getElementById("address").value.trim(),
-          city: document.getElementById("city").value.trim(),
-          country: document.getElementById("country").value.trim()
-        }]
-      };
-  
+  document.addEventListener("DOMContentLoaded", async function () {
+  let userProfile = JSON.parse(localStorage.getItem("userProfile"));
+
+  if (!userProfile) {
+    const email = localStorage.getItem("email");
+    if (email) {
       try {
-        const response = await fetch(`${CONFIG.API_URL}/update-profile`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(updatedProfile),
-        });
-  
+        const response = await fetch(`${CONFIG.API_URL}/get-user?email=${email}`);
         const data = await response.json();
         if (response.ok) {
-          localStorage.setItem("userProfile", JSON.stringify(data.user));
-          document.getElementById("updateMessage").textContent = "Profile updated successfully!";
-          
-          // Lock the update button again after successful update
-          document.getElementById("updateProfile").setAttribute("disabled", "true");
-          isEditing = false; // Exit edit mode
-        } else {
-          alert("Failed to update profile: " + data.message);
+          userProfile = data.user;
+          localStorage.setItem("userProfile", JSON.stringify(userProfile));
         }
       } catch (error) {
-        alert("Error updating profile");
+        console.error("Error fetching user details:", error);
       }
+    }
+  }
+
+  if (userProfile) {
+    document.getElementById("firstName").value = userProfile.firstName || "";
+    document.getElementById("lastName").value = userProfile.lastName || "";
+    document.getElementById("email").value = userProfile.email || "";
+    document.getElementById("phone").value = userProfile.phone || "";
+    document.getElementById("dob").value = userProfile.dob || "";
+    document.getElementById("gender").value = userProfile.gender || "";
+
+    if (userProfile.profileImage) {
+      document.getElementById("profileImage").src = `${CONFIG.API_URL}${userProfile.profileImage}`;
+    }
+  }
+});
+
+let isEditing = false;
+
+document.getElementById("imageUpload").addEventListener("change", async function (event) {
+  const file = event.target.files[0];
+  if (file) {
+    const formData = new FormData();
+    const email = document.getElementById("email").value.trim();
+    formData.append("profileImage", file);
+    formData.append("email", email);
+
+    try {
+      const response = await fetch(`${CONFIG.API_URL}/upload-profile-image`, {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        localStorage.setItem("userProfile", JSON.stringify(data.user));
+        document.getElementById("profileImage").src = `${CONFIG.API_URL}${data.user.profileImage}`;
+
+        if (isEditing) {
+          document.getElementById("updateProfile").removeAttribute("disabled");
+        }
+      } else {
+        alert("Image upload failed: " + data.message);
+      }
+    } catch (error) {
+      console.error("Error uploading image:", error);
+    }
+  }
+});
+
+document.getElementById("editProfile").addEventListener("click", function () {
+  isEditing = true;
+  document.getElementById("firstName").removeAttribute("disabled");
+  document.getElementById("lastName").removeAttribute("disabled");
+  document.getElementById("phone").removeAttribute("disabled");
+  document.getElementById("dob").removeAttribute("disabled");
+  document.getElementById("gender").removeAttribute("disabled");
+  document.getElementById("updateProfile").removeAttribute("disabled");
+  document.getElementById("uploadBtn").style.display = "block";
+});
+
+document.getElementById("profileForm").addEventListener("submit", async function (e) {
+  e.preventDefault();
+
+  const updatedProfile = {
+    firstName: document.getElementById("firstName").value.trim(),
+    lastName: document.getElementById("lastName").value.trim(),
+    email: document.getElementById("email").value.trim(),
+    phone: document.getElementById("phone").value.trim(),
+    dob: document.getElementById("dob").value.trim(),
+    gender: document.getElementById("gender").value.trim(),
+  };
+
+  try {
+    const response = await fetch(`${CONFIG.API_URL}/update-profile`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updatedProfile),
     });
+
+    const data = await response.json();
+    if (response.ok) {
+      localStorage.setItem("userProfile", JSON.stringify(data.user));
+      document.getElementById("updateMessage").textContent = "Profile updated successfully!";
+      
+      document.getElementById("updateProfile").setAttribute("disabled", "true");
+      isEditing = false;
+    } else {
+      alert("Failed to update profile: " + data.message);
+    }
+  } catch (error) {
+    alert("Error updating profile");
+  }
+});
+
   </script>
   
 </body>

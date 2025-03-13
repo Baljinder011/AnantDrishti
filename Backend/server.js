@@ -21,12 +21,12 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: "https://indraq.tech",  // Allow requests from localhost:3001
+  origin: ['https://indraq.tech', 'http://localhost:3001'] ,  // Allow requests from localhost:3001
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"], // Add headers if needed
   credentials: true,  // Allow cookies/credentials
-  }));
-  app.use(express.json());
+}));
+app.use(express.json());
 
 const frontendPath = path.join(__dirname, "..", "Frontend"); // Adjust if needed
 app.use(express.static(path.join(__dirname, frontendPath)));
@@ -98,55 +98,55 @@ async function generateOrderId() {
 // Create Payment Link & Save Order with linkId
 app.post("/create-payment-link", async (req, res) => {
   try {
-      const { customer_name, customer_email, customer_phone, amount } = req.body;
-      if (!customer_name || !customer_email || !customer_phone || !amount) {
-          return res.status(400).json({ error: "Missing required fields" });
-      }
+    const { customer_name, customer_email, customer_phone, amount } = req.body;
+    if (!customer_name || !customer_email || !customer_phone || !amount) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
 
-      const orderId = await generateOrderId();
-      const linkId = `CF_${crypto.randomBytes(8).toString("hex")}`; // Generate Unique linkId
+    const orderId = await generateOrderId();
+    const linkId = `CF_${crypto.randomBytes(8).toString("hex")}`; // Generate Unique linkId
 
-      const payload = {
-          order_id: orderId, // Store orderId in Cashfree
-          link_id: linkId, // Pass generated linkId
-          customer_details: { customer_name, customer_email, customer_phone },
-          link_amount: amount,
-          link_currency: "INR",
-          link_purpose: "E-commerce Purchase",
-          link_notify: { send_email: true, send_sms: true },
-          link_auto_reminders: true,
-          link_expiry_time: new Date(Date.now() + 3600 * 1000).toISOString(), // 1-hour expiry
-          link_meta: {
-              return_url: `http://localhost:${PORT}/redirect.html?orderId=${orderId}&linkId=${linkId}`,
-              // return_url: `https://indraq.tech/redirect.html?orderId=${orderId}&linkId=${linkId}`,
+    const payload = {
+      order_id: orderId, // Store orderId in Cashfree
+      link_id: linkId, // Pass generated linkId
+      customer_details: { customer_name, customer_email, customer_phone },
+      link_amount: amount,
+      link_currency: "INR",
+      link_purpose: "E-commerce Purchase",
+      link_notify: { send_email: true, send_sms: true },
+      link_auto_reminders: true,
+      link_expiry_time: new Date(Date.now() + 3600 * 1000).toISOString(), // 1-hour expiry
+      link_meta: {
+        return_url: `http://localhost:${PORT}/redirect.html?orderId=${orderId}&linkId=${linkId}`,
+        // return_url: `https://indraq.tech/redirect.html?orderId=${orderId}&linkId=${linkId}`,
 
-          },
-      };
+      },
+    };
 
-      const response = await axios.post("https://sandbox.cashfree.com/pg/links", payload, {
-          headers: {
-              "x-api-version": "2022-09-01",
-              "x-client-id": APP_ID,
-              "x-client-secret": SECRET_KEY,
-          },
-      });
+    const response = await axios.post("https://sandbox.cashfree.com/pg/links", payload, {
+      headers: {
+        "x-api-version": "2022-09-01",
+        "x-client-id": APP_ID,
+        "x-client-secret": SECRET_KEY,
+      },
+    });
 
-      // Save Order in MongoDB including linkId
-      const newOrder = new Order({
-          orderId,
-          linkId, // Store Cashfree linkId
-          customerName: customer_name,
-          customerEmail: customer_email,
-          customerPhone: customer_phone,
-          amount,
-          status: "pending",
-      });
+    // Save Order in MongoDB including linkId
+    const newOrder = new Order({
+      orderId,
+      linkId, // Store Cashfree linkId
+      customerName: customer_name,
+      customerEmail: customer_email,
+      customerPhone: customer_phone,
+      amount,
+      status: "pending",
+    });
 
-      await newOrder.save();
-      res.json({ success: true, orderId, linkId, linkUrl: response.data.link_url });
+    await newOrder.save();
+    res.json({ success: true, orderId, linkId, linkUrl: response.data.link_url });
   } catch (error) {
-      console.error("Cashfree Error:", error.response?.data || error.message);
-      res.status(500).json({ error: "Failed to create payment link" });
+    console.error("Cashfree Error:", error.response?.data || error.message);
+    res.status(500).json({ error: "Failed to create payment link" });
   }
 });
 
@@ -154,86 +154,86 @@ app.post("/create-payment-link", async (req, res) => {
 
 // Check Payment Status & Update Order
 app.get("/check-payment-status", async (req, res) => {
-    try {
-        const { orderId, linkId } = req.query;
-        if (!orderId || !linkId) {
-            return res.status(400).json({ error: "Missing orderId or linkId" });
-        }
-
-        const order = await Order.findOne({ orderId, linkId });
-        if (!order) {
-            return res.status(404).json({ error: "Order not found" });
-        }
-
-        console.log(`Checking payment status for Order: ${orderId}, Link ID: ${linkId}`);
-
-        // Use linkId to fetch payment status
-        const cashfreeResponse = await axios.get(
-            `https://sandbox.cashfree.com/pg/links/${linkId}`,
-            {
-                headers: {
-                    "x-api-version": "2022-09-01",
-                    "x-client-id": APP_ID,
-                    "x-client-secret": SECRET_KEY,
-                },
-            }
-        );
-
-        console.log("Cashfree API Response:", cashfreeResponse.data);
-
-        const linkStatus = cashfreeResponse.data.link_status;
-        let orderStatus = "pending";
-        let paymentStatus = "pending";
-        let paid = false;
-
-        if (linkStatus === "PAID") {
-            orderStatus = "successful";
-            paymentStatus = "PAID";
-            paid = true;
-        } else if (linkStatus === "EXPIRED" || linkStatus === "CANCELLED") {
-            orderStatus = "failed";
-            paymentStatus = linkStatus.toLowerCase();
-        }
-
-        await Order.updateOne(
-            { orderId, linkId },
-            {
-                $set: {
-                    status: orderStatus,
-                    "paymentDetails.status": paymentStatus,
-                    "paymentDetails.paid": paid,
-                    "paymentDetails.transactionId": cashfreeResponse.data.reference_id || "",
-                    "paymentDetails.timestamp": new Date(),
-                },
-            }
-        );
-
-        res.json({ success: orderStatus === "successful", status: orderStatus });
-    } catch (error) {
-        console.error("Error checking payment status:", error.response?.data || error.message);
-        res.status(500).json({ error: "Failed to check payment status" });
+  try {
+    const { orderId, linkId } = req.query;
+    if (!orderId || !linkId) {
+      return res.status(400).json({ error: "Missing orderId or linkId" });
     }
+
+    const order = await Order.findOne({ orderId, linkId });
+    if (!order) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    console.log(`Checking payment status for Order: ${orderId}, Link ID: ${linkId}`);
+
+    // Use linkId to fetch payment status
+    const cashfreeResponse = await axios.get(
+      `https://sandbox.cashfree.com/pg/links/${linkId}`,
+      {
+        headers: {
+          "x-api-version": "2022-09-01",
+          "x-client-id": APP_ID,
+          "x-client-secret": SECRET_KEY,
+        },
+      }
+    );
+
+    console.log("Cashfree API Response:", cashfreeResponse.data);
+
+    const linkStatus = cashfreeResponse.data.link_status;
+    let orderStatus = "pending";
+    let paymentStatus = "pending";
+    let paid = false;
+
+    if (linkStatus === "PAID") {
+      orderStatus = "successful";
+      paymentStatus = "PAID";
+      paid = true;
+    } else if (linkStatus === "EXPIRED" || linkStatus === "CANCELLED") {
+      orderStatus = "failed";
+      paymentStatus = linkStatus.toLowerCase();
+    }
+
+    await Order.updateOne(
+      { orderId, linkId },
+      {
+        $set: {
+          status: orderStatus,
+          "paymentDetails.status": paymentStatus,
+          "paymentDetails.paid": paid,
+          "paymentDetails.transactionId": cashfreeResponse.data.reference_id || "",
+          "paymentDetails.timestamp": new Date(),
+        },
+      }
+    );
+
+    res.json({ success: orderStatus === "successful", status: orderStatus });
+  } catch (error) {
+    console.error("Error checking payment status:", error.response?.data || error.message);
+    res.status(500).json({ error: "Failed to check payment status" });
+  }
 });
 
 
 // Fetch Order by Order ID
 app.get("/order", async (req, res) => {
-    try {
-        const { orderId } = req.query;
-        if (!orderId) {
-            return res.status(400).json({ error: "Missing orderId" });
-        }
-
-        const order = await Order.findOne({ orderId });
-        if (!order) {
-            return res.status(404).json({ error: "Order not found" });
-        }
-
-        res.json({ success: true, order });
-    } catch (error) {
-        console.error("Error fetching order:", error);
-        res.status(500).json({ error: "Failed to fetch order" });
+  try {
+    const { orderId } = req.query;
+    if (!orderId) {
+      return res.status(400).json({ error: "Missing orderId" });
     }
+
+    const order = await Order.findOne({ orderId });
+    if (!order) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    res.json({ success: true, order });
+  } catch (error) {
+    console.error("Error fetching order:", error);
+    res.status(500).json({ error: "Failed to fetch order" });
+  }
 });
 
 
@@ -316,12 +316,13 @@ app.get("/failure.html", (req, res) => res.sendFile(path.join(frontendPath, "fai
 
 // User Schema & Model
 const userSchema = new mongoose.Schema({
-  userId:{type:String , unique:true},
-  profileImage:{type:String,default:""},
-  firstName:  { type: String, required: true },
-  lastName:  { type: String, required: true },
-  email:  { type: String, required: true },
-  phone:  { type: String, required: true },
+  userId: { type: String, unique: true },
+  profileImage: { type: String, default: "" },
+  firstName: { type: String, required: true },
+  lastName: { type: String, required: true },
+  email: { type: String, required: true },
+  phone: { type: String, required: true },
+  gender:{type:String,required:true},
   password: { type: String, required: true }, // Add this field
   dob: { type: String, default: "" },
   createdAt: { type: Date, default: Date.now },
@@ -330,12 +331,10 @@ const userSchema = new mongoose.Schema({
     fullName: String,
     phone: String,
     pincode: String,
-    houseNumber: String,
-    area: String,
-    landmark: String,
+    address: String,
     city: String,
     state: String,
-    addressType: String,
+    country:String,
     isDefaultAddress: Boolean
   }],
   loginSessions: [
@@ -359,6 +358,104 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model("users", userSchema);
 
 
+// 📌 API to Save or Update Address
+app.post("/save-address", async (req, res) => {
+  const { userId, newAddress, addressIndex } = req.body;
+
+  try {
+    const user = await User.findOne({ userId });
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (addressIndex !== undefined && user.address[addressIndex]) {
+      // 🔹 Update only changed fields of the existing address
+      Object.assign(user.address[addressIndex], newAddress);
+    } else {
+      // 🔹 If no addressIndex, add a new address
+      user.address.push(newAddress);
+    }
+
+    await user.save();
+    res.json({ message: "Address saved successfully", address: user.address });
+
+  } catch (err) {
+    console.error("Error:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+
+
+
+
+// 📌 API to Fetch Addresses
+app.get("/get-address", async (req, res) => {
+  const { userId } = req.query;
+
+  try {
+      const user = await User.findOne({ userId });
+
+      if (!user) return res.status(404).json({ message: "User not found" });
+
+      res.json(user.address);
+  } catch (err) {
+      console.error("Error:", err);
+      res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+
+
+app.delete("/delete-address", async (req, res) => {
+  try {
+      const { userId, index } = req.body;
+
+      if (!userId || index === undefined) {
+          return res.status(400).json({ message: "Missing required fields." });
+      }
+
+      // Find the user
+      const user = await User.findOne({ userId });
+
+      if (!user) {
+          return res.status(404).json({ message: "User not found." });
+      }
+
+      if (!user.address || index < 0 || index >= user.address.length) {
+          return res.status(400).json({ message: "Invalid address index." });
+      }
+
+      // Remove the address at the given index
+      user.address.splice(index, 1);
+
+      // Save updated user data
+      await user.save();
+
+      return res.json({ message: "Address deleted successfully." });
+  } catch (error) {
+      console.error("Delete Address Error:", error);
+      res.status(500).json({ message: "Internal server error." });
+  }
+});
+
+
+
+
+
+app.get("/get-user", async (req, res) => {
+  try {
+      const { email } = req.query;
+      if (!email) return res.json({ success: false, message: "Email is required" });
+
+      const user = await customers.findOne({ email });
+      if (!user) return res.json({ success: false, message: "User not found" });
+
+      res.json({ success: true, user });
+  } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
 
 
 
@@ -367,7 +464,7 @@ const User = mongoose.model("users", userSchema);
 
 
 app.post("/update-profile", async (req, res) => {
-  const { email, firstName, lastName, phone, dob, address } = req.body;
+  const { email, firstName, lastName, phone, dob, gender } = req.body;
 
   try {
     // Find user by email
@@ -382,7 +479,8 @@ app.post("/update-profile", async (req, res) => {
     user.lastName = lastName;
     user.phone = phone;
     user.dob = dob;
-    user.address = address; // Replace existing address array
+    user.gender = gender
+    // user.address = address; // Replace existing address array
 
     // Save updated user
     await user.save();
@@ -414,7 +512,7 @@ const userStorage = multer.diskStorage({
     cb(null, uploadDir); // Save images in the "uploads/Userprofile" folder
   },
   filename: function (req, file, cb) {
-    cb(null,file.originalname); // Unique filename
+    cb(null, file.originalname); // Unique filename
   }
 });
 
@@ -713,7 +811,7 @@ const storage = multer.diskStorage({
     cb(null, 'uploads/Products/');
   },
   filename: function (req, file, cb) {
-    cb(null,file.originalname);
+    cb(null, file.originalname);
   }
 });
 
@@ -740,7 +838,7 @@ app.post('/products', upload.single('image'), async (req, res) => {
     await product.save();
 
 
-    console.log("product saved successfully:",product)
+    console.log("product saved successfully:", product)
     res.status(201).json(product);
   } catch (error) {
     console.error(":x: Error adding product:", error);
@@ -802,7 +900,7 @@ app.put('/products/:id', upload.single('image'), async (req, res) => {
 
     let imagePath = product.image; // Keep existing image if not updated
     if (req.file) {
-      imagePath =`/uploads/Products/${req.file.originalname}`; // :white_check_mark: Store new image in correct folder
+      imagePath = `/uploads/Products/${req.file.originalname}`; // :white_check_mark: Store new image in correct folder
     }
 
     const updatedProduct = await Product.findByIdAndUpdate(

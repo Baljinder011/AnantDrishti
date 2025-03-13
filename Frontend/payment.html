@@ -389,24 +389,7 @@ document.getElementById("payButton").addEventListener("click", async function ()
 
 
     <script>
- document.addEventListener("DOMContentLoaded", async () => {
-        const addressDetails = document.getElementById("addressDetails");
-        try {
-            const response = await fetch(`${CONFIG.API_URL}/get-selected-address`);
-            const result = await response.json();
-            if (result.success) {
-                const selectedAddress = result.address;
-                addressDetails.innerHTML = `<p><strong>Name:</strong> ${selectedAddress.name}</p>
-                    <p><strong>Phone:</strong> ${selectedAddress.phone}</p>
-                    <p><strong>Address:</strong> ${selectedAddress.address}, ${selectedAddress.city}, ${selectedAddress.state}, ${selectedAddress.pin}, ${selectedAddress.country}</p>`;
-            } else {
-                addressDetails.textContent = "No address selected. Please select an address.";
-            }
-        } catch (error) {
-            console.error("Error fetching address:", error);
-            addressDetails.textContent = "Error loading address. Please try again.";
-        }
-    });
+      
 
 
 
