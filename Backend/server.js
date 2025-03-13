@@ -20,8 +20,12 @@ const https = require("https");
 const app = express();
 
 // Middleware
-app.use(cors());
-app.use(express.json());
+app.use(cors({
+  origin: "https://api.indraq.tech",  // Allow requests from localhost:3001
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"], // Add headers if needed
+  credentials: true,  // Allow cookies/credentials
+  }));app.use(express.json());
 
 const frontendPath = path.join(__dirname, "..", "Frontend"); // Adjust if needed
 app.use(express.static(path.join(__dirname, frontendPath)));
@@ -785,9 +789,12 @@ app.post('/products', upload.single('image'), async (req, res) => {
     }
 
     const imagePath = `/uploads/Products/${req.file.originalname}`;
+    console.log("saving image path:", imagePath);
     const product = new Product({ ...req.body, image: imagePath });
     await product.save();
 
+
+    console.log("product saved successfully:",product)
     res.status(201).json(product);
   } catch (error) {
     console.error(":x: Error adding product:", error);
