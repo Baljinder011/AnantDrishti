@@ -1,0 +1,761 @@
+require("dotenv").config(); // Load environment variables
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+const bodyParser = require('body-parser');
+const nodemailer = require("nodemailer");
+const http = require('http');  // Required for Socket.IO
+const { Server } = require("socket.io");
+
+const app = express();
+const server = http.createServer(app);  // Create HTTP server
+const io = new Server(server, {        // Attach Socket.IO to the server
+  cors: {
+    origin: "http://localhost:3001",  // Allow frontend
+    methods: ["GET", "POST"],
+    transports: ["websocket", "polling"], // Ensure WebSocket support
+    credentials: true
+  }
+});
+const PORT = 3000;
+
+// Middleware
+app.use(cors({
+   origin: "http://localhost:3001",  // Allow requests from localhost:3001
+   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+   allowedHeaders: ["Content-Type", "Authorization"], // Add headers if needed
+   credentials: true,  // Allow cookies/credentials
+   }));
+   
+app.use(express.json());
+app.use(bodyParser.json());
+app.use(express.urlencoded({ extended: true }));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+// Connect to MongoDB
+mongoose.connect('mongodb://localhost:27017/AnantDrishti', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+}).then(() => console.log('Connected to MongoDB (Local)'))
+  .catch(err => console.error('Error connecting to MongoDB (Local):', err));
+
+  // mongoose.connect('mongodb://193.203.160.6:27017/AnantDrishti', {
+  //   useNewUrlParser: true,
+  //   useUnifiedTopology: true
+  // }).then(() => console.log('Connected to MongoDB (Remote)'))
+  //   .catch(err => console.error('Error connecting to MongoDB (Local):', err));
+
+// //User Connection of another database
+//  mongoose.connect('mongodb://193.203.160.6:27017/AnantDrishti', {
+//   useNewUrlParser: true,
+//   useUnifiedTopology: true,
+// })
+//  .then(() => {
+//   console.log('Connected to MongoDB (Remote)');
+// }).catch(err => console.error('Error connecting to MongoDB (Remote):', err));
+
+// :white_check_mark: Email Transporter Setup (Fixed)
+const transporter = nodemailer.createTransport({
+  service: "gmail", // :white_check_mark: Correct service name
+  auth: {
+    user: process.env.EMAIL_USER, // :white_check_mark: Your email from .env
+    pass: process.env.EMAIL_PASS, // :white_check_mark: App password (Not normal password)
+  },
+});
+
+// :white_check_mark: Function to Send Email (Improved)
+async function sendMail(to, subject, text, html) {
+  try {
+    const info = await transporter.sendMail({
+      from: "Anant Ki Drishti" <${process.env.EMAIL_USER}>,
+      to,
+      subject,
+      text,
+      html,
+    });
+    console.log(":e-mail: Email sent successfully:", info.messageId);
+    return { success: true, message: "Email sent successfully" };
+  } catch (error) {
+    console.error(":x: Error sending email:", error);
+    return { success: false, message: "Failed to send email", error: error.message };
+  }
+}
+
+const profileSchema = new mongoose.Schema({
+  profileImage: { type: String, default: "" },
+  firstName: { type: String, required: true },
+  lastName: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },  // :fire: Add this line
+  phone: { type: String, required: true },
+  address: {
+    street: { type: String, default: "" },
+    city: { type: String, default: "" },
+    postalCode: { type: String, default: "" },
+    state: { type: String, default: "" },
+    country: { type: String, default: "" },
+  },
+}, { timestamps: true });
+
+const Profile = mongoose.model('profiles', profileSchema);
+
+// Store connected admins for notifications
+let connectedAdmins = [];
+
+io.on("connection", (socket) => {
+  console.log("Admin connected for notifications:", socket.id);
+  connectedAdmins.push(socket);
+
+  socket.on("disconnect", () => {
+    console.log("Admin disconnected:", socket.id);
+    connectedAdmins = connectedAdmins.filter(admin => admin !== socket);
+  });
+});
+
+
+// :white_check_mark: Signup Route with Email & Notification
+app.post("/signup", async (req, res) => {
+  console.log("Received signup request:", req.body);
+  
+  try {
+    let { firstName, lastName, email, password, phone } = req.body;
+    if (!firstName || !lastName || !email || !password || !phone ) {
+      console.log("Signup error: Missing email or password");
+      return res.status(400).json({ success: false, message: "Email and password are required" });
+    }
+
+    
+    email = email.toLowerCase(); // Ensure email is stored in lowercase
+
+    const existingUser = await Profile.findOne({ email });
+    if (existingUser) {
+      return res.json({ success: false, message: "User already exists" });
+    }
+
+    // :white_check_mark: Default empty address (admin can edit later in Profile.js)
+    const defaultAddress = {
+      street: "",
+      city: "",
+      postalCode: "",
+      state: "",
+      country: "",
+    };
+
+    const newUser = new Profile({ 
+      firstName,
+      lastName,
+      email,
+      password, // Make sure to hash the password in production
+      phone,
+      address: defaultAddress,  // :white_check_mark: Assign empty address by default
+    });
+
+    await newUser.save();
+
+
+    // :white_check_mark: Send Welcome Email
+    const emailResponse = await sendMail(
+      email,
+      "Welcome to Anant ki Drishti",
+      "Hi, thank you for registering on Anant ki Drishti.",
+      "<p>Hi,</p><p>Thank you for registering on Anant ki Drishti.</p>"
+    );
+
+    if (!emailResponse.success) {
+      return res.json({ success: false, message: "User registered, but email failed" });
+    }
+
+    // :white_check_mark: Emit real-time notification to connected admins
+    
+    io.emit("newUser", { message: New user ${firstName} ${lastName} is registered. })
+    console.log(":bell: Notification Sent:", New user ${firstName} ${lastName} registered!);
+
+    res.json({ success: true, message: "Signup successful, email sent" });
+  } catch (err) {
+    console.error(":x: Signup error:", err);
+    res.status(500).json({ success: false, message: "Error during signup" });
+  }
+});
+
+// :white_check_mark: Login Route
+app.post("/login", async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    console.log(":mag: Incoming Login Request:", req.body); 
+
+   
+    if (!email || !password) {
+      console.log(":x: Missing email or password");
+      return res.status(400).json({ success: false, message: "Email and password are required" });
+    }
+
+    // Find the user by email
+    const user = await Profile.findOne({ email });
+    if (!user) {
+      console.log(":x: Login failed: User not found ->", email);
+      return res.status(400).json({ success: false, message: "User not found" });
+    }
+
+    console.log(":white_check_mark: User found:", user);
+
+    // Directly compare passwords (No Hashing)
+    if (user.password !== password) {
+      console.log(":x: Login failed: Invalid password for user ->", email);
+      return res.status(400).json({ success: false, message: "Invalid password" });
+    }
+
+    console.log(":white_check_mark: Password Matched: Login successful!");
+
+    // If passwords match, send the user data
+    return res.json({
+      success: true,
+      message: "Login successful",
+      admin: {
+        _id: user._id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        profileImage: user.profileImage || "/default-avatar.png",
+      },
+    });
+
+  } catch (err) {
+    console.error("Login error:", err);
+    return res.status(500).json({ 
+      success: false, 
+      message: "Internal server error", 
+      error: err.message 
+    });
+  }
+});
+
+
+// Example route for dashboard (requires authentication)
+app.get('/api/dashboard', (req, res) => {
+  // In this case, we are not using JWT, but you can manually check session/cookie for authentication
+  res.json({ success: true, message: 'Welcome to the dashboard!' });
+});
+
+// Get the logged-in admin's profile details
+app.get("/profile", async (req, res) => {
+  const { id } = req.query;
+  if (!id) {
+    return res.status(400).json({ message: "Admin ID is required" });
+  }
+  try {
+    const adminProfile = await Profile.findById(id); 
+    if (!adminProfile) {
+      return res.status(404).json({ message: "Profile not found" });
+    }
+    res.json(adminProfile);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching profile" });
+  }
+});
+
+
+// :white_check_mark: Ensure the directory exists for storing profile images
+const profileUploadPath = "uploads/AdminProfile/";
+if (!fs.existsSync(profileUploadPath)) {
+  fs.mkdirSync(profileUploadPath, { recursive: true });
+}
+
+// :white_check_mark: Multer storage configuration for profile images
+const profileStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, profileUploadPath); // Save the images in uploads/AdminProfile/
+  },
+  filename: (req, file, cb) => {
+    cb(null, file.originalname); // Add timestamp to filename for uniqueness
+  },
+});
+const uploadProfile = multer({ storage: profileStorage });
+
+// :white_check_mark: API to Update Admin Profile
+app.post("/update-profile", uploadProfile.single("profileImage"), async (req, res) => {
+  try {
+     const { adminId, firstName, lastName, email, phone, street, city, postalCode, state, country } = req.body;
+    if (!adminId) {
+      return res.status(400).json({ success: false, message: "Admin ID is required" });
+    }
+    let updatedData = {
+      firstName,
+      lastName,
+      email,
+      phone,
+      address: { street, city, postalCode, state, country },
+    };
+    if (req.file) {
+      updatedData.profileImage = /uploads/AdminProfile/${req.file.filename};
+    }
+    let adminProfile = await Profile.findOne({ email }); 
+    if (adminProfile) {
+      adminProfile = await Profile.findOneAndUpdate({ email }, updatedData, { new: true });
+    } else {
+      adminProfile = new Profile(updatedData);
+      await adminProfile.save();
+    }
+    res.json({ success: true, updatedProfile: adminProfile });
+  } catch (err) {
+    console.error(":x: Error updating profile:", err);
+    if (err instanceof multer.MulterError) {
+      return res.status(400).json({ success: false, message: "File upload error" });
+    }
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+});
+
+
+// User Schema & Model
+
+const userSchema = new mongoose.Schema({
+  firstName: String,
+  lastName: String,
+  email: String,
+  password :String,
+  phone: String,
+  dob :{type: Date , required:true},
+  address: {
+    street: String,
+    city: String,
+    postalCode: String,
+    country: String
+  },
+  loginSessions: [
+    {
+      date: String,
+      time: String,
+      location: String
+    }
+  ],
+  orders: [
+    {
+      orderId: String,
+      productName: String,
+      price: Number,
+      date: String,
+      status: String
+    }
+  ]
+}, { timestamps: true });
+
+
+const User = mongoose.model('users', userSchema);
+
+// User Routes
+app.get("/users", async (req, res) => {
+  try {
+    const users = await User.find({}); // Fetch all users
+    if (!users || users.length === 0) {
+      return res.status(404).json({ message: "No users found" });
+    }
+    res.json(users);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+
+app.get("/users/:id", async (req, res) => {
+  try {
+    const userId = req.params.id;
+    console.log("User ID:", userId);  // Log the received ID
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: "Invalid user ID format" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json(user);
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+app.post('/users', async (req, res) => {
+  try {
+    const newUser = new User(req.body);
+    await newUser.save();
+    res.status(201).json(newUser);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to create user', error });
+  }
+});
+
+app.put('/users/:id', async (req, res) => {
+  const userId = req.params.id;
+  const updatedUserData = req.body;
+
+  console.log("Received update request for User ID:", userId);
+  console.log("Updated user data:", updatedUserData); // Debugging log
+
+  // Ensure the ID is valid
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(400).json({ message: "Invalid user ID format." });
+  }
+
+  try {
+    const updatedUser = await User.findByIdAndUpdate(userId, 
+      { $set: updatedUserData }, 
+      { new: true, runValidators: true }
+    );
+    if (!updatedUser) {
+      console.log("User not found in database.");
+      return res.status(404).json({ message: 'User not found' });
+    }
+    console.log("User updated successfully:", updatedUser);
+    res.status(200).json(updatedUser);
+  } catch (error) {
+    console.error("Error updating user:", error);
+    res.status(500).json({ message: 'Failed to update user', error: error.message });
+  }
+});
+
+
+
+// Address Schema
+const addressSchema = new mongoose.Schema({
+  name: String,
+  email: String,
+  phone: String,
+  address: String,
+  city: String,
+  state: String,
+  pin: String,
+  country: String,
+  isDefaultAddress: Boolean
+});
+
+const Address = mongoose.model('addresses', addressSchema);
+
+// Address Routes
+app.get('/addresses', async (req, res) => {
+  try {
+    const addresses = await Address.find();
+    res.json(addresses);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
+
+// Product Schema & Model
+const productSchema = new mongoose.Schema({
+  name: String,
+  description: String,
+  image: String,
+  price: Number,
+  stock: Number,
+  status: { type: String, enum: ['available', 'out of stock'], default: 'available' },
+  category: String,
+  discount: Number,
+  size: String,
+  color: String,
+});
+const Product = mongoose.model('products', productSchema);
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/Products/');
+  },
+  filename: function (req, file, cb) {
+    cb(null,file.originalname);
+  }
+});
+
+const upload = multer({ storage: storage });
+
+
+// Create Product
+app.post('/products', upload.single('image'), async (req, res) => {
+  try {
+    console.log(":inbox_tray: Incoming Request Body:", req.body);
+    console.log(":outbox_tray: Uploaded File:", req.file);
+
+    if (!req.body.name || !req.body.price || !req.body.category) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: "Image upload failed" });
+    }
+
+    const imagePath = /uploads/Products/${req.file.originalname};
+    const product = new Product({ ...req.body, image: imagePath });
+    await product.save();
+
+    res.status(201).json(product);
+  } catch (error) {
+    console.error(":x: Error adding product:", error);
+    res.status(500).json({ error: "Error adding product", details: error.message });
+  }
+});
+
+
+// Product fetch route
+app.get("/products", async (req, res) => {
+  try {
+    const products = await Product.find({});
+    res.json(products);
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    res.status(500).send("Error fetching products");
+  }
+});
+
+
+app.get("/products/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: ":x: Invalid product ID format" });
+    }
+
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ message: ":x: Product not found" });
+    }
+
+    res.status(200).json(product);
+  } catch (error) {
+    console.error(":x: Error fetching product:", error);
+    res.status(500).json({ message: ":x: Error fetching product", error });
+  }
+});
+
+app.delete('/products/:id', async (req, res) => {
+  try {
+    const product = await Product.findByIdAndDelete(req.params.id);
+    if (!product) return res.status(404).json({ message: 'Product not found' });
+
+    res.json({ success: true, message: 'Product deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting product', error });
+  }
+});
+
+// Update Product
+app.put('/products/:id', upload.single('image'), async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ message: "Product not found" });
+
+    let imagePath = product.image; // Keep existing image if not updated
+    if (req.file) {
+      imagePath = /uploads/Products/${req.file.originalname}; // :white_check_mark: Store new image in correct folder
+    }
+
+    const updatedProduct = await Product.findByIdAndUpdate(
+      req.params.id,
+      { ...req.body, image: imagePath },
+      { new: true }
+    );
+
+    res.json(updatedProduct);
+  } catch (error) {
+    console.error(":x: Error updating product:", error);
+    res.status(500).json({ error: "Error updating product" });
+  }
+});
+
+
+
+app.put('/products/:id/status', async (req, res) => {
+  try {
+    console.log("Received request to update product status for ID:", req.params.id);
+
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      console.log("Product not found");
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    // Toggle status
+    product.status = product.status === 'available' ? 'out of stock' : 'available';
+
+    // Save changes
+    await product.save();
+    console.log("Product status updated:", product.status);
+
+    res.json({ success: true, message: 'Product status updated', product });
+  } catch (error) {
+    console.error("Error updating product status:", error);
+    res.status(500).json({ message: 'Error updating product status', error });
+  }
+});
+
+
+// Order Schema (similar to previous example)
+const orderSchema = new mongoose.Schema({
+  orderId: { type: String, unique: true },
+  userName: String,
+  address: String,
+  productName: String,
+  productImage: String,
+  price: Number,
+  quantity: Number,
+  status: {
+    type: String,
+    enum: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Canceled'],
+    default: 'Pending'
+  },
+  createdAt: { type: Date, default: Date.now }
+});
+
+const Order = mongoose.model('Order', orderSchema);
+
+// GET Orders with Filtering
+app.get('/api/orders', async (req, res) => {
+  try {
+    const { name, priceRange, size, color, quantity, category } = req.query;
+    console.log('Filters:', { name, priceRange, size, color,  category });
+
+    const filter = {};
+    if (name) filter.userName = { $regex: name, $options: 'i' };
+    if (priceRange) {
+      const [min, max] = priceRange.split('-');
+      filter.price = { $gte: min, $lte: max };
+    }
+    if (size) filter.size = size;
+    if (color) filter.color = color;
+    if (category) filter.category = category;
+
+    console.log('Filter:', filter);  // Check filter values
+
+    const orders = await Order.find(filter);
+    res.json(orders);
+  } catch (err) {
+    console.error('Error fetching orders:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// POST /api/orders - Create a new order with generated orderId
+app.post('/api/orders', upload.single('image'), async (req, res) => {
+  try {
+    console.log("Received file:", req.file); // Debugging
+    console.log("Received body:", req.body); // Debugging
+
+    if (!req.file) {
+      return res.status(400).json({ error: "Order image upload failed" });
+    }
+
+    const lastOrder = await Order.findOne().sort({ createdAt: -1 });
+    let lastCount = 0;
+    if (lastOrder && lastOrder.orderId) {
+      const countStr = lastOrder.orderId.substring(6, 9);
+      lastCount = parseInt(countStr, 10) || 0;
+    }
+    const newCount = lastCount + 1;
+    const newCountStr = newCount.toString().padStart(3, '0');
+    const now = new Date();
+    const dateTimeStr = ${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}${now.getSeconds().toString().padStart(2, '0')};
+    const newOrderId = Anant${newCountStr}${dateTimeStr};  
+
+    const imagePath = /uploads/Products/${req.file.originalname};
+    const { userName, address, productName, price, size, quantity } = req.body;
+
+    if (!userName || !address || !productName || !price || !size || !quantity) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+    const newOrder = new Order({
+      orderId: newOrderId,
+      userName,
+      address,
+      productName,
+      productImage: imagePath,
+      price,
+      size,
+      quantity
+    });
+    await newOrder.save();
+
+    res.status(201).json(newOrder);
+  } catch (err) {
+    console.error("Error creating order:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Update Order Status
+app.patch('/api/orders/:id/status', async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    // Validate that the status is one of the allowed values
+    const allowedStatuses = ['Pending', 'Completed', 'Shipped', 'Canceled', 'Processing'];
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({ message: 'Invalid status' });
+    }
+
+    const order = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true });
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    res.json(order);
+  } catch (error) {
+    console.error('Error updating order status:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Update Order Details
+app.put('/api/orders/:id', async (req, res) => {
+  try {
+    const { address, discount, productImage } = req.body;
+
+    // Validate the fields before updating
+    const updateFields = {};
+    if (address) updateFields.address = address;
+    if (discount) updateFields.discount = discount;
+    if (productImage) updateFields.productImage = productImage;
+
+    const order = await Order.findByIdAndUpdate(req.params.id, updateFields, { new: true });
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    res.json(order);
+  } catch (err) {
+    console.error('Error updating order details:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Delete Order
+app.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deletedOrder = await Order.findByIdAndDelete(id);
+
+    if (!deletedOrder) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    res.json({ message: 'Order deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// :white_check_mark: Start the Express + Socket.IO Server (Fix for 404 error)
+server.listen(PORT, () => {
+  console.log(:rocket: Server running on http://localhost:${PORT});
+});
