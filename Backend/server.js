@@ -21,7 +21,7 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: ['https://indraq.tech', 'http://localhost:3001'] ,  // Allow requests from localhost:3001
+  origin: ['https://api.indraq.tech', 'http://localhost:3001',"https://indra.tech"] ,  // Allow requests from localhost:3001
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"], // Add headers if needed
   credentials: true,  // Allow cookies/credentials
