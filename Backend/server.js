@@ -34,17 +34,8 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
 }));
-// :white_tick: Manually Set Headers for Debugging
-app.use((req, res, next) => {
- 
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(204);
-  }
-  next();
-});
+
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 const frontendPath = path.join(__dirname, "..", "Frontend"); // Adjust if needed
