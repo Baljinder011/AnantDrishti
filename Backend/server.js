@@ -21,22 +21,20 @@ const app = express();
 
 // :white_tick: Define allowed origins
 const allowedOrigins = ['https://api.indraq.tech', 'https://indraq.tech', 'http://localhost:3000', 'http://localhost:3001'];
-// :white_tick: Proper CORS Middleware
 app.use(cors({
-  origin: (origin, callback) => {
+  origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
+      callback(null, origin); // :white_tick: Allow only specific origins
     } else {
-      callback(new Error('Not allowed by CORS'));
+      callback(new Error("CORS not allowed for this origin"));
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
-
-// 👇 Handle preflight requests explicitly
-app.options('*', cors()); // Enable preflight for all routes
+// :white_tick: Handle OPTIONS requests (preflight)
+app.options('*', cors());
 
 
 app.use(express.json());
