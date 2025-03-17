@@ -49,7 +49,7 @@ app.use((req, res, next) => {
   next();
 });
 app.use(express.json());
-
+app.use(express.urlencoded({ extended: true }));
 const frontendPath = path.join(__dirname, "..", "Frontend"); // Adjust if needed
 app.use(express.static(path.join(__dirname, frontendPath)));
 app.use(express.static(frontendPath));
@@ -843,28 +843,39 @@ const upload = multer({ storage: storage });
 
 app.post('/products', upload.single('image'), async (req, res) => {
   try {
+      // :white_tick: Add CORS Headers to Response
+      res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "*");
+      res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+      res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+      res.setHeader("Access-Control-Allow-Credentials", "true");
     console.log(":inbox_tray: Incoming Request Body:", req.body);
     console.log(":outbox_tray: Uploaded File:", req.file);
-
     if (!req.body.name || !req.body.price || !req.body.category) {
       return res.status(400).json({ error: "Missing required fields" });
     }
-
     if (!req.file) {
       return res.status(400).json({ error: "Image upload failed" });
     }
-
-    const imagePath = `/uploads/Products/${req.file.originalname}`;
-    console.log("saving image path:", imagePath);
-    const product = new Product({ ...req.body, image: imagePath });
-    await product.save();
-
-
-    console.log("product saved successfully:", product)
-    res.status(201).json(product);
+    const imagePath = `/uploads/Products/${req.file.filename}`;
+    const newProduct = new Product({
+      name: req.body.name,
+      description: req.body.description,
+      price: parseFloat(req.body.price),  // :white_tick: Ensure numeric fields are numbers
+      stock: parseInt(req.body.stock),
+      status: req.body.status,
+      category: req.body.category,
+      discount: parseFloat(req.body.discount),
+      size: req.body.size,
+      color: req.body.color,
+      image: imagePath
+    });
+    console.log(":memo: Saving product to database:", newProduct);
+    await newProduct.save();
+    console.log(":white_tick: Product saved successfully:", newProduct);
+    res.status(201).json(newProduct);
   } catch (error) {
-    console.error(":x: Error adding product:", error);
-    res.status(500).json({ error: "Error adding product", details: error.message });
+    console.error(":x: MongoDB Save Error:", error);
+    res.status(500).json({ error: "Error saving product", details: error.message });
   }
 });
 
