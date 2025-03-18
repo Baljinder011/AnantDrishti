@@ -38,6 +38,12 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"]
   })
 );
+
+// app.use(cors({
+//   origin: '*',  // Update this to match your Go Live URL if different
+//   methods: ['GET', 'POST', 'PUT', 'DELETE'],
+//   allowedHeaders: ['Content-Type', 'Authorization']
+// }))
 app.use(express.json());
 
 const frontendPath = path.join(__dirname, "..", "Frontend"); // Adjust if needed
@@ -1037,10 +1043,10 @@ app.delete("/delete-order/:orderId", async (req, res) => {
 
 
 // Start Server
-
 // app.listen(PORT, () => {
 //   console.log(`Server running on http://localhost:${PORT}`);
 // });
+
 
 
 // Start HTTPS server
