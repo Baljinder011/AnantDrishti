@@ -85,6 +85,7 @@
             <input class="form-input" id="newCountry" placeholder="Country">
             <button type="button" class="btn btn-primary" onclick="saveNewAddress()">Save Address</button>
             <button class="back-btn" onclick="closeAddressPopup()">Cancel</button>
+        </div>
     </div>
 
     <!-- Edit Address Popup -->
@@ -246,8 +247,70 @@
             }
         }
 
+       // Enable editing for profile section
+       function editProfile() {
+    console.log("Edit button clicked");
+
+    document.querySelectorAll("#profileDetails .form-input").forEach(input => {
+        input.removeAttribute("readonly");
+    });
+
+    // Show the Save button and hide the Edit button
+    document.querySelector(".edit-btn").style.display = "none";
+    document.querySelector(".save-btn").style.display = "inline-block";
+}
 
 
+// Save updated profile data and update backend
+async function saveProfile() {
+    const _id = localStorage.getItem("_id"); // Retrieve _id directly
+    if (!_id) {
+        alert("User ID not found!");
+        return;
+    }
+
+    const updatedData = {
+        firstName: document.getElementById("firstName").value,
+        lastName: document.getElementById("lastName").value,
+        phone: document.getElementById("phone").value
+    };
+
+    try {
+        const response = await fetch(`http://localhost:4000/users/${_id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updatedData)
+        });
+
+        if (response.ok) {
+            const updatedUser = await response.json();
+
+            // Update UI with new data
+            document.getElementById("firstName").value = updatedUser.firstName;
+            document.getElementById("lastName").value = updatedUser.lastName;
+            document.getElementById("phone").value = updatedUser.phone;
+
+            // Update local storage
+            localStorage.setItem("userProfile", JSON.stringify(updatedUser));
+
+            // Make fields readonly again
+            document.querySelectorAll("#profileDetails .form-input").forEach(input => {
+                input.setAttribute("readonly", true);
+            });
+
+            // Show edit button, hide save button
+            document.querySelector(".edit-btn").style.display = "inline-block";
+            document.querySelector(".save-btn").style.display = "none";
+
+            alert("Profile updated successfully!");
+        } else {
+            alert("Failed to update profile!");
+        }
+    } catch (error) {
+        console.error("Error updating profile:", error);
+        alert("Error updating profile!");
+    }
+}
 
 
         // Fetch and display orders

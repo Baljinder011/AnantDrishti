@@ -19,12 +19,25 @@ const https = require("https");
 
 const app = express();
 
-// Middleware
-app.use(cors({
-  origin: '*',  // Update this to match your Go Live URL if different
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}))
+// :white_tick: Define allowed origins
+const allowedOrigins = ['https://api.indraq.tech', 'https://indraq.tech', 'http://localhost:3000', 'http://localhost:3001'];
+// :white_tick: CORS Middleware
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Allow requests with no origin (e.g., mobile apps, curl)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true, // REQUIRED for cookies/auth headers
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+  })
+);
 app.use(express.json());
 
 const frontendPath = path.join(__dirname, "..", "Frontend"); // Adjust if needed
@@ -291,6 +304,21 @@ const User = mongoose.model("users", userSchema);
 
 
 
+app.get("/users/:id/orders", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.status(200).json({ orders: user.orders || [] });
+  } catch (error) {
+    console.error("Error fetching orders:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+
 // Update a Specific Address
 app.put("/users/:id/update-address/:index", async (req, res) => {
   try {
@@ -339,19 +367,6 @@ app.put("/users/:id/remove-address/:index", async (req, res) => {
 
 
 
-app.get("/users/:id/orders", async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    const user = await User.findById(id);
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    res.status(200).json({ orders: user.orders || [] });
-  } catch (error) {
-    console.error("Error fetching orders:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
 
 
 app.get("/users/email/:email", async (req, res) => {
