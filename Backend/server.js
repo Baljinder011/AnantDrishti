@@ -13,33 +13,20 @@ const fs = require("fs");
 const dotenv = require("dotenv")
 dotenv.config();
 
-const https = require("https");
+// const https = require("https");
 
 
 
 const app = express();
 
-// :white_tick: Define allowed origins
-const allowedOrigins = ['https://api.indraq.tech', 'https://indraq.tech', 'http://localhost:3000', 'http://localhost:3001'];
+// Middleware
 app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, origin); // :white_tick: Allow only specific origins
-    } else {
-      callback(new Error("CORS not allowed for this origin"));
-    }
-  },
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
-}));
-// :white_tick: Handle OPTIONS requests (preflight)
-app.options('*', cors());
-
-
-
+  origin: '*',  // Update this to match your Go Live URL if different
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}))
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
 const frontendPath = path.join(__dirname, "..", "Frontend"); // Adjust if needed
 app.use(express.static(path.join(__dirname, frontendPath)));
 app.use(express.static(frontendPath));
@@ -57,22 +44,22 @@ const PORT = process.env.PORT || 4000
 
 
 
-const options = {
-  key: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/privkey.pem"),
-  cert: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/fullchain.pem"),
-};
+// const options = {
+//   key: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/privkey.pem"),
+//   cert: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/fullchain.pem"),
+// };
 
 
 
 // Enforce HTTPS middleware
 
 
-app.use((req, res, next) => {
-  if (req.protocol !== "https") {
-    return res.redirect("https://" + req.headers.host + req.url);
-  }
-  next();
-});
+// app.use((req, res, next) => {
+//   if (req.protocol !== "https") {
+//     return res.redirect("https://" + req.headers.host + req.url);
+//   }
+//   next();
+// });
 
 
 
@@ -269,7 +256,120 @@ app.get("/failure.html", (req, res) => res.sendFile(path.join(frontendPath, "fai
 
 
 
-// user Schema 
+
+
+
+
+
+
+// const upload = multer({
+//   storage: storage,
+//   limits: { fileSize: 5 * 1024 * 1024 }, // Limit file size to 5 MB
+//   fileFilter: (req, file, cb) => {
+//     const fileTypes = /jpeg|jpg|png|gif/;
+//     const extname = fileTypes.test(path.extname(file.originalname).toLowerCase());
+//     const mimeType = fileTypes.test(file.mimetype);
+
+//     if (extname && mimeType) {
+//       return cb(null, true);
+//     } else {
+//       return cb(new Error("Only image files are allowed (jpeg, jpg, png, gif)"), false);
+//     }
+//   },
+// });
+
+
+
+
+
+// Define the User Schema
+
+
+
+
+
+
+// Profile Schema and Model
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Define User Schema
+// const userSchema = new mongoose.Schema({
+//   userId: { type: String, required: true, unique: true }, // Unique user ID
+//   firstName: { type: String, required: true },
+//   lastName: { type: String, required: true },
+//   email: { type: String, required: true, unique: true, lowercase: true },
+//   password: { type: String, required: true, minlength: 6 },
+//   phone: { type: String, required: true, match: /^[0-9]{10}$/ },
+//   createdAt: { type: Date, default: Date.now },
+// });
+
+// const User = mongoose.model("User", userSchema);
+
+
+
+
+
+
+
+// const userSchema = new mongoose.Schema(
+//   {
+//     userId: { type: String, unique: true },
+//     profileImage: { type: String, default: "" },
+//     firstName: { type: String, required: true },
+//     lastName: { type: String, required: true },
+//     email: { type: String, required: true },
+//     phone: { type: String, required: true },
+//     password: { type: String, required: true },
+//     dob: { type: String, default: "" },
+//     createdAt: { type: Date, default: Date.now },
+//     address: [
+//       {
+//         fullName: String,
+//         phone: String,
+//         pincode: String,
+//         address: String,
+//         city: String,
+//         state: String,
+//         country: String,
+//         isDefaultAddress: Boolean,
+//       },
+//     ],
+//     loginSessions: [
+//       {
+//         date: String,
+//         time: String,
+//         location: String,
+//       },
+//     ],
+//     orders: [
+//       {
+//         orderId: String,
+//         productName: String,
+//         price: Number,
+//         date: String,
+//         status: String,
+//       },
+//     ],
+//   },
+//   { timestamps: true }
+// );
+
+// const User = mongoose.model("users", userSchema);
+
+
+
+
 const userSchema = new mongoose.Schema({
   profileImage: { type: String, default: "" },
   firstName: { type: String, required: true },
@@ -541,6 +641,93 @@ app.get('/getUser', async (req, res) => {
 
 
 
+// 📌 API to Save or Update Address
+// app.post("/save-address", async (req, res) => {
+//   const { userId, newAddress, addressIndex } = req.body;
+
+//   console.log("Request Body:", req.body); // Add logging to debug
+
+//   try {
+//     const user = await User.findOne({ userId });
+
+//     if (!user) return res.status(404).json({ message: "User not found" });
+
+//     if (addressIndex !== undefined && user.address[addressIndex]) {
+//       // Update only changed fields of the existing address
+//       Object.assign(user.address[addressIndex], newAddress);
+//     } else {
+//       // Add a new address if no addressIndex is provided
+//       user.address.push(newAddress);
+//     }
+
+//     await user.save();
+//     res.json({ message: "Address saved successfully", address: user.address });
+//   } catch (err) {
+//     console.error("Error:", err);
+//     res.status(500).json({ message: "Server error", error: err.message });
+//   }
+// });
+
+
+
+
+
+
+
+
+
+
+// app.delete("/delete-address", async (req, res) => {
+//   try {
+//     const { userId, index } = req.body;
+
+//     if (!userId || index === undefined) {
+//       return res.status(400).json({ message: "Missing required fields." });
+//     }
+
+//     // Find the user
+//     const user = await User.findOne({ userId });
+
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found." });
+//     }
+
+//     if (!user.address || index < 0 || index >= user.address.length) {
+//       return res.status(400).json({ message: "Invalid address index." });
+//     }
+
+//     // Remove the address at the given index
+//     user.address.splice(index, 1);
+
+//     // Save updated user data
+//     await user.save();
+
+//     return res.json({ message: "Address deleted successfully." });
+//   } catch (error) {
+//     console.error("Delete Address Error:", error);
+//     res.status(500).json({ message: "Internal server error." });
+//   }
+// });
+
+
+
+
+
+// app.get("/get-user", async (req, res) => {
+//   try {
+//     const { email } = req.query;
+//     if (!email) return res.json({ success: false, message: "Email is required" });
+
+//     const user = await User.findOne({ email });
+//     if (!user) return res.json({ success: false, message: "User not found" });
+
+//     res.json({ success: true, user });
+//   } catch (error) {
+//     console.error("Error fetching user:", error);
+//     res.status(500).json({ success: false, message: "Internal server error" });
+//   }
+// });
+
 
 
 
@@ -575,6 +762,16 @@ app.get('/getUser', async (req, res) => {
 //     res.status(500).json({ message: "Server error" });
 //   }
 // });
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -743,6 +940,34 @@ app.post("/saveProfile", uploadProfile.single("image"), async (req, res) => {
 
 
 
+// const addressSchema = new mongoose.Schema({
+//   userId: { type: String, required: true }, // Identify the user
+//   name: { type: String, required: true },
+//   email: { type: String, required: true },
+//   phone: Number,
+//   address: { type: String, required: true },
+//   city: { type: String, required: true },
+//   state: { type: String, required: true },
+//   pin: { type: String, required: true },
+//   country: { type: String, required: true },
+//   isDefaultAddress: { type: Boolean, default: false }
+// });
+
+// const Address = mongoose.model("Address", addressSchema);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 app.get("/products/search", async (req, res) => {
   try {
     const query = req.query.query;
@@ -766,6 +991,29 @@ app.get("/products/search", async (req, res) => {
 
 
 
+
+
+
+
+
+
+
+// app.post('/products', upload.single('image'), async (req, res) => {
+//   try {
+//     const productData = {
+//       ...req.body,
+//       price: parseFloat(req.body.price),
+//       stock: parseInt(req.body.stock),
+//       discount: parseFloat(req.body.discount),
+//       image: req.file ? `/uploads/${req.file.filename}` : '',
+//     };
+//     const product = new Product(productData);
+//     await product.save();
+//     res.status(201).json(product);
+//   } catch (error) {
+//     res.status(500).json({ message: 'Error creating product', error });
+//   }
+// });
 
 
 // Product Schema & Model
@@ -928,6 +1176,33 @@ app.put('/products/:id/status', async (req, res) => {
 
 
 
+
+// const profileSchema = new mongoose.Schema({
+//   name: String,
+//   email: { type: String, required: true, unique: true },
+//   phone: String,
+//   dob: String,
+//   image: String, // Store image file path
+// });
+// profileSchema.index({ email: 1 });
+// const Profile = mongoose.model("Profile", profileSchema);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // Order Schema
 const orderSchema = new mongoose.Schema({
   orderId: { type: String, unique: true }, // Custom Order ID
@@ -1015,13 +1290,13 @@ app.delete("/delete-order/:orderId", async (req, res) => {
 
 // Start Server
 
-// app.listen(PORT, () => {
-//   console.log(`Server running on http://localhost:${PORT}`);
-// });
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});
 
 
 // Start HTTPS server
 
-https.createServer(options, app).listen(PORT, () => {
-  console.log(`Secure server running on HTTPS at port ${PORT}`);
-});
+// https.createServer(options, app).listen(PORT, () => {
+//   console.log(`Secure server running on HTTPS at port ${PORT}`);
+// });
