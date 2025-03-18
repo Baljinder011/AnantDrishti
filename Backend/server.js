@@ -19,15 +19,27 @@ const https = require("https");
 
 const app = express();
 
-// Middleware
+// :white_tick: Define allowed origins
+const allowedOrigins = ['https://api.indraq.tech', 'https://indraq.tech', 'http://localhost:3000', 'http://localhost:3001'];
 app.use(cors({
-  origin: ['https://indraq.tech', 'http://localhost:3001'] ,  // Allow requests from localhost:3001
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"], // Add headers if needed
-  credentials: true,  // Allow cookies/credentials
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, origin); // :white_tick: Allow only specific origins
+    } else {
+      callback(new Error("CORS not allowed for this origin"));
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
-app.use(express.json());
+// :white_tick: Handle OPTIONS requests (preflight)
+app.options('*', cors());
 
+
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 const frontendPath = path.join(__dirname, "..", "Frontend"); // Adjust if needed
 app.use(express.static(path.join(__dirname, frontendPath)));
 app.use(express.static(frontendPath));
@@ -35,6 +47,14 @@ app.use(bodyParser.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 const PORT = process.env.PORT || 4000
+
+
+// origin: ['https://indraq.tech', 'http://localhost:3001'] ,  // Allow requests from localhost:3001
+// methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+// allowedHeaders: ["Content-Type", "Authorization"], // Add headers if needed
+// credentials: true,  // Allow cookies/credentials
+
+
 
 
 const options = {
@@ -249,192 +269,81 @@ app.get("/failure.html", (req, res) => res.sendFile(path.join(frontendPath, "fai
 
 
 
-
-
-
-
-
-
-// const upload = multer({
-//   storage: storage,
-//   limits: { fileSize: 5 * 1024 * 1024 }, // Limit file size to 5 MB
-//   fileFilter: (req, file, cb) => {
-//     const fileTypes = /jpeg|jpg|png|gif/;
-//     const extname = fileTypes.test(path.extname(file.originalname).toLowerCase());
-//     const mimeType = fileTypes.test(file.mimetype);
-
-//     if (extname && mimeType) {
-//       return cb(null, true);
-//     } else {
-//       return cb(new Error("Only image files are allowed (jpeg, jpg, png, gif)"), false);
-//     }
-//   },
-// });
-
-
-
-
-
-// Define the User Schema
-
-
-
-
-
-
-// Profile Schema and Model
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Define User Schema
-// const userSchema = new mongoose.Schema({
-//   userId: { type: String, required: true, unique: true }, // Unique user ID
-//   firstName: { type: String, required: true },
-//   lastName: { type: String, required: true },
-//   email: { type: String, required: true, unique: true, lowercase: true },
-//   password: { type: String, required: true, minlength: 6 },
-//   phone: { type: String, required: true, match: /^[0-9]{10}$/ },
-//   createdAt: { type: Date, default: Date.now },
-// });
-
-// const User = mongoose.model("User", userSchema);
-
-
-
-
-
-
-// User Schema & Model
+// user Schema 
 const userSchema = new mongoose.Schema({
-  userId: { type: String, unique: true },
   profileImage: { type: String, default: "" },
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
   email: { type: String, required: true },
   phone: { type: String, required: true },
-  gender:{type:String,required:true},
-  password: { type: String, required: true }, // Add this field
+  password: { type: String, required: true },
   dob: { type: String, default: "" },
   createdAt: { type: Date, default: Date.now },
-
-  address: [{
-    fullName: String,
-    phone: String,
-    pincode: String,
-    address: String,
-    city: String,
-    state: String,
-    country:String,
-    isDefaultAddress: Boolean
-  }],
-  loginSessions: [
+  address: [  // This is the correct field name
     {
-      date: String,
-      time: String,
-      location: String
-    }
+      street: String,
+      city: String,
+      postalCode: Number,
+      state: String,
+      country: String,
+    },
   ],
   orders: [
     {
       orderId: String,
       productName: String,
       price: Number,
-      date: String,
-      status: String
-    }
-  ]
-}, { timestamps: true });
+      status: String,
+    },
+  ],
+});
 
 const User = mongoose.model("users", userSchema);
 
 
-// 📌 API to Save or Update Address
-app.post("/save-address", async (req, res) => {
-  const { userId, newAddress, addressIndex } = req.body;
 
+
+// Update a Specific Address
+app.put("/users/:id/update-address/:index", async (req, res) => {
   try {
-    const user = await User.findOne({ userId });
-
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    if (addressIndex !== undefined && user.address[addressIndex]) {
-      // 🔹 Update only changed fields of the existing address
-      Object.assign(user.address[addressIndex], newAddress);
-    } else {
-      // 🔹 If no addressIndex, add a new address
-      user.address.push(newAddress);
-    }
-
-    await user.save();
-    res.json({ message: "Address saved successfully", address: user.address });
-
-  } catch (err) {
-    console.error("Error:", err);
-    res.status(500).json({ message: "Server error", error: err.message });
-  }
-});
-
-
-
-
-
-// 📌 API to Fetch Addresses
-app.get("/get-address", async (req, res) => {
-  const { userId } = req.query;
-
-  try {
-      const user = await User.findOne({ userId });
-
+      const user = await User.findById(req.params.id);
       if (!user) return res.status(404).json({ message: "User not found" });
 
-      res.json(user.address);
-  } catch (err) {
-      console.error("Error:", err);
-      res.status(500).json({ message: "Server error", error: err.message });
+      const index = parseInt(req.params.index);
+      if (index < 0 || index >= user.address.length) {
+          return res.status(400).json({ message: "Invalid address index" });
+      }
+
+      // Update the specific address
+      user.address[index] = { ...user.address[index], ...req.body };
+      await user.save();
+
+      res.json({ message: "Address updated successfully!", addresses: user.address });
+  } catch (error) {
+      res.status(500).json({ message: "Error updating address", error });
   }
 });
 
 
 
-app.delete("/delete-address", async (req, res) => {
+// Remove an Address
+app.put("/users/:id/remove-address/:index", async (req, res) => {
   try {
-      const { userId, index } = req.body;
+      const user = await User.findById(req.params.id);
+      if (!user) return res.status(404).json({ message: "User not found" });
 
-      if (!userId || index === undefined) {
-          return res.status(400).json({ message: "Missing required fields." });
-      }
-
-      // Find the user
-      const user = await User.findOne({ userId });
-
-      if (!user) {
-          return res.status(404).json({ message: "User not found." });
-      }
-
-      if (!user.address || index < 0 || index >= user.address.length) {
-          return res.status(400).json({ message: "Invalid address index." });
+      const index = parseInt(req.params.index);
+      if (index < 0 || index >= user.address.length) {
+          return res.status(400).json({ message: "Invalid address index" });
       }
 
       // Remove the address at the given index
       user.address.splice(index, 1);
-
-      // Save updated user data
       await user.save();
 
-      return res.json({ message: "Address deleted successfully." });
+      res.json({ message: "Address removed successfully!", addresses: user.address });
   } catch (error) {
-      console.error("Delete Address Error:", error);
-      res.status(500).json({ message: "Internal server error." });
+      res.status(500).json({ message: "Error removing address", error });
   }
 });
 
@@ -442,18 +351,60 @@ app.delete("/delete-address", async (req, res) => {
 
 
 
-app.get("/get-user", async (req, res) => {
+app.get("/users/:id/orders", async (req, res) => {
+  const { id } = req.params;
+
   try {
-      const { email } = req.query;
-      if (!email) return res.json({ success: false, message: "Email is required" });
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-      const user = await customers.findOne({ email });
-      if (!user) return res.json({ success: false, message: "User not found" });
-
-      res.json({ success: true, user });
+    res.status(200).json({ orders: user.orders || [] });
   } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ success: false, message: "Internal server error" });
+    console.error("Error fetching orders:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+
+app.get("/users/email/:email", async (req, res) => {
+  const user = await User.findOne({ email: req.params.email });
+  if (!user) return res.status(404).send("User not found");
+  res.json(user);
+});
+
+
+
+app.post("/users/:id/add-address", async (req, res) => {
+  const { id } = req.params;
+  const newAddress = req.body;
+
+  try {
+    const user = await User.findByIdAndUpdate(
+      id,
+      { $push: { address: newAddress } },
+      { new: true }
+    );
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.status(200).json({ message: "Address added successfully", user });
+  } catch (error) {
+    console.error("Error adding address:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+app.get("/users/:id/addresses", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.status(200).json({ addresses: user.address || [] });
+  } catch (error) {
+    console.error("Error fetching addresses:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
@@ -461,33 +412,126 @@ app.get("/get-user", async (req, res) => {
 
 
 
-
-
-app.post("/update-profile", async (req, res) => {
-  const { email, firstName, lastName, phone, dob, gender } = req.body;
-
+app.put("/users/:id", async (req, res) => {
   try {
-    // Find user by email
-    const user = await User.findOne({ email });
+    const { firstName, lastName, phone, address } = req.body;
 
-    if (!user) {
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      { firstName, lastName, phone, address },
+      { new: true }
+    );
+
+    if (!updatedUser) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Update user details
-    user.firstName = firstName;
-    user.lastName = lastName;
-    user.phone = phone;
-    user.dob = dob;
-    user.gender = gender
-    // user.address = address; // Replace existing address array
-
-    // Save updated user
-    await user.save();
-
-    res.status(200).json({ message: "Profile updated successfully", user });
+    res.json(updatedUser);
   } catch (error) {
-    console.error("Error updating profile:", error);
+    console.error("Error updating user:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// app.get("/users/:id", async (req, res) => {
+//   try {
+//     const user = await User.findById(req.params.id);
+
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found" });
+//     }
+
+//     res.json(user);
+//   } catch (error) {
+//     console.error("Error fetching user:", error);
+//     res.status(500).json({ error: "Internal Server Error" });
+//   }
+// });
+
+
+
+// Ensure `uploads/Userprofile/` folder exists
+const uploadDir = path.join(__dirname, "uploads/Userprofile");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const userStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  },
+});
+
+const uploadProfile = multer({ storage: userStorage });
+
+// Upload Profile Image and Update User
+app.post("/users/:id/upload", uploadProfile.single("profileImage"), async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+
+    const imageUrl = `/uploads/Userprofile/${req.file.filename}`;
+
+    await User.findByIdAndUpdate(id, { profileImage: imageUrl });
+
+    res.json({ message: "Profile image updated!", imageUrl });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.get("/users/:id/profile", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id);
+
+    if (!user || !user.profileImage) {
+      return res.status(404).json({ error: "User or profile image not found" });
+    }
+
+    res.json({ imageUrl: `http://localhost:4000${user.profileImage}` });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Update User Profile API
+app.put("/users/:id", uploadProfile.single("profileImage"), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { firstName, lastName, phone } = req.body;
+    const profileImage = req.file ? `/uploads/Userprofile/${req.file.filename}` : undefined;
+
+    const updateFields = { firstName, lastName, phone };
+    if (profileImage) updateFields.profileImage = profileImage;
+
+    const updatedUser = await User.findByIdAndUpdate(id, { $set: updateFields }, { new: true });
+
+    if (!updatedUser) return res.status(404).json({ message: "User not found" });
+
+    res.json(updatedUser);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+
+
+
+app.get('/getUser', async (req, res) => {
+  const { email } = req.query;
+  try {
+    const user = await User.findOne({ email }).select("-password"); // Exclude password
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json(user);
+  } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -500,150 +544,138 @@ app.post("/update-profile", async (req, res) => {
 
 
 
-// Ensure `uploads/Userprofile/` folder exists
-const uploadDir = path.join(__dirname, "uploads/Userprofile");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-// File upload setup
-const userStorage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadDir); // Save images in the "uploads/Userprofile" folder
-  },
-  filename: function (req, file, cb) {
-    cb(null, file.originalname); // Unique filename
-  }
-});
-
-const uploadProfile = multer({ storage: userStorage });
 
 
 
+// app.post("/update-profile", async (req, res) => {
+//   const { email, firstName, lastName, phone, dob, gender } = req.body;
 
-// API Route to Update Profile Image
-app.post("/upload-profile-image", uploadProfile.single("profileImage"), async (req, res) => {
-  try {
-    const { email } = req.body; // Get email from request
-    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+//   try {
+//     // Find user by email
+//     const user = await User.findOne({ email });
 
-    // Find user and update profile image
-    const updatedUser = await User.findOneAndUpdate(
-      { email },
-      { profileImage: `/uploads/Userprofile/${req.file.filename}` }, // Corrected image path
-      { new: true }
-    );
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found" });
+//     }
 
-    if (!updatedUser) return res.status(404).json({ message: "User not found" });
+//     // Update user details
+//     user.firstName = firstName;
+//     user.lastName = lastName;
+//     user.phone = phone;
+//     user.dob = dob;
+//     user.gender = gender
+//     // user.address = address; // Replace existing address array
 
-    res.status(200).json({ message: "Profile image updated", user: updatedUser });
-  } catch (error) {
-    console.error("Error uploading image:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-});
+//     // Save updated user
+//     await user.save();
+
+//     res.status(200).json({ message: "Profile updated successfully", user });
+//   } catch (error) {
+//     console.error("Error updating profile:", error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// });
 
 
 
 
+// // API Route to Update Profile Image
+// app.post("/upload-profile-image", uploadProfile.single("profileImage"), async (req, res) => {
+//   try {
+//     const { email } = req.body; // Get email from request
+//     if (!req.file) return res.status(400).json({ message: "No file uploaded" });
 
-async function generateUserId(firstName) {
-  const baseId = firstName.toLowerCase(); // Use first name as prefix
+//     // Find user and update profile image
+//     const updatedUser = await User.findOneAndUpdate(
+//       { email },
+//       { profileImage: `/uploads/Userprofile/${req.file.filename}` }, // Corrected image path
+//       { new: true }
+//     );
 
-  const lastUser = await User.findOne().sort({ userId: -1 }); // Find last created user
+//     if (!updatedUser) return res.status(404).json({ message: "User not found" });
 
-  if (!lastUser) {
-    return `${baseId}001`; // First user starts with their name + 001
-  }
-
-  const lastNumber = parseInt(lastUser.userId.match(/\d+$/)?.[0] || "0"); // Extract last numeric part
-  const newNumber = (lastNumber + 1).toString().padStart(3, "0"); // Increment and format
-
-  return `${baseId}${newNumber}`;
-}
+//     res.status(200).json({ message: "Profile image updated", user: updatedUser });
+//   } catch (error) {
+//     console.error("Error uploading image:", error);
+//     res.status(500).json({ message: "Server error", error: error.message });
+//   }
+// });
 
 
 
 
 
-// Signup Route
+// ✅ Signup Route
 app.post("/signup", async (req, res) => {
-  console.log("Received request body:", req.body);
-
-  const { firstName, lastName, email, password, phone } = req.body;
-
-  if (!firstName || !lastName || !email || !password || !phone) {
-    return res.status(400).json({ message: "All fields are required" });
-  }
-
   try {
+    const { firstName, lastName, email, password, phone } = req.body;
+
+    if (!firstName || !lastName || !email || !password || !phone) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    // Generate global incremental userId using firstName
-    const userId = await generateUserId(firstName);
-
-    // Create and save user
-    const newUser = new User({ userId, firstName, lastName, email, password, phone });
+    const newUser = new User({ firstName, lastName, email, password, phone });
     await newUser.save();
 
-    console.log("User saved successfully:", newUser);
-    res.status(201).json({ message: "User registered successfully", userId });
+    res.status(201).json({
+      message: "User registered successfully",
+      user: {
+        _id: newUser._id,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+        email: newUser.email,
+        phone: newUser.phone,
+        profileImage: newUser.profileImage,
+        dob: newUser.dob,
+      },
+    });
   } catch (error) {
-    console.error("Error during registration:", error);
+    console.error("Signup error:", error);
     res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 });
 
-
-
-
-
-// My Login api
-
+// ✅ Login Route
 app.post("/login", async (req, res) => {
-  const { email, password } = req.body;
-
-  if (!email || !password) {
-    return res.status(400).json({ message: "Email and password are required" });
-  }
-
   try {
-    // Find user in the User collection
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
+    }
+
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ message: "User not found" });
     }
 
-    // Check password (plain text comparison)
     if (user.password !== password) {
       return res.status(400).json({ message: "Invalid password" });
     }
 
-    // Find user profile (if exists)
-    let userProfile = {
-      fullName: user.fullName,
-      phone: user.phone,
-      image: null, // Default to null
-    };
-
-    try {
-      const profile = await User.findOne({ email });
-      if (profile && profile.image) {
-        userProfile.image = profile.image;
-      }
-    } catch (profileError) {
-      console.warn("Profile fetch error:", profileError.message); // Non-blocking warning
-    }
-
-    res.status(200).json({ message: "Login successful", userProfile });
+    res.status(200).json({
+      message: "Login successful",
+      userProfile: {
+        _id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        phone: user.phone,
+        profileImage: user.profileImage,
+        dob: user.dob,
+      },
+    });
   } catch (error) {
-    console.error("Error during login:", error);
+    console.error("Login error:", error);
     res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 });
+
 
 
 
@@ -711,34 +743,6 @@ app.post("/saveProfile", uploadProfile.single("image"), async (req, res) => {
 
 
 
-// const addressSchema = new mongoose.Schema({
-//   userId: { type: String, required: true }, // Identify the user
-//   name: { type: String, required: true },
-//   email: { type: String, required: true },
-//   phone: Number,
-//   address: { type: String, required: true },
-//   city: { type: String, required: true },
-//   state: { type: String, required: true },
-//   pin: { type: String, required: true },
-//   country: { type: String, required: true },
-//   isDefaultAddress: { type: Boolean, default: false }
-// });
-
-// const Address = mongoose.model("Address", addressSchema);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 app.get("/products/search", async (req, res) => {
   try {
     const query = req.query.query;
@@ -762,29 +766,6 @@ app.get("/products/search", async (req, res) => {
 
 
 
-
-
-
-
-
-
-
-// app.post('/products', upload.single('image'), async (req, res) => {
-//   try {
-//     const productData = {
-//       ...req.body,
-//       price: parseFloat(req.body.price),
-//       stock: parseInt(req.body.stock),
-//       discount: parseFloat(req.body.discount),
-//       image: req.file ? `/uploads/${req.file.filename}` : '',
-//     };
-//     const product = new Product(productData);
-//     await product.save();
-//     res.status(201).json(product);
-//   } catch (error) {
-//     res.status(500).json({ message: 'Error creating product', error });
-//   }
-// });
 
 
 // Product Schema & Model
@@ -849,15 +830,18 @@ app.post('/products', upload.single('image'), async (req, res) => {
 
 
 
-app.get("/products", async (req, res) => {
+app.get('/products', async (req, res) => {
   try {
-    const products = await Product.find({});
+    let query = {};
+    let limit = parseInt(req.query.limit) || 0; // Convert limit to a number, default 0 (no limit)
+
+    const products = await Product.find(query).limit(limit);
     res.json(products);
   } catch (error) {
-    console.error("Error fetching products:", error);
-    res.status(500).send("Error fetching products");
+    res.status(500).json({ error: 'Failed to fetch products' });
   }
 });
+
 
 
 app.get("/products/:id", async (req, res) => {
@@ -944,33 +928,6 @@ app.put('/products/:id/status', async (req, res) => {
 
 
 
-
-// const profileSchema = new mongoose.Schema({
-//   name: String,
-//   email: { type: String, required: true, unique: true },
-//   phone: String,
-//   dob: String,
-//   image: String, // Store image file path
-// });
-// profileSchema.index({ email: 1 });
-// const Profile = mongoose.model("Profile", profileSchema);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // Order Schema
 const orderSchema = new mongoose.Schema({
   orderId: { type: String, unique: true }, // Custom Order ID
@@ -1033,16 +990,7 @@ app.post("/save-order", async (req, res) => {
 
 
 
-// Fetch orders and payment details
-app.get("/get-orders", async (req, res) => {
-  try {
-    const orders = await Order.find().sort({ createdAt: -1 }); // Get orders sorted by latest first
-    res.json({ success: true, orders });
-  } catch (error) {
-    console.error("Error fetching orders:", error);
-    res.status(500).json({ success: false, message: "Failed to fetch orders" });
-  }
-});
+
 
 
 

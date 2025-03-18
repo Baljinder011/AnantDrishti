@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    
+    <!-- Profile Section -->
+<div class="detail-container" id="profileDetails">
+    <h2>Personal Details</h2>
+    
+<!-- Profile Image Preview -->
+<img id="profileImagePreview" src="" alt="Profile Image" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover;">
+
+<!-- File Upload Input -->
+<input type="file" id="profileImageInput" accept="image/*" style="display: none;">
+<button class="edit-btn" onclick="document.getElementById('profileImageInput').click()">Choose Image</button>
+
+<!-- Upload Button -->
+<button id="upload-btn" class="save-btn" onclick="uploadProfileImage()" style="display: none;">Upload</button>
+
+    <p><strong>First Name:</strong> <input class="form-input" id="firstName" readonly></p>
+    <p><strong>Last Name:</strong> <input class="form-input" id="lastName" readonly></p>
+    <p><strong>Email:</strong> <input class="form-input" id="email" readonly></p>
+    <p><strong>Phone:</strong> <input class="form-input" id="phone" readonly></p>
+
+    <button class="edit-btn" onclick="editProfile()">Edit</button>
+    <button class="save-btn" onclick="saveProfile()">Save</button>
+    <div class="back-btn" onclick="goBack()">Back</div>
+</div>
+
+
+    <!-- Address Section -->
+    <div class="detail-container" id="addressesDetails">
+        <h2>Saved Addresses</h2>
+        <div id="addressesList">Loading...</div>
+        <button class="edit-btn" onclick="openAddressPopup()">Add New Address</button>
+        <button class="save-btn" onclick="fetchUserAddresses()">Refresh Addresses</button>
+        <div class="back-btn" onclick="goBack()">Back</div>
+    </div>
+    
+    <div id="addressPopup" class="popup-overlay" style="display: none;">
+        <div class="popup-content">
+            <h2>Add New Address</h2>
+            <input class="form-input" id="newStreet" placeholder="Street">
+            <input class="form-input" id="newCity" placeholder="City">
+            <input class="form-input" id="newPostalCode" placeholder="Postal Code">
+            <input class="form-input" id="newState" placeholder="State">
+            <input class="form-input" id="newCountry" placeholder="Country">
+            <button type="button" class="btn btn-primary" onclick="saveNewAddress()">Save Address</button>
+            <button class="back-btn" onclick="closeAddressPopup()">Cancel</button>
+        </div>
+    </div>
+    
+
+    
+
+    <!-- Orders Section -->
+    <div class="detail-container" id="ordersDetails">
+        <h2>My Orders</h2>
+        <div id="ordersList">No Order Found</div>
+        <div class="back-btn" onclick="goBack()">Back</div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login & Register</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./index.css">
+    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+    <style>
+        .hidden { display: none; }
+        .cursor-pointer { cursor: pointer; }
+
+        .card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+h3 {
+    font-weight: bold;
+    color: #333;
+}
+
+.btn {
+    border-radius: 50px;
+    transition: all 0.3s ease-in-out;
+}
+
+.btn-primary {
+    background-color: #667eea;
+    border: none;
+}
+
+.btn-primary:hover {
+    background-color: #5563c1;
+}
+
+.btn-secondary {
+    background-color: #764ba2;
+    border: none;
+}
+
+.btn-secondary:hover {
+    background-color: #5c3c8d;
+}
+
+.form-control {
+    border-radius: 8px;
+    padding: 0.75rem;
+    font-size: 1rem;
+    transition: border 0.3s;
+}
+
+.form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 5px rgba(102, 126, 234, 0.5);
+}
+
+/* Responsive Styling */
+@media (max-width: 768px) {
+    .card {
+        width: 90%;
+        padding: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .card {
+        width: 95%;
+        padding: 1rem;
+    }
+
+    h3 {
+        font-size: 1.25rem;
+    }
+
+    .btn {
+        font-size: 0.9rem;
+    }
+}
+
+    </style>
+</head>
+<body>
+    <div id="nav-placeholder"></div>
+    <script> $(function () { $("#nav-placeholder").load("nav.html"); }); </script>
+
+    <div class="d-flex justify-content-center align-items-center" style="height: 100vh;">
+        <div class="card p-4 shadow-lg" style="width: 100%; max-width: 450px;">
+            <h3 class="text-center mb-4" id="formTitle">Create Your Account</h3>
+            
+            <!-- Toggle Buttons -->
+            <div class="text-center mb-3">
+                <button id="toggleRegister" class="btn btn-primary">Register</button>
+                <button id="toggleLogin" class="btn btn-secondary">Login</button>
+            </div>
+            
+            <!-- Register Form -->
+            <form id="registerForm">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="firstName" class="form-label">First Name</label>
+                        <input type="text" id="firstName" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="lastName" class="form-label">Last Name</label>
+                        <input type="text" id="lastName" class="form-control" required>
+                    </div>
+                </div>
+                <input type="email" id="email" class="form-control mb-3" placeholder="Email" required>
+                <input type="tel" id="phone" class="form-control mb-3" placeholder="Phone Number" required>
+                <input type="password" id="password" class="form-control mb-3" placeholder="Password" required>
+                <input type="password" id="confirmPassword" class="form-control mb-3" placeholder="Confirm Password" required>
+                <button type="submit" class="btn btn-primary w-100">Register</button>
+            </form>
+            
+            <!-- Login Form -->
+            <form id="loginForm" class="hidden">
+                <input type="email" id="loginEmail" class="form-control mb-3" placeholder="Email" required>
+                <input type="password" id="loginPassword" class="form-control mb-3" placeholder="Password" required>
+                <button type="submit" class="btn btn-primary w-100">Login</button>
+            </form>
+            
+            <div id="formError" class="text-danger mt-3 text-center"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:4000"; // Change this if needed
+
+        const registerForm = document.getElementById('registerForm');
+        const loginForm = document.getElementById('loginForm');
+        const formTitle = document.getElementById('formTitle');
+        const formError = document.getElementById('formError');
+        
+        document.getElementById('toggleRegister').addEventListener('click', () => {
+            registerForm.classList.remove('hidden');
+            loginForm.classList.add('hidden');
+            formTitle.textContent = "Create Your Account";
+        });
+
+        document.getElementById('toggleLogin').addEventListener('click', () => {
+            registerForm.classList.add('hidden');
+            loginForm.classList.remove('hidden');
+            formTitle.textContent = "Login to Your Account";
+        });
+
+        // Register Form Submission
+        registerForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            formError.textContent = "";
+
+            const firstName = document.getElementById('firstName').value.trim();
+            const lastName = document.getElementById('lastName').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const confirmPassword = document.getElementById('confirmPassword').value.trim();
+
+            if (password !== confirmPassword) {
+                formError.textContent = "Passwords do not match.";
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/signup`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ firstName, lastName, email, phone, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert("Registration successful! Please log in.");
+                    document.getElementById('toggleLogin').click();
+                } else {
+                    formError.textContent = data.message || "Registration failed.";
+                }
+            } catch (error) {
+                formError.textContent = "Error connecting to the server.";
+            }
+        });
+
+        // Login Form Submission
+        loginForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            formError.textContent = "";
+
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+
+            try {
+                const response = await fetch(`${API_URL}/login`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    localStorage.setItem('userProfile', JSON.stringify(data.userProfile));
+                    localStorage.setItem('isLoggedIn', 'true');
+                    window.location.href = "./index.html";
+                } else {
+                    formError.textContent = data.message || "Login failed.";
+                }
+            } catch (error) {
+                formError.textContent = "Error connecting to the server.";
+            }
+        });
+    </script>
+</body>
+</html>

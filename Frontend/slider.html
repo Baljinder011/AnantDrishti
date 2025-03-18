@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infinite Loop Slider</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f5f5f5;
+        }
+        .slider-container {
+            position: relative;
+            width: 90%;
+            max-width: 1400px;
+            overflow: hidden;
+        }
+        .slider-wrapper {
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+        .slider {
+            display: flex;
+            transition: transform 0.5s ease-in-out;
+            gap: 10px;
+        }
+        .slide-item {
+            position: relative;
+            width: calc(25% - 10px); 
+            flex-shrink: 0;
+        }
+        .slide-item img {
+            width: 100%;
+            height: 250px;
+            border-radius: 10px 10px 0 0;
+            object-fit: cover;
+        }
+        .slide-content {
+            background-color: white;
+            padding: 10px;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .slide-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 16px;
+            color: #333;
+        }
+        .shop-button {
+            display: block;
+            background-color: #4CAF50;
+            color: white;
+            text-align: center;
+            padding: 8px 0;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        .shop-button:hover {
+            background-color: #45a049;
+        }
+        .arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 50%;
+            font-size: 20px;
+            z-index: 10;
+        }
+        .arrow-left {
+            left: 10px;
+        }
+        .arrow-right {
+            right: 10px;
+        }
+
+        @media (max-width: 1024px) {
+    .slide-item {
+        width: calc(33.33% - 10px); /* Show 3 items */
+    }
+}
+
+@media (max-width: 768px) {
+    .slide-item {
+        width: calc(50% - 10px); /* Show 2 items */
+    }
+}
+
+@media (max-width: 480px) {
+    .slide-item {
+        width: 100%; /* Show 1 item */
+    }
+}
+
+    </style>
+</head>
+<body>
+
+    <div class="slider-container">
+        <button class="arrow arrow-left">&#9665;</button>
+        <div class="slider-wrapper">
+            <div class="slider">
+                <!-- Original items -->
+                <div class="slide-item">
+                    <a href="products.html">
+                        <img src="https://www.pandit.com/cdn/shop/files/7_chakra_bracelet_main_product_image_395.webp?v=1741334391&width=713" alt="7 Chakra Bracelet">
+                    </a>
+                    <div class="slide-content">
+                        <div class="slide-title">7 Chakra Bracelet</div>
+                        <a href="products.html" class="shop-button">Shop Collection</a>
+                    </div>
+                </div>
+                
+                <div class="slide-item">
+                    <a href="products.html">
+                        <img src="https://www.pandit.com/cdn/shop/files/african_bloodstone_bracelet_main_product_image_394.webp?v=1741334423&width=713" alt="African Bloodstone Bracelet">
+                    </a>
+                    <div class="slide-content">
+                        <div class="slide-title">African Bloodstone Bracelet</div>
+                        <a href="products.html" class="shop-button">Shop Collection</a>
+                    </div>
+                </div>
+                
+                <div class="slide-item">
+                    <a href="products.html">
+                        <img src="https://www.pandit.com/cdn/shop/files/azurite_bracelet_lucky_bracelet_main_product_image_203.webp?v=1733307429&width=360" alt="Azurite Lucky Bracelet">
+                    </a>
+                    <div class="slide-content">
+                        <div class="slide-title">Azurite Lucky Bracelet</div>
+                        <a href="products.html" class="shop-button">Shop Collection</a>
+                    </div>
+                </div>
+                
+                <div class="slide-item">
+                    <a href="products.html">
+                        <img src="https://www.pandit.com/cdn/shop/files/5_mukhi_copper_rudraksha_bracelet_main_product_image_204.webp?v=1721127382&width=713" alt="5 Mukhi Copper Rudraksha">
+                    </a>
+                    <div class="slide-content">
+                        <div class="slide-title">5 Mukhi Copper Rudraksha</div>
+                        <a href="products.html" class="shop-button">Shop Collection</a>
+                    </div>
+                </div>
+                
+                <div class="slide-item">
+                    <a href="products.html">
+                        <img src="https://www.pandit.com/cdn/shop/files/angelite_lucky_bracelet_main_product_image_205.webp?v=1733370600&width=713" alt="Angelite Lucky Bracelet">
+                    </a>
+                    <div class="slide-content">
+                        <div class="slide-title">Angelite Lucky Bracelet</div>
+                        <a href="products.html" class="shop-button">Shop Collection</a>
+                    </div>
+                </div>
+                
+                <!-- Cloned items for Infinite Effect -->
+                <div class="slide-item">
+                    <a href="products.html">
+                        <img src="https://www.pandit.com/cdn/shop/files/7_chakra_bracelet_main_product_image_395.webp?v=1741334391&width=713" alt="7 Chakra Bracelet">
+                    </a>
+                    <div class="slide-content">
+                        <div class="slide-title">7 Chakra Bracelet</div>
+                        <a href="products.html" class="shop-button">Shop Collection</a>
+                    </div>
+                </div>
+                
+                <div class="slide-item">
+                    <a href="products.html">
+                        <img src="https://www.pandit.com/cdn/shop/files/african_bloodstone_bracelet_main_product_image_394.webp?v=1741334423&width=713" alt="African Bloodstone Bracelet">
+                    </a>
+                    <div class="slide-content">
+                        <div class="slide-title">African Bloodstone Bracelet</div>
+                        <a href="products.html" class="shop-button">Shop Collection</a>
+                    </div>
+                </div>
+                
+                <div class="slide-item">
+                    <a href="products.html">
+                        <img src="https://www.pandit.com/cdn/shop/files/azurite_bracelet_lucky_bracelet_main_product_image_203.webp?v=1733307429&width=360" alt="Azurite Lucky Bracelet">
+                    </a>
+                    <div class="slide-content">
+                        <div class="slide-title">Azurite Lucky Bracelet</div>
+                        <a href="products.html" class="shop-button">Shop Collection</a>
+                    </div>
+                </div>
+                
+                <div class="slide-item">
+                    <a href="products.html">
+                        <img src="https://www.pandit.com/cdn/shop/files/5_mukhi_copper_rudraksha_bracelet_main_product_image_204.webp?v=1721127382&width=713" alt="5 Mukhi Copper Rudraksha">
+                    </a>
+                    <div class="slide-content">
+                        <div class="slide-title">5 Mukhi Copper Rudraksha</div>
+                        <a href="products.html" class="shop-button">Shop Collection</a>
+                    </div>
+                </div>
+                
+                <div class="slide-item">
+                    <a href="products.html">
+                        <img src="https://www.pandit.com/cdn/shop/files/angelite_lucky_bracelet_main_product_image_205.webp?v=1733370600&width=713" alt="Angelite Lucky Bracelet">
+                    </a>
+                    <div class="slide-content">
+                        <div class="slide-title">Angelite Lucky Bracelet</div>
+                        <a href="products.html" class="shop-button">Shop Collection</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="arrow arrow-right">&#9655;</button>
+    </div>
+
+<script>
+    const slider = document.querySelector(".slider");
+    const leftArrow = document.querySelector(".arrow-left");
+    const rightArrow = document.querySelector(".arrow-right");
+    const sliderWrapper = document.querySelector(".slider-wrapper");
+    
+    let isDragging = false;
+    let startX;
+    let scrollLeft;
+    
+    // Get all slide items
+    const slideItems = document.querySelectorAll(".slide-item");
+    const slideWidth = 240; // Slide width + gap
+    const originalSlideCount = slideItems.length / 2; // Original slides count
+    
+    let index = 0;
+    let isTransitioning = false;
+    
+    // Function to move the slider
+    function moveSlider(direction) {
+        if (isTransitioning) return;
+        
+        isTransitioning = true;
+        index += direction;
+        
+        // Apply transition for smooth sliding
+        slider.style.transition = "transform 0.5s ease-in-out";
+        slider.style.transform = `translateX(-${index * slideWidth}px)`;
+        
+        // Reset for Infinite Loop Effect
+        setTimeout(() => {
+            if (index >= originalSlideCount) {
+                index = 0;
+                slider.style.transition = "none";
+                slider.style.transform = `translateX(-${index * slideWidth}px)`;
+            } else if (index < 0) {
+                index = originalSlideCount - 1;
+                slider.style.transition = "none";
+                slider.style.transform = `translateX(-${index * slideWidth}px)`;
+            }
+            isTransitioning = false;
+        }, 500);
+    }
+    
+    // Event listeners for arrows
+    rightArrow.addEventListener("click", () => moveSlider(1));
+    leftArrow.addEventListener("click", () => moveSlider(-1));
+    
+    // Mouse events for drag functionality
+    slider.addEventListener("mousedown", (e) => {
+        isDragging = true;
+        startX = e.pageX - slider.offsetLeft;
+        scrollLeft = slider.scrollLeft;
+        slider.style.transition = "none";
+    });
+    
+    slider.addEventListener("mouseleave", () => {
+        isDragging = false;
+    });
+    
+    slider.addEventListener("mouseup", () => {
+        isDragging = false;
+        slider.style.transition = "transform 0.5s ease-in-out";
+        
+        // Determine direction based on drag distance
+        const dragDistance = scrollLeft - slider.scrollLeft;
+        if (Math.abs(dragDistance) > 50) {
+            if (dragDistance > 0) {
+                moveSlider(1);
+            } else {
+                moveSlider(-1);
+            }
+        }
+    });
+    
+    slider.addEventListener("mousemove", (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+        const x = e.pageX - slider.offsetLeft;
+        const walk = (x - startX) * 2;
+        slider.scrollLeft = scrollLeft - walk;
+    });
+    
+    // Touch events for mobile
+    slider.addEventListener("touchstart", (e) => {
+        isDragging = true;
+        startX = e.touches[0].pageX - slider.offsetLeft;
+        scrollLeft = slider.scrollLeft;
+        slider.style.transition = "none";
+    });
+    
+    slider.addEventListener("touchend", () => {
+        isDragging = false;
+        slider.style.transition = "transform 0.5s ease-in-out";
+        
+        // Determine direction based on drag distance
+        const dragDistance = scrollLeft - slider.scrollLeft;
+        if (Math.abs(dragDistance) > 50) {
+            if (dragDistance > 0) {
+                moveSlider(1);
+            } else {
+                moveSlider(-1);
+            }
+        }
+    });
+    
+    slider.addEventListener("touchmove", (e) => {
+        if (!isDragging) return;
+        const x = e.touches[0].pageX - slider.offsetLeft;
+        const walk = (x - startX) * 2;
+        slider.scrollLeft = scrollLeft - walk;
+    });
+    
+    // Auto-slide every 3s
+    let autoSlideInterval = setInterval(() => moveSlider(1), 3000);
+    
+    // Pause auto-slide when hovering
+    sliderWrapper.addEventListener("mouseenter", () => {
+        clearInterval(autoSlideInterval);
+    });
+    
+    sliderWrapper.addEventListener("mouseleave", () => {
+        autoSlideInterval = setInterval(() => moveSlider(1), 3000);
+    });
+    
+    // Initial setup
+    slider.style.transform = `translateX(0px)`;
+</script>
+
+</body>
+</html>

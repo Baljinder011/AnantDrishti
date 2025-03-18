@@ -1,5 +1,78 @@
 [
     {
+        "id": 13,
+        "name": "Mukhi Rudraksha Bracelet",
+        "description": "To Prevents Poverty & Gain Fame",
+        "price": 510,
+        "image": "../Photos/bracelet1.webp",
+        "color":"Green"
+    },
+    {
+        "id": 14,
+        "name": "Mukhi Indonesian Rudraksha Bracelet",
+        "description": "Mukhi Indonesian Rudraksha Bracelet",
+        "price": 450,
+        "image": "https://www.pandit.com/cdn/shop/files/5_mukhi_indonesian_rudraksha_bracelet_with_silver_capping_main_product_image_06.webp?v=1740741211&width=713",
+        "color":"Green"
+    },
+    {
+        "id": 15,
+        "name": "Mukhi Copper Rudraksha Bracelett",
+        "description": "To Enhance Manifestation",
+        "price": 870,
+        "image": "https://www.pandit.com/cdn/shop/files/5_mukhi_copper_rudraksha_bracelet_main_product_image_204.webp?v=1721127382&width=713",
+        "color":"Green"
+    },
+    {
+        "id": 16,
+        "name": "Chakra Bracelet",
+        "description": "To Protect From Evil Energies",
+        "price": 250,
+        "image": "https://www.pandit.com/cdn/shop/files/7_chakra_bracelet_main_product_image_395.webp?v=1741334391&width=713",
+        "color":"Green"
+    },
+    {
+        "id": 17,
+        "name": "African Bloodstone Bracelet",
+        "description": "To Remove Fears & Bring Hopes",
+        "price": 610,
+        "image": "https://www.pandit.com/cdn/shop/files/african_bloodstone_bracelet_main_product_image_394.webp?v=1741334423&width=713",
+        "color":"Green"
+    },
+    {
+        "id": 18,
+        "name": "Angelite Bracelet",
+        "description": " To Heal Anxiety and Panic Attackst",
+        "price": 560,
+        "image": "https://www.pandit.com/cdn/shop/files/angelite_lucky_bracelet_main_product_image_205.webp?v=1733370600&width=713",
+        "color":"Green"
+    },
+    {
+        "id": 19,
+        "name": "Aquamarine Bracelet",
+        "description": "For Success and Happiness",
+        "price": 400,
+        "image": "https://www.pandit.com/cdn/shop/files/aquamarine_bracelet_main_product_image_395.webp?v=1741334615&width=713",
+        "color":"Green"
+    }
+    ,
+    {
+        "id": 19,
+        "name": "Amethyst Bracelet",
+        "description": "For Building Confidence & Ensures Success",
+        "price": 320,
+        "image": "https://www.pandit.com/cdn/shop/files/amethyst_bracelet_main_product_image_394.webp?v=1741334537&width=713",
+        "color":"Green"
+    },
+    {
+        "id": 20,
+        "name": "Angelite Bracelet ",
+        "description": "To Heal Anxiety and Panic Attacks",
+        "price": 390,
+        "image": "https://www.pandit.com/cdn/shop/files/angelite_lucky_bracelet_main_product_image_205.webp?v=1733370600&width=713",
+        "color":"Green"
+    },
+    {
         "id": 1,
         "name": "Red",
         "description": "For Spiritual Protection",
@@ -95,5 +168,6 @@
         "image": "../Photos/Rectangle 7.png",
         "color":"Green"
     }
+   
     
 ]

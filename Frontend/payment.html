@@ -390,6 +390,20 @@ document.getElementById("payButton").addEventListener("click", async function ()
 
     <script>
       
+      function displaySelectedAddress() {
+    const selectedAddress = JSON.parse(localStorage.getItem("selectedAddress"));
+
+    if (selectedAddress) {
+        document.getElementById("addressDetails").innerHTML = `
+            <strong>${selectedAddress.name}</strong><br>
+            ${selectedAddress.street}, ${selectedAddress.city}, ${selectedAddress.state}, ${selectedAddress.pincode}<br>
+            Phone: ${selectedAddress.phone}
+        `;
+    }
+}
+
+// Call function when page loads
+displaySelectedAddress();
 
 
 

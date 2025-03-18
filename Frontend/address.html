@@ -122,10 +122,7 @@
         <div class="address-header">
             <button class="add-address-btn" onclick="openPopup()">+ Add Address</button>
         </div>
-        <div class="payment-section">
-            <button id="goToPaymentBtn" onclick="goToPayment()">Go to Payment</button>
-        </div>
-        
+
     </div>
 
     <!-- Address Popup -->
@@ -326,23 +323,23 @@ async function setDefaultAddress(index) {
     }
 }
 
-function goToPayment() {
-    const selectedAddressIndex = document.querySelector('input[name="defaultAddress"]:checked');
+// function goToPayment() {
+//     const selectedAddressIndex = document.querySelector('input[name="defaultAddress"]:checked');
     
-    if (!selectedAddressIndex) {
-        alert("Please select an address before proceeding to payment.");
-        return;
-    }
+//     if (!selectedAddressIndex) {
+//         alert("Please select an address before proceeding to payment.");
+//         return;
+//     }
 
-    // Get selected address details
-    const selectedAddress = addresses[selectedAddressIndex.value];
+//     // Get selected address details
+//     const selectedAddress = addresses[selectedAddressIndex.value];
 
-    // Store selected address in localStorage (or send to backend)
-    localStorage.setItem("selectedAddress", JSON.stringify(selectedAddress));
+//     // Store selected address in localStorage (or send to backend)
+//     localStorage.setItem("selectedAddress", JSON.stringify(selectedAddress));
 
-    // Redirect to payment page
-    window.location.href = "payment.html";
-}
+//     // Redirect to payment page
+//     window.location.href = "payment.html";
+// }
 
 
         // 🔹 Auto-fill Address Details using PIN Code

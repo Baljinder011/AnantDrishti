@@ -1,160 +1,491 @@
-<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link rel="stylesheet" href="./index.css">
-
-<script src="https://code.jquery.com/jquery-1.10.2.js"></script>
-    <style>
-      
-
-
-
-        /* Account Container */
-        .account-container {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin: 50px 20px;
-            gap: 20px;
-            padding: 20px;
-        }
-
-        /* Account Card Styling */
-        .account-card {
-            text-align: center;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 12px;
-            width: 220px;
-            background: linear-gradient(to bottom, #ffffff, #f7f7f7);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .account-card:hover {
-            transform: scale(1.05);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        .account-card img {
-            width: 60px;
-            height: auto;
-            margin-bottom: 15px;
-            transition: transform 0.3s ease;
-        }
-
-        .account-card:hover img {
-            transform: rotate(-5deg) scale(1.1);
-        }
-
-        .account-card h3 {
-            font-size: 20px;
-            margin: 10px 0 5px;
-        }
-
-        .account-card h3:hover {
-            text-decoration: underline;
-        }
-
-        .account-card p {
-            font-size: 15px;
-            color: #555;
-        }
-
-        .account-card:hover p {
-            color: #333;
-        }
-
-        .account-card i {
-            font-size: 30px;
-            color: #007bff;
-            margin-bottom: 15px;
-        }
-
-         a{
-            text-decoration: none;
-            color:black
-        }
-
-        
-
-        /* Responsive Design */
-        @media (max-width: 668px) {
-            .account-container {
-                /* flex-direction: column; */
-                align-items: center;
-            }
-
-            
-
-            .account-card h3 {
-                font-size: 18px;
-            }
-
-            .account-card p {
-                font-size: 14px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .account-card {
-                padding: 15px;
-            }
-
-            .account-card h3 {
-                font-size: 16px;
-            }
-
-            .account-card p {
-                font-size: 12px;
-            }
-        }
-    </style>
-
-
+    <title>My Profile</title>
+    <link rel="stylesheet" href="profile.css">
+    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+    <link rel="stylesheet" href="index.css">
+<script src="config.js"></script>
 </head>
 
 <body>
-    <div id="nav-placeholder">
+    <div id="nav-placeholder"></div>
 
-    </div>
-    
     <script>
-        $(function(){
-          $("#nav-placeholder").load("profileNav.html" , function () {
-            updateCartCounter(); // Ensure counter updates after loading nav
-          });
+        $(function () {
+            $("#nav-placeholder").load("profileNav.html", function () {
+                updateCartCounter(); // Ensure counter updates after loading nav
+            });
         });
     </script>
 
+    <div class="container">
+        <div class="section-container" id="mainSections">
+            <div class="section-card" onclick="showDetails('profile')">
+                <div class="section-icon profile-icon">👤</div>
+                <div class="section-title">My Profile</div>
+                <div class="section-subtitle">Edit Your Profile</div>
+            </div>
+            <div class="section-card" onclick="showDetails('orders')">
+                <div class="section-icon orders-icon">📦</div>
+                <div class="section-title">My Orders</div>
+                <div class="section-subtitle">Check Your Orders</div>
+            </div>
+            <div class="section-card" onclick="showDetails('addresses')">
+                <div class="section-icon address-icon">📍</div>
+                <div class="section-title">My Addresses</div>
+                <div class="section-subtitle">Edit Addresses for orders</div>
+            </div>
+        </div>
+    </div>
 
-<center>
-<div class="account-container">
-    <a href="./myProfile.html">
-    <div class="account-card">
-        <i class="fa-solid fa-user"></i>
-        <h3 style="margin-top:25px">My Profile</h3>
-        <p>Edit Your Profile</p>
+    <!-- Profile Section -->
+    <div class="detail-container" id="profileDetails">
+        <h2>Personal Details</h2>
+
+        <!-- Profile Image Preview -->
+        <img id="profileImagePreview" src="" alt="Profile Image"
+            style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover;">
+
+        <!-- File Upload Input -->
+        <input type="file" id="profileImageInput" accept="image/*" style="display: none;">
+        <button class="edit-btn" onclick="document.getElementById('profileImageInput').click()">Choose Image</button>
+
+        <!-- Upload Button -->
+        <button id="upload-btn" class="save-btn" onclick="uploadProfileImage()" style="display: none;">Upload</button>
+
+        <p><strong>First Name:</strong> <input class="form-input" id="firstName" readonly></p>
+        <p><strong>Last Name:</strong> <input class="form-input" id="lastName" readonly></p>
+        <p><strong>Email:</strong> <input class="form-input" id="email" readonly></p>
+        <p><strong>Phone:</strong> <input class="form-input" id="phone" readonly></p>
+
+        <button class="edit-btn" onclick="editProfile()">Edit</button>
+        <button class="save-btn" onclick="saveProfile()" style="display: none;">Save</button>
+        
+        <div class="back-btn" onclick="goBack()">Back</div>
     </div>
-</a>
-<a href="./orders.html">
-    <div class="account-card">
-        <img src="https://m.media-amazon.com/images/G/31/x-locale/cs/ya/images/Box._CB485927553_.png" alt="Your Orders">
-       <h3>My Orders</h3>
-        <p>Check Your Orders</p>
+
+    <!-- Address Section -->
+    <div class="detail-container" id="addressesDetails">
+        <h2>Saved Addresses</h2>
+        <div id="addressesList">Loading...</div>
+        <button class="edit-btn" onclick="openAddressPopup()">Add New Address</button>
+        <button class="save-btn" onclick="fetchUserAddresses()">Refresh Addresses</button>
+        <div class="back-btn" onclick="goBack()">Back</div>
     </div>
-    </a>
-    <a href="./savedAddresses.html">  
-    <div class="account-card">
-        <img src="https://m.media-amazon.com/images/G/31/x-locale/cs/ya/images/address-map-pin._CB485934183_.png" alt="Login & Security">
-    <h3 style="margin-top:2px">My Addresses</h3>
-        <p >Edit Addresses for orders</p>
+
+    <div id="addressPopup" class="popup-overlay" style="display: none;">
+        <div class="popup-content">
+            <h2>Add New Address</h2>
+            <input class="form-input" id="newStreet" placeholder="Street">
+            <input class="form-input" id="newCity" placeholder="City">
+            <input class="form-input" id="newPostalCode" placeholder="Postal Code">
+            <input class="form-input" id="newState" placeholder="State">
+            <input class="form-input" id="newCountry" placeholder="Country">
+            <button type="button" class="btn btn-primary" onclick="saveNewAddress()">Save Address</button>
+            <button class="back-btn" onclick="closeAddressPopup()">Cancel</button>
     </div>
-</a>
-</div>
-</center>
+
+    <!-- Edit Address Popup -->
+    <div id="editAddressPopup" class="popup-overlay" style="display: none;">
+        <div class="popup-content">
+            <h2>Edit Address</h2>
+            <input type="hidden" id="editAddressId">
+            <input class="form-input" id="editStreet" placeholder="Street">
+            <input class="form-input" id="editCity" placeholder="City">
+            <input class="form-input" id="editPostalCode" placeholder="Postal Code">
+            <input class="form-input" id="editState" placeholder="State">
+            <input class="form-input" id="editCountry" placeholder="Country">
+            <button type="button" class="btn btn-primary" onclick="updateAddress()">Update Address</button>
+            <button class="back-btn" onclick="closeEditAddressPopup()">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Orders Section -->
+    <div class="detail-container" id="ordersDetails">
+        <h2>My Orders</h2>
+        <div id="ordersList">No Order Found</div>
+        <div class="back-btn" onclick="goBack()">Back</div>
+    </div>
+
+    <script>
+        document.getElementById("profileImageInput").addEventListener("change", function (event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    document.getElementById("profileImagePreview").src = e.target.result;
+                    document.getElementById("upload-btn").style.display = "inline-block"; // Show upload button
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+       async function uploadProfileImage() {
+    const fileInput = document.getElementById("profileImageInput");
+    const file = fileInput.files[0];
+
+    if (!file) {
+        alert("Please select an image first.");
+        return;
+    }
+
+    const _id = localStorage.getItem("_id");
+    console.log("User ID from localStorage:", _id);
+
+    const formData = new FormData();
+    formData.append("profileImage", file);
+
+    try {
+        const response = await fetch(`http://localhost:4000/users/${_id}/upload`, {
+            method: "POST",
+            body: formData
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            alert("Profile image updated!");
+            document.getElementById("profileImagePreview").src = data.imageUrl;
+            document.getElementById("upload-btn").style.display = "none";
+
+            // Update user profile in localStorage with new image URL
+            const storedUserProfile = localStorage.getItem("userProfile");
+            if (storedUserProfile) {
+                const userProfile = JSON.parse(storedUserProfile);
+                userProfile.profileImage = data.imageUrl;
+                localStorage.setItem("userProfile", JSON.stringify(userProfile));
+            } else {
+                // If no stored profile, fetch updated user data
+                fetchUserData();
+            }
+
+            // Ensure the Personal Details section remains visible
+            showDetails('profile');
+        } else {
+            alert("Image upload failed!");
+        }
+    } catch (error) {
+        console.error("Error uploading image:", error);
+        alert("Error uploading image!");
+    }
+}
+
+        function showDetails(section) {
+            document.getElementById("mainSections").style.display = "none";
+            document.getElementById("profileDetails").style.display = section === "profile" ? "block" : "none";
+            document.getElementById("addressesDetails").style.display = section === "addresses" ? "block" : "none";
+            document.getElementById("ordersDetails").style.display = section === "orders" ? "block" : "none";
+            
+            if (section === "addresses") {
+                fetchUserAddresses();
+            } else if (section === "orders") {
+                fetchOrders();
+            }
+        }
+
+        function goBack() {
+            document.getElementById("mainSections").style.display = "flex";
+            document.getElementById("profileDetails").style.display = "none";
+            document.getElementById("addressesDetails").style.display = "none";
+            document.getElementById("ordersDetails").style.display = "none";
+        }
+
+        function getUserEmail() {
+            return localStorage.getItem("userEmail");  // Retrieve the email from localStorage
+        }
+
+        // Fetch user data based on email
+        function fetchUserData() {
+            try {
+                const storedUserProfile = localStorage.getItem("userProfile");
+
+                if (storedUserProfile) {
+                    const user = JSON.parse(storedUserProfile);
+                    if (user._id) localStorage.setItem("_id", user._id); // Store _id separately
+                    populateUserDetails(user);
+                    return;
+                }
+
+                const userEmail = getUserEmail();
+                if (!userEmail) throw new Error("No email found");
+
+                fetch(`http://localhost:4000/users/email/${userEmail}`)
+                    .then(response => {
+                        if (!response.ok) throw new Error("User not found");
+                        return response.json();
+                    })
+                    .then(user => {
+                        localStorage.setItem("_id", user._id); // Store _id separately
+                        populateUserDetails(user);
+                    })
+                    .catch(error => console.error("Error fetching user details:", error));
+            } catch (error) {
+                console.error("Error fetching user details:", error);
+            }
+        }
+
+        function populateUserDetails(user) {
+            document.getElementById("firstName").value = user.firstName;
+            document.getElementById("lastName").value = user.lastName;
+            document.getElementById("email").value = user.email;
+            document.getElementById("phone").value = user.phone;
+
+            if (user.profileImage) {
+                document.getElementById("profileImagePreview").src = user.profileImage;
+                localStorage.setItem("userProfile", JSON.stringify(user)); // Update localStorage
+            }
+        }
+
+        const storedUserProfile = localStorage.getItem("userProfile");
+
+        if (storedUserProfile) {
+            const user = JSON.parse(storedUserProfile);
+            if (user.profileImage) {
+                document.getElementById("profileImagePreview").src = user.profileImage;
+            }
+        }
+
+
+
+
+
+        // Fetch and display orders
+        async function fetchOrders() {
+            const _id = localStorage.getItem("_id"); // Retrieve user ID from localStorage
+            if (!_id) {
+                alert("User ID not found! Please log in again.");
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:4000/users/${_id}/orders`);
+                if (!response.ok) throw new Error("Failed to fetch orders");
+
+                const data = await response.json();
+                const ordersContainer = document.getElementById("ordersList");
+                ordersContainer.innerHTML = ""; // Clear previous orders
+
+                if (!data.orders || data.orders.length === 0) {
+                    ordersContainer.innerHTML = "<p>No orders found.</p>";
+                    return;
+                }
+
+                data.orders.forEach(order => {
+                    const orderDiv = document.createElement("div");
+                    orderDiv.className = "order-item"; // Optional class for styling
+                    orderDiv.innerHTML = `
+                        <p><strong>Order ID:</strong> ${order.orderId}</p>
+                        <p><strong>Product:</strong> ${order.productName}</p>
+                        <p><strong>Price:</strong> $${order.price}</p>
+                        <p><strong>Status:</strong> ${order.status}</p>
+                        <hr>
+                    `;
+                    ordersContainer.appendChild(orderDiv);
+                });
+            } catch (error) {
+                console.error("Error fetching orders:", error);
+                alert("Error fetching orders!");
+            }
+        }
+
+        // Fetch and display user addresses with edit and remove buttons
+        async function fetchUserAddresses() {
+            const _id = localStorage.getItem("_id");
+            if (!_id) {
+                alert("User ID not found!");
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:4000/users/${_id}/addresses`);
+                if (!response.ok) throw new Error("Failed to fetch addresses");
+
+                const data = await response.json();
+                const addressesList = document.getElementById("addressesList");
+                
+                addressesList.innerHTML = ""; // Clear previous addresses
+                if (!data.addresses || data.addresses.length === 0) {
+                    addressesList.innerHTML = "<p>No saved addresses found.</p>";
+                } else {
+                    data.addresses.forEach((addr, index) => {
+                        const addressItem = document.createElement("div");
+                        addressItem.className = "address-item";
+                        addressItem.innerHTML = `
+                            <p><strong>Street:</strong> ${addr.street}</p>
+                            <p><strong>City:</strong> ${addr.city}</p>
+                            <p><strong>State:</strong> ${addr.state}</p>
+                            <p><strong>Country:</strong> ${addr.country}</p>
+                            <p><strong>Postal Code:</strong> ${addr.postalCode}</p>
+                            <div class="address-actions">
+                                <button class="edit-btn" onclick="openEditAddressPopup(${index})">Edit</button>
+                                <button class="remove-btn" onclick="removeAddress(${index})">Remove</button>
+                            </div>
+                            <hr>
+                        `;
+                        addressesList.appendChild(addressItem);
+                    });
+                }
+            } catch (error) {
+                console.error("Error fetching addresses:", error);
+                alert("Error fetching addresses!");
+            }
+        }
+
+        // Open edit address popup and populate with address data
+        async function openEditAddressPopup(index) {
+            const _id = localStorage.getItem("_id");
+            if (!_id) {
+                alert("User ID not found!");
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:4000/users/${_id}/addresses`);
+                if (!response.ok) throw new Error("Failed to fetch addresses");
+
+                const data = await response.json();
+                if (!data.addresses || index >= data.addresses.length) {
+                    alert("Address not found!");
+                    return;
+                }
+
+                const address = data.addresses[index];
+                
+                document.getElementById("editAddressId").value = index;
+                document.getElementById("editStreet").value = address.street || "";
+                document.getElementById("editCity").value = address.city || "";
+                document.getElementById("editPostalCode").value = address.postalCode || "";
+                document.getElementById("editState").value = address.state || "";
+                document.getElementById("editCountry").value = address.country || "";
+                
+                document.getElementById("editAddressPopup").style.display = "flex";
+            } catch (error) {
+                console.error("Error fetching address for edit:", error);
+                alert("Error fetching address!");
+            }
+        }
+
+        // Close edit address popup
+        function closeEditAddressPopup() {
+            document.getElementById("editAddressPopup").style.display = "none";
+        }
+
+        // Update an address
+        async function updateAddress() {
+    const _id = localStorage.getItem("_id");
+    if (!_id) {
+        alert("User ID not found!");
+        return;
+    }
+
+    const index = document.getElementById("editAddressId").value;
+    
+    const updatedAddress = {
+        street: document.getElementById("editStreet").value,
+        city: document.getElementById("editCity").value,
+        postalCode: document.getElementById("editPostalCode").value,
+        state: document.getElementById("editState").value,
+        country: document.getElementById("editCountry").value
+    };
+
+    try {
+        const response = await fetch(`http://localhost:4000/users/${_id}/update-address/${index}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updatedAddress)
+        });
+
+        if (response.ok) {
+            alert("Address updated successfully!");
+            closeEditAddressPopup();
+            fetchUserAddresses();
+        } else {
+            alert("Failed to update address!");
+        }
+    } catch (error) {
+        console.error("Error updating address:", error);
+        alert("Error updating address!");
+    }
+}
+
+
+        // Remove an address
+        async function removeAddress(index) {
+    if (!confirm("Are you sure you want to remove this address?")) return;
+
+    const _id = localStorage.getItem("_id");
+    if (!_id) {
+        alert("User ID not found!");
+        return;
+    }
+
+    try {
+        const response = await fetch(`http://localhost:4000/users/${_id}/remove-address/${index}`, {
+            method: "PUT"
+        });
+
+        if (response.ok) {
+            alert("Address removed successfully!");
+            fetchUserAddresses();
+        } else {
+            alert("Failed to remove address!");
+        }
+    } catch (error) {
+        console.error("Error removing address:", error);
+        alert("Error removing address!");
+    }
+}
+
+
+        // Save a new address to the backend
+        async function saveNewAddress() {
+            const _id = localStorage.getItem("_id");
+            if (!_id) {
+                alert("User ID not found!");
+                return;
+            }
+
+            const newAddress = {
+                street: document.getElementById("newStreet").value,
+                city: document.getElementById("newCity").value,
+                postalCode: document.getElementById("newPostalCode").value,
+                state: document.getElementById("newState").value,
+                country: document.getElementById("newCountry").value
+            };
+
+            try {
+                const response = await fetch(`http://localhost:4000/users/${_id}/add-address`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(newAddress)
+                });
+
+                if (response.ok) {
+                    alert("Address added successfully!");
+                    closeAddressPopup();
+                    fetchUserAddresses(); // Refresh address list
+                } else {
+                    alert("Failed to add address!");
+                }
+            } catch (error) {
+                console.error("Error saving address:", error);
+                alert("Error saving address!");
+            }
+        }
+
+        function openAddressPopup() {
+            document.getElementById("addressPopup").style.display = "flex";
+        }
+
+        function closeAddressPopup() {
+            document.getElementById("addressPopup").style.display = "none";
+        }
+
+        // Load initial data
+        document.addEventListener("DOMContentLoaded", function() {
+            fetchUserData();
+        });
+    </script>
 </body>
 </html>

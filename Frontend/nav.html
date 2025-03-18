@@ -265,6 +265,8 @@ const logoutHandler = () => {
             localStorage.removeItem('profileImage');
             localStorage.removeItem('cart');
             localStorage.removeItem('wishlist');
+            localStorage.removeItem('_id'); // Ensure _id is also removed
+            localStorage.removeItem('userEmail');
             // Redirect to home page after logout
             window.location.href = './index.html';
         };
@@ -290,7 +292,7 @@ profileIconSidebar.addEventListener('click', (e) => toggleDropdown(e, profileDro
 // Redirect to login page when the login button is clicked
 loginButton.addEventListener('click', function (event) {
     event.preventDefault();
-    window.location.href = './login.html'; // Navigate to login page
+    window.location.href = './loginRegister.html'; // Navigate to login page
 });
 
 loginButtonSidebar.addEventListener('click', function (event) {

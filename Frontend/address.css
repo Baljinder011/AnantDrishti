@@ -58,6 +58,8 @@ button {
     background-color: rgb(175, 82, 222);
     color: white;
     padding: 8px;
+    width:100px;
+    margin-top:5px
 }
 
 .edit-btn:hover {
@@ -68,6 +70,8 @@ button {
     background-color: rgb(175, 82, 222);
     color: white;
     padding: 8px;
+    width:100px;
+    margin-top:5px
 }
 
 .remove-btn:hover {

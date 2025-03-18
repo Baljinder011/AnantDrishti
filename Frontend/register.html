@@ -79,7 +79,7 @@
         </div>
         
         <!-- Register button -->
-        <button class="register">Register</button>
+        <button type="submit" class="register">Register</button>
         <small class="text-center mt-3 already">Already have an account? <a href="./login.html">Login here</a></small>
         
         <!-- Error Message -->
@@ -149,30 +149,35 @@
       clearError();
 
       try {
-        const response = await fetch(`${CONFIG.API_URL}/signup`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId, firstName, lastName, email, phone, password })
-        });
+  const response = await fetch(`${CONFIG.API_URL}/signup`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ firstName, lastName, email, phone, password }) // Removed userId
+  });
 
-        const data = await response.json();
+  const data = await response.json();
 
-        if (data.message) {
-          if (data.message === "User already exists") {
-            showError("A user with this email already exists. Please try a different email.");
-            return;
-          }
-          // Save user data in localStorage and redirect
-          localStorage.setItem('userProfile', JSON.stringify({ userId, firstName, lastName, email, phone }));
-          localStorage.setItem('isLoggedIn', 'true');
-          alert("Registration successful!");
-          window.location.href = "./index.html";
-        } else {
-          showError(data.message || "Registration failed. Please try again.");
-        }
-      } catch (error) {
-        showError("Error connecting to the server.");
-      }
+  if (data.message === "User already exists") {
+    showError("A user with this email already exists. Please try a different email.");
+    return;
+  }
+
+  if (response.ok) {
+    const { _id, firstName, lastName, email, phone } = data.user;
+
+    // Save user data in localStorage and redirect
+    localStorage.setItem('userProfile', JSON.stringify({ _id, firstName, lastName, email, phone }));
+    localStorage.setItem('isLoggedIn', 'true');
+    
+    alert("Registration successful!");
+    window.location.href = "./index.html";
+  } else {
+    showError(data.message || "Registration failed. Please try again.");
+  }
+} catch (error) {
+  showError("Error connecting to the server.");
+}
+
     });
 
     function showError(message) {
