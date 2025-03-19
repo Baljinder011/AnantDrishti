@@ -492,8 +492,3 @@ h2 {
   background-color:rgb(108, 35, 145) ;
   transform: matrix(1);
 }
-
-.section-card a{
-  text-decoration: none;
-  color:black
-}
