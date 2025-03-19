@@ -1,68 +1,210 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Addresses</title>
     <link rel="stylesheet" href="address.css"> <!-- Add your CSS file -->
+    <script src="config.js"></script>
+    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+
+    <link rel="stylesheet" href="./index.css">
 </head>
+
+
+
 <body>
-    <h2>My Addresses</h2>
-    <button onclick="openAddressPopup()">Add New Address</button>
-    <div id="addressesList"></div>
+    <div id="nav-placeholder">
+
+    </div>
+
+    <script>
+        $(function () {
+            $("#nav-placeholder").load("nav.html", function () {
+                updateCartCounter(); // Ensure counter updates after loading nav
+            });
+        });
+        $(function () {
+            $("#nav-placeholder").load("nav.html");
+        });
+    </script>
+    <div class="container">
+        <h2>My Addresses</h2>
+        <button class="btn" onclick="openAddressPopup()">Add New Address</button>
+
+        <div id="addressesList"></div>
+        <button id="goToPaymentBtn" class="btn" onclick="goToPayment()" disabled>Go to Payment</button>
+
+    </div>
 
     <!-- Add Address Popup -->
-    <div id="addressPopup" class="popup" style="display: none;">
+    <div id="addressPopup" class="popup">
         <div class="popup-content">
             <h3>Add Address</h3>
+            <input type="text" id="newName" placeholder="Full Name">
+            <input type="text" id="newPhone" placeholder="Phone Number">
+            <input type="email" id="newEmail" placeholder="Email">
             <input type="text" id="newStreet" placeholder="Street">
             <input type="text" id="newCity" placeholder="City">
             <input type="text" id="newState" placeholder="State">
             <input type="text" id="newCountry" placeholder="Country">
             <input type="text" id="newPostalCode" placeholder="Postal Code">
-            <button onclick="saveNewAddress()">Save</button>
-            <button onclick="closeAddressPopup()">Cancel</button>
+            <button class="btn" onclick="saveNewAddress()">Save</button>
+            <button class="btn delete-btn" onclick="closeAddressPopup()">Cancel</button>
         </div>
     </div>
 
+    <!-- Edit Address Popup -->
+    <div id="editAddressPopup" class="popup">
+        <div class="popup-content">
+            <h3>Edit Address</h3>
+            <input type="hidden" id="editAddressId">
+            <input type="text" id="editName" placeholder="Full Name">
+            <input type="text" id="editPhone" placeholder="Phone Number">
+            <input type="email" id="editEmail" placeholder="Email">
+            <input type="text" id="editStreet" placeholder="Street">
+            <input type="text" id="editCity" placeholder="City">
+            <input type="text" id="editState" placeholder="State">
+            <input type="text" id="editCountry" placeholder="Country">
+            <input type="text" id="editPostalCode" placeholder="Postal Code">
+            <button class="btn" onclick="updateAddress()">Update</button>
+            <button class="btn delete-btn" onclick="closeEditAddressPopup()">Cancel</button>
+        </div>
+    </div>
+
+
+
+
     <script>
         async function fetchUserAddresses() {
+            const _id = localStorage.getItem("_id");
+            if (!_id) {
+                document.getElementById("addressesList").innerHTML = "<p class='error'>User ID not found!</p>";
+                return;
+            }
+
+            try {
+                const response = await fetch(`${CONFIG.API_URL}/users/${_id}/addresses`);
+                if (!response.ok) throw new Error("Failed to fetch addresses");
+
+                const data = await response.json();
+                const addressesList = document.getElementById("addressesList");
+                addressesList.innerHTML = "";
+
+                if (!data.addresses || data.addresses.length === 0) {
+                    addressesList.innerHTML = "<p class='error'>No saved addresses found.</p>";
+                    document.getElementById("goToPaymentBtn").style.display = "none";
+                    return;
+                }
+
+                let selectedAddressId = localStorage.getItem("selectedAddressId");
+
+                data.addresses.forEach((addr, index) => {
+                    const addressItem = document.createElement("div");
+                    addressItem.className = "address-item";
+                    addressItem.dataset.id = addr._id;
+
+                    const isChecked = selectedAddressId ? addr._id === selectedAddressId : index === data.addresses.length - 1;
+                    if (isChecked) {
+                        localStorage.setItem("selectedAddressId", addr._id);
+                        localStorage.setItem("selectedAddress", JSON.stringify(addr));
+                    }
+
+                    addressItem.innerHTML = `
+                <input type="radio" name="selectedAddress" value="${addr._id}" ${isChecked ? "checked" : ""} onchange="setSelectedAddress('${addr._id}')">
+                <p class="address-name"><strong>Name:</strong> ${addr.fullName}</p>
+                <p class="address-phone"><strong>Phone:</strong> ${addr.phone}</p>
+                <p class="address-email"><strong>Email:</strong> ${addr.email}</p>
+                <p class="address-street"><strong>Street:</strong> ${addr.street}</p>
+                <p class="address-city"><strong>City:</strong> ${addr.city}</p>
+                <p class="address-state"><strong>State:</strong> ${addr.state}</p>
+                <p class="address-country"><strong>Country:</strong> ${addr.country}</p>
+                <p class="address-postal"><strong>Postal Code:</strong> ${addr.postalCode}</p>
+                <button class="edit-btn" onclick="openEditAddressPopup('${addr._id}')">Edit</button>
+                <button class="remove-btn" onclick="removeAddress('${addr._id}')">Remove</button>
+            `;
+
+                    addressesList.appendChild(addressItem);
+                });
+
+                // Ensure button is only enabled if an address exists
+                document.getElementById("goToPaymentBtn").style.display = "block";
+                document.getElementById("goToPaymentBtn").disabled = !selectedAddressId;
+
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+
+        function openEditAddressPopup(addressId) {
+            const addressElement = document.querySelector(`[data-id="${addressId}"]`);
+            if (!addressElement) {
+                alert("Address not found!");
+                return;
+            }
+
+            document.getElementById("editAddressId").value = addressId;
+            document.getElementById("editName").value = addressElement.querySelector(".address-name").textContent.split(":")[1].trim();
+            document.getElementById("editPhone").value = addressElement.querySelector(".address-phone").textContent.split(":")[1].trim();
+            document.getElementById("editEmail").value = addressElement.querySelector(".address-email").textContent.split(":")[1].trim();
+            document.getElementById("editStreet").value = addressElement.querySelector(".address-street").textContent.split(":")[1].trim();
+            document.getElementById("editCity").value = addressElement.querySelector(".address-city").textContent.split(":")[1].trim();
+            document.getElementById("editState").value = addressElement.querySelector(".address-state").textContent.split(":")[1].trim();
+            document.getElementById("editCountry").value = addressElement.querySelector(".address-country").textContent.split(":")[1].trim();
+            document.getElementById("editPostalCode").value = addressElement.querySelector(".address-postal").textContent.split(":")[1].trim();
+
+            document.getElementById("editAddressPopup").style.display = "flex";
+        }
+
+
+
+        function closeEditAddressPopup() {
+            document.getElementById("editAddressPopup").style.display = "none";
+        }
+
+
+        async function updateAddress() {
             const _id = localStorage.getItem("_id");
             if (!_id) {
                 alert("User ID not found!");
                 return;
             }
 
-            try {
-                const response = await fetch(`http://localhost:4000/users/${_id}/addresses`);
-                if (!response.ok) throw new Error("Failed to fetch addresses");
+            const addressId = document.getElementById("editAddressId").value;
+            const updatedAddress = {
+                fullName: document.getElementById("editName").value, // Corrected
+                phone: document.getElementById("editPhone").value,
+                email: document.getElementById("editEmail").value,
+                street: document.getElementById("editStreet").value,
+                city: document.getElementById("editCity").value,
+                state: document.getElementById("editState").value,
+                country: document.getElementById("editCountry").value,
+                postalCode: document.getElementById("editPostalCode").value
+            };
 
-                const data = await response.json();
-                const addressesList = document.getElementById("addressesList");
-                
-                addressesList.innerHTML = ""; // Clear previous addresses
-                if (!data.addresses || data.addresses.length === 0) {
-                    addressesList.innerHTML = "<p>No saved addresses found.</p>";
+
+            try {
+                const response = await fetch(`${CONFIG.API_URL}/users/${_id}/update-address/${addressId}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(updatedAddress)
+                });
+
+                if (response.ok) {
+                    alert("Address updated successfully!");
+                    closeEditAddressPopup();
+                    fetchUserAddresses();
                 } else {
-                    data.addresses.forEach((addr, index) => {
-                        const addressItem = document.createElement("div");
-                        addressItem.className = "address-item";
-                        addressItem.innerHTML = `
-                            <p><strong>Street:</strong> ${addr.street}</p>
-                            <p><strong>City:</strong> ${addr.city}</p>
-                            <p><strong>State:</strong> ${addr.state}</p>
-                            <p><strong>Country:</strong> ${addr.country}</p>
-                            <p><strong>Postal Code:</strong> ${addr.postalCode}</p>
-                            <button onclick="removeAddress(${index})">Remove</button>
-                        `;
-                        addressesList.appendChild(addressItem);
-                    });
+                    alert("Failed to update address!");
                 }
             } catch (error) {
-                console.error("Error fetching addresses:", error);
-                alert("Error fetching addresses!");
+                console.error("Error updating address:", error);
+                alert("Error updating address!");
             }
         }
+
 
         async function saveNewAddress() {
             const _id = localStorage.getItem("_id");
@@ -72,15 +214,19 @@
             }
 
             const newAddress = {
+                fullName: document.getElementById("newName").value, // Corrected
+                phone: document.getElementById("newPhone").value,
+                email: document.getElementById("newEmail").value,
                 street: document.getElementById("newStreet").value,
                 city: document.getElementById("newCity").value,
-                postalCode: document.getElementById("newPostalCode").value,
                 state: document.getElementById("newState").value,
-                country: document.getElementById("newCountry").value
+                country: document.getElementById("newCountry").value,
+                postalCode: document.getElementById("newPostalCode").value
             };
 
+
             try {
-                const response = await fetch(`http://localhost:4000/users/${_id}/add-address`, {
+                const response = await fetch(`${CONFIG.API_URL}/users/${_id}/add-address`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(newAddress)
@@ -99,7 +245,8 @@
             }
         }
 
-        async function removeAddress(index) {
+
+        async function removeAddress(addressId) {
             if (!confirm("Are you sure you want to remove this address?")) return;
 
             const _id = localStorage.getItem("_id");
@@ -109,13 +256,13 @@
             }
 
             try {
-                const response = await fetch(`http://localhost:4000/users/${_id}/remove-address/${index}`, {
+                const response = await fetch(`${CONFIG.API_URL}/users/${_id}/remove-address/${addressId}`, {
                     method: "PUT"
                 });
 
                 if (response.ok) {
                     alert("Address removed successfully!");
-                    fetchUserAddresses();
+                    fetchUserAddresses(); // Refresh the list
                 } else {
                     alert("Failed to remove address!");
                 }
@@ -124,6 +271,7 @@
                 alert("Error removing address!");
             }
         }
+
 
         function openAddressPopup() {
             document.getElementById("addressPopup").style.display = "flex";
@@ -134,6 +282,59 @@
         }
 
         document.addEventListener("DOMContentLoaded", fetchUserAddresses);
+
+
+
+
+        function setSelectedAddress(addressId) {
+            localStorage.setItem("selectedAddressId", addressId);
+
+            const addressElement = document.querySelector(`[data-id="${addressId}"]`);
+            if (!addressElement) {
+                alert("Address not found!");
+                return;
+            }
+
+            const selectedAddress = {
+                id: addressId,
+                fullName: addressElement.querySelector(".address-name").textContent.split(":")[1].trim(),
+                phone: addressElement.querySelector(".address-phone").textContent.split(":")[1].trim(),
+                email: addressElement.querySelector(".address-email").textContent.split(":")[1].trim(), // Corrected this line
+                street: addressElement.querySelector(".address-street").textContent.split(":")[1].trim(),
+                city: addressElement.querySelector(".address-city").textContent.split(":")[1].trim(),
+                state: addressElement.querySelector(".address-state").textContent.split(":")[1].trim(),
+                country: addressElement.querySelector(".address-country").textContent.split(":")[1].trim(),
+                postalCode: addressElement.querySelector(".address-postal").textContent.split(":")[1].trim()
+            };
+
+            localStorage.setItem("selectedAddress", JSON.stringify(selectedAddress));
+
+            // Highlight selected address
+            document.querySelectorAll(".address-item").forEach(item => item.style.border = "1px solid #ddd");
+            addressElement.style.border = "2px solid green";
+
+            // Ensure button is enabled when an address is selected
+            document.getElementById("goToPaymentBtn").disabled = false;
+        }
+
+
+
+        function goToPayment() {
+            const selectedAddress = localStorage.getItem("selectedAddress");
+
+            if (!selectedAddress) {
+                alert("Please select an address before proceeding to payment.");
+                return;
+            }
+
+            window.location.href = "payment.html";
+        }
+
+
+
+
+
     </script>
 </body>
+
 </html>

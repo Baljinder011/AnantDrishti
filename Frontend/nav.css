@@ -13,7 +13,7 @@ body button {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 20px;
+    padding: 15px 20px;
     background-color: #ffffff;
 }
 
@@ -63,10 +63,9 @@ body button {
 
 .navbar-brand img {
 
-    height: 50px;
     width: 100px;
 
-    height: 40px;
+    height: 50px;
 }
 
 .navbar-toggler {
@@ -85,7 +84,7 @@ body button {
 
 .navbar-menu .nav-link {
     position: relative;
-    left: -220px
+    left: -230px
 }
 
 
@@ -366,7 +365,7 @@ body button {
 .searchInput {
     position: absolute;
     right: 240px;
-    top: 11px
+    top: 20px
 }
 
 /* Style when logged in */
@@ -881,7 +880,7 @@ body button {
     align-items: center;
     justify-content: center;
     position: absolute;
-    top: 28px;
+    top: 30px;
     right: 14px;
 }
 

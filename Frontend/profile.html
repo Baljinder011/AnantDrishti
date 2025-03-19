@@ -29,8 +29,10 @@
             </div>
             <div class="section-card" onclick="showDetails('orders')">
                 <div class="section-icon orders-icon">📦</div>
+                <a href="orders.html">
                 <div class="section-title">My Orders</div>
                 <div class="section-subtitle">Check Your Orders</div>
+                </a>
             </div>
             <div class="section-card" onclick="showDetails('addresses')">
                 <div class="section-icon address-icon">📍</div>
@@ -66,42 +68,43 @@
         <div class="back-btn" onclick="goBack()">Back</div>
     </div>
 
-    <!-- Address Section -->
-    <div class="detail-container" id="addressesDetails">
-        <h2>Saved Addresses</h2>
-        <div id="addressesList">Loading...</div>
-        <button class="edit-btn" onclick="openAddressPopup()">Add New Address</button>
-        <button class="save-btn" onclick="fetchUserAddresses()">Refresh Addresses</button>
-        <div class="back-btn" onclick="goBack()">Back</div>
-    </div>
+<!-- Address Section -->
+<div class="detail-container" id="addressesDetails">
+    <h2>Saved Addresses</h2>
+    <div id="addressesList">Loading...</div>
+    <button class="edit-btn" onclick="openAddressPopup()">Add New Address</button>
+    <button class="save-btn" onclick="fetchUserAddresses()">Refresh Addresses</button>
+    <div class="back-btn" onclick="goBack()">Back</div>
+</div>
 
-    <div id="addressPopup" class="popup-overlay" style="display: none;">
-        <div class="popup-content">
-            <h2>Add New Address</h2>
-            <input class="form-input" id="newStreet" placeholder="Street">
-            <input class="form-input" id="newCity" placeholder="City">
-            <input class="form-input" id="newPostalCode" placeholder="Postal Code">
-            <input class="form-input" id="newState" placeholder="State">
-            <input class="form-input" id="newCountry" placeholder="Country">
-            <button type="button" class="btn btn-primary" onclick="saveNewAddress()">Save Address</button>
-            <button class="back-btn" onclick="closeAddressPopup()">Cancel</button>
-        </div>
+<!-- Add Address Popup -->
+<div id="addressPopup" class="popup-overlay" style="display: none;">
+    <div class="popup-content">
+        <h2>Add New Address</h2>
+        <input class="form-input" id="newStreet" placeholder="Street">
+        <input class="form-input" id="newCity" placeholder="City">
+        <input class="form-input" id="newPostalCode" placeholder="Postal Code">
+        <input class="form-input" id="newState" placeholder="State">
+        <input class="form-input" id="newCountry" placeholder="Country">
+        <button type="button" class="btn btn-primary" onclick="saveNewAddress()">Save Address</button>
+        <button class="back-btn" onclick="closeAddressPopup()">Cancel</button>
     </div>
+</div>
 
-    <!-- Edit Address Popup -->
-    <div id="editAddressPopup" class="popup-overlay" style="display: none;">
-        <div class="popup-content">
-            <h2>Edit Address</h2>
-            <input type="hidden" id="editAddressId">
-            <input class="form-input" id="editStreet" placeholder="Street">
-            <input class="form-input" id="editCity" placeholder="City">
-            <input class="form-input" id="editPostalCode" placeholder="Postal Code">
-            <input class="form-input" id="editState" placeholder="State">
-            <input class="form-input" id="editCountry" placeholder="Country">
-            <button type="button" class="btn btn-primary" onclick="updateAddress()">Update Address</button>
-            <button class="back-btn" onclick="closeEditAddressPopup()">Cancel</button>
-        </div>
+<!-- Edit Address Popup -->
+<div id="editAddressPopup" class="popup-overlay" style="display: none;">
+    <div class="popup-content">
+        <h2>Edit Address</h2>
+        <input type="hidden" id="editAddressId">
+        <input class="form-input" id="editStreet" placeholder="Street">
+        <input class="form-input" id="editCity" placeholder="City">
+        <input class="form-input" id="editPostalCode" placeholder="Postal Code">
+        <input class="form-input" id="editState" placeholder="State">
+        <input class="form-input" id="editCountry" placeholder="Country">
+        <button class="btn btn-primary" onclick="updateAddress()">Update Address</button>
+        <button class="back-btn" onclick="closeEditAddressPopup()">Cancel</button>
     </div>
+</div>
 
     <!-- Orders Section -->
     <div class="detail-container" id="ordersDetails">
@@ -354,6 +357,112 @@ async function saveProfile() {
 
         // Fetch and display user addresses with edit and remove buttons
         async function fetchUserAddresses() {
+        const _id = localStorage.getItem("_id");
+        if (!_id) {
+            document.getElementById("addressesList").innerHTML = "<p class='error'>User ID not found!</p>";
+            return;
+        }
+
+        try {
+            const response = await fetch(`${CONFIG.API_URL}/users/${_id}/addresses`);
+            if (!response.ok) throw new Error("Failed to fetch addresses");
+
+            const data = await response.json();
+            const addressesList = document.getElementById("addressesList");
+            addressesList.innerHTML = ""; // Clear previous addresses
+
+            if (!data.addresses || data.addresses.length === 0) {
+                addressesList.innerHTML = "<p class='error'>No saved addresses found.</p>";
+            } else {
+                data.addresses.forEach((addr) => {
+                    const addressItem = document.createElement("div");
+                    addressItem.className = "address-item";
+                    addressItem.dataset.id = addr._id;
+                    addressItem.innerHTML = `
+                        <p><strong>Street:</strong> ${addr.street}</p>
+                        <p><strong>City:</strong> ${addr.city}</p>
+                        <p><strong>State:</strong> ${addr.state}</p>
+                        <p><strong>Country:</strong> ${addr.country}</p>
+                        <p><strong>Postal Code:</strong> ${addr.postalCode}</p>
+                        <div class="address-actions">
+                            <button class="edit-btn" onclick="openEditAddressPopup('${addr._id}')">Edit</button>
+                            <button class="remove-btn" onclick="removeAddress('${addr._id}')">Remove</button>
+                        </div>
+                        <hr>
+                    `;
+                    addressesList.appendChild(addressItem);
+                });
+            }
+        } catch (error) {
+            document.getElementById("addressesList").innerHTML = "<p class='error'>Error fetching addresses!</p>";
+            console.error(error);
+        }
+    }
+
+    function openEditAddressPopup(addressId) {
+        fetchUserAddresses().then(() => {
+            const address = document.querySelector(`[data-id="${addressId}"]`);
+            if (!address) {
+                alert("Address not found!");
+                return;
+            }
+
+            document.getElementById("editAddressId").value = addressId;
+            document.getElementById("editStreet").value = address.querySelector("p:nth-child(1)").textContent.replace("Street:", "").trim();
+            document.getElementById("editCity").value = address.querySelector("p:nth-child(2)").textContent.replace("City:", "").trim();
+            document.getElementById("editState").value = address.querySelector("p:nth-child(3)").textContent.replace("State:", "").trim();
+            document.getElementById("editCountry").value = address.querySelector("p:nth-child(4)").textContent.replace("Country:", "").trim();
+            document.getElementById("editPostalCode").value = address.querySelector("p:nth-child(5)").textContent.replace("Postal Code:", "").trim();
+
+            document.getElementById("editAddressPopup").style.display = "flex";
+        });
+    }
+
+    function closeEditAddressPopup() {
+        document.getElementById("editAddressPopup").style.display = "none";
+    }
+
+    async function updateAddress() {
+        const _id = localStorage.getItem("_id");
+        if (!_id) {
+            alert("User ID not found!");
+            return;
+        }
+
+        const addressId = document.getElementById("editAddressId").value;
+        const updatedAddress = {
+            street: document.getElementById("editStreet").value,
+            city: document.getElementById("editCity").value,
+            state: document.getElementById("editState").value,
+            country: document.getElementById("editCountry").value,
+            postalCode: document.getElementById("editPostalCode").value
+        };
+
+        try {
+            const response = await fetch(`${CONFIG.API_URL}/users/${_id}/update-address/${addressId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(updatedAddress)
+            });
+
+            if (response.ok) {
+                alert("Address updated successfully!");
+                closeEditAddressPopup();
+                fetchUserAddresses();
+            } else {
+                alert("Failed to update address!");
+            }
+        } catch (error) {
+            console.error("Error updating address:", error);
+            alert("Error updating address!");
+        }
+    }
+
+    // Remove an address
+  
+    async function removeAddress(index) {
+            if (!confirm("Are you sure you want to remove this address?")) return;
+
             const _id = localStorage.getItem("_id");
             if (!_id) {
                 alert("User ID not found!");
@@ -361,144 +470,21 @@ async function saveProfile() {
             }
 
             try {
-                const response = await fetch(`${CONFIG.API_URL}/users/${_id}/addresses`);
-                if (!response.ok) throw new Error("Failed to fetch addresses");
+                const response = await fetch(`${CONFIG.API_URL}/users/${_id}/remove-address/${index}`, {
+                    method: "PUT"
+                });
 
-                const data = await response.json();
-                const addressesList = document.getElementById("addressesList");
-                
-                addressesList.innerHTML = ""; // Clear previous addresses
-                if (!data.addresses || data.addresses.length === 0) {
-                    addressesList.innerHTML = "<p>No saved addresses found.</p>";
+                if (response.ok) {
+                    alert("Address removed successfully!");
+                    fetchUserAddresses();
                 } else {
-                    data.addresses.forEach((addr, index) => {
-                        const addressItem = document.createElement("div");
-                        addressItem.className = "address-item";
-                        addressItem.innerHTML = `
-                            <p><strong>Street:</strong> ${addr.street}</p>
-                            <p><strong>City:</strong> ${addr.city}</p>
-                            <p><strong>State:</strong> ${addr.state}</p>
-                            <p><strong>Country:</strong> ${addr.country}</p>
-                            <p><strong>Postal Code:</strong> ${addr.postalCode}</p>
-                            <div class="address-actions">
-                                <button class="edit-btn" onclick="openEditAddressPopup(${index})">Edit</button>
-                                <button class="remove-btn" onclick="removeAddress(${index})">Remove</button>
-                            </div>
-                            <hr>
-                        `;
-                        addressesList.appendChild(addressItem);
-                    });
+                    alert("Failed to remove address!");
                 }
             } catch (error) {
-                console.error("Error fetching addresses:", error);
-                alert("Error fetching addresses!");
+                console.error("Error removing address:", error);
+                alert("Error removing address!");
             }
         }
-
-        // Open edit address popup and populate with address data
-        async function openEditAddressPopup(index) {
-            const _id = localStorage.getItem("_id");
-            if (!_id) {
-                alert("User ID not found!");
-                return;
-            }
-
-            try {
-                const response = await fetch(`${CONFIG.API_URL}/users/${_id}/addresses`);
-                if (!response.ok) throw new Error("Failed to fetch addresses");
-
-                const data = await response.json();
-                if (!data.addresses || index >= data.addresses.length) {
-                    alert("Address not found!");
-                    return;
-                }
-
-                const address = data.addresses[index];
-                
-                document.getElementById("editAddressId").value = index;
-                document.getElementById("editStreet").value = address.street || "";
-                document.getElementById("editCity").value = address.city || "";
-                document.getElementById("editPostalCode").value = address.postalCode || "";
-                document.getElementById("editState").value = address.state || "";
-                document.getElementById("editCountry").value = address.country || "";
-                
-                document.getElementById("editAddressPopup").style.display = "flex";
-            } catch (error) {
-                console.error("Error fetching address for edit:", error);
-                alert("Error fetching address!");
-            }
-        }
-
-        // Close edit address popup
-        function closeEditAddressPopup() {
-            document.getElementById("editAddressPopup").style.display = "none";
-        }
-
-        // Update an address
-        async function updateAddress() {
-    const _id = localStorage.getItem("_id");
-    if (!_id) {
-        alert("User ID not found!");
-        return;
-    }
-
-    const index = document.getElementById("editAddressId").value;
-    
-    const updatedAddress = {
-        street: document.getElementById("editStreet").value,
-        city: document.getElementById("editCity").value,
-        postalCode: document.getElementById("editPostalCode").value,
-        state: document.getElementById("editState").value,
-        country: document.getElementById("editCountry").value
-    };
-
-    try {
-        const response = await fetch(`${CONFIG.API_URL}/users/${_id}/update-address/${index}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(updatedAddress)
-        });
-
-        if (response.ok) {
-            alert("Address updated successfully!");
-            closeEditAddressPopup();
-            fetchUserAddresses();
-        } else {
-            alert("Failed to update address!");
-        }
-    } catch (error) {
-        console.error("Error updating address:", error);
-        alert("Error updating address!");
-    }
-}
-
-
-        // Remove an address
-        async function removeAddress(index) {
-    if (!confirm("Are you sure you want to remove this address?")) return;
-
-    const _id = localStorage.getItem("_id");
-    if (!_id) {
-        alert("User ID not found!");
-        return;
-    }
-
-    try {
-        const response = await fetch(`${CONFIG.API_URL}/users/${_id}/remove-address/${index}`, {
-            method: "PUT"
-        });
-
-        if (response.ok) {
-            alert("Address removed successfully!");
-            fetchUserAddresses();
-        } else {
-            alert("Failed to remove address!");
-        }
-    } catch (error) {
-        console.error("Error removing address:", error);
-        alert("Error removing address!");
-    }
-}
 
 
         // Save a new address to the backend
@@ -549,6 +535,10 @@ async function saveProfile() {
         document.addEventListener("DOMContentLoaded", function() {
             fetchUserData();
         });
+
+        
+     
+
     </script>
 </body>
 </html>
