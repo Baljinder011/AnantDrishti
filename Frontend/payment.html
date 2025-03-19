@@ -27,9 +27,14 @@
         <div class="container pay-btn">
 
             <div class="mt-4">
-                <div id="selectedAddress" class="selected-address mt-4 p-3 border rounded pay-">
-                    <h3>Selected Address</h3><br>
-                    <p id="addressDetails">Please select an address to proceed</p>
+                <div class="container">
+          
+                    <h3>Selected Address:</h3>
+                    <div id="addressDetails">
+                        <!-- Address will be shown here -->
+                    </div>
+                </div>
+                
                     <a href="./address.html">
                         <button>Change Address</button></a><br><br>
                     <div class="line"></div><br>
@@ -196,17 +201,17 @@ document.getElementById("payButton").addEventListener("click", async function ()
         return;
     }
 
-    const customerName = selectedAddress.name;
+    const customerName = selectedAddress.fullName;  // ✅ Fix: Use fullName from address
     const customerEmail = selectedAddress.email;
     const customerPhone = selectedAddress.phone;
-    const amount = document.getElementById("total-price").innerText.trim();
+    const amount = parseFloat(document.getElementById("total-price").innerText.trim());
 
     if (!customerName || !customerEmail || !customerPhone) {
         alert("Missing customer details. Please select an address.");
         return;
     }
 
-    if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
+    if (!amount || isNaN(amount) || amount <= 0) {
         alert("Invalid total amount: " + amount);
         return;
     }
@@ -233,7 +238,7 @@ document.getElementById("payButton").addEventListener("click", async function ()
                 customer_name: customerName,
                 customer_email: customerEmail,
                 customer_phone: customerPhone,
-                amount: parseFloat(amount)
+                amount
             })
         });
 
@@ -248,18 +253,22 @@ document.getElementById("payButton").addEventListener("click", async function ()
             return;
         }
 
-        // Step 2: Save Order to Backend Before Redirecting
+        // Step 2: Save Order Before Redirecting
         const orderData = {
             orderId: paymentResult.orderId,
+            linkId: paymentResult.linkUrl,  // ✅ Save linkId for tracking
             customerName,
             customerEmail,
             customerPhone,
             orderDetails,
+            Price: amount,  // ✅ Fix: Ensure total price is saved
             paymentDetails: {
                 method: "cashfree",
-                amount: parseFloat(amount),
-                shippingMethod
-            }
+                transactionId: "",
+                status: "pending",
+                paid: false
+            },
+            status: "pending"
         };
 
         const saveOrderResponse = await fetch(`${CONFIG.API_URL}/save-order`, {
@@ -285,6 +294,7 @@ document.getElementById("payButton").addEventListener("click", async function ()
         alert("Error in payment process: " + error.message);
     }
 });
+
 
 
      
@@ -395,15 +405,22 @@ document.getElementById("payButton").addEventListener("click", async function ()
 
     if (selectedAddress) {
         document.getElementById("addressDetails").innerHTML = `
-            <strong>${selectedAddress.name}</strong><br>
-            ${selectedAddress.street}, ${selectedAddress.city}, ${selectedAddress.state}, ${selectedAddress.pincode}<br>
-            Phone: ${selectedAddress.phone}
+            <strong>${selectedAddress.fullName || "N/A"}</strong><br>
+            ${selectedAddress.street || "Street not available"}, 
+            ${selectedAddress.city || "City not available"}, 
+            ${selectedAddress.state || "State not available"}, 
+            ${selectedAddress.postalCode || "Postal Code not available"}<br>
+            <strong>Phone:</strong> ${selectedAddress.phone || "Phone not available"}<br>
+            <strong>Email:</strong> ${selectedAddress.email || "Email not available"}
         `;
+    } else {
+        document.getElementById("addressDetails").innerHTML = "Please select an address to proceed.";
     }
 }
 
-// Call function when page loads
+// Call the function when the page loads
 displaySelectedAddress();
+
 
 
 
