@@ -1,385 +1,139 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>My Address</title>
-    <link rel="stylesheet" href="address.css">
-
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 400px;
-            margin: auto;
-        }
-
-        button {
-            display: block;
-            width: 100%;
-            margin: 10px 0;
-            padding: 8px;
-        }
-
-        .address-box {
-            border: 1px solid #ccc;
-            padding: 10px;
-            margin: 10px 0;
-            position: relative;
-        }
-
-        .edit-btn,
-        .remove-btn {
-            margin: 5px 5px 5px 0;
-            padding: 5px;
-            width: auto;
-            display: inline-block;
-            cursor: pointer;
-        }
-
-        .edit-btn {
-            background: blue;
-            color: white;
-        }
-
-        .remove-btn {
-            background: red;
-            color: white;
-        }
-
-        /* Popup Styles */
-        .popup {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 80%;
-            max-width: 400px;
-            background: white;
-            padding: 20px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
-            border-radius: 5px;
-            z-index: 1000;
-            /* Ensure popup appears above overlay */
-        }
-
-        .popup input {
-            width: 100%;
-            padding: 8px;
-            margin: 5px 0;
-        }
-
-        .popup .close-btn {
-            background: gray;
-            color: white;
-        }
-
-        .overlay {
-    display: none; /* Initially hidden */
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(5px);
-    z-index: 999;
-}
-
-    </style>
-    <script src="config.js"></script>
-    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
-    <link rel="stylesheet" href="index.css">
+    <title>My Addresses</title>
+    <link rel="stylesheet" href="address.css"> <!-- Add your CSS file -->
 </head>
-
 <body>
-    <div id="nav-placeholder">
+    <h2>My Addresses</h2>
+    <button onclick="openAddressPopup()">Add New Address</button>
+    <div id="addressesList"></div>
 
+    <!-- Add Address Popup -->
+    <div id="addressPopup" class="popup" style="display: none;">
+        <div class="popup-content">
+            <h3>Add Address</h3>
+            <input type="text" id="newStreet" placeholder="Street">
+            <input type="text" id="newCity" placeholder="City">
+            <input type="text" id="newState" placeholder="State">
+            <input type="text" id="newCountry" placeholder="Country">
+            <input type="text" id="newPostalCode" placeholder="Postal Code">
+            <button onclick="saveNewAddress()">Save</button>
+            <button onclick="closeAddressPopup()">Cancel</button>
+        </div>
     </div>
+
     <script>
+        async function fetchUserAddresses() {
+            const _id = localStorage.getItem("_id");
+            if (!_id) {
+                alert("User ID not found!");
+                return;
+            }
 
-        $(function () {
+            try {
+                const response = await fetch(`http://localhost:4000/users/${_id}/addresses`);
+                if (!response.ok) throw new Error("Failed to fetch addresses");
 
-            $("#nav-placeholder").load("profileNav.html", function () {
-                updateCartCounter(); // Ensure counter updates after loading nav
-            });
-        });
-    </script>
-    <!-- Address Section -->
-    <div class="address-container">
-      
-        <h2>My Addresses</h2>
-
-        <div class="address-list" id="addressList">
-            <!-- Addresses will be dynamically inserted here -->
-        </div>
-        <div class="address-header">
-            <button class="add-address-btn" onclick="openPopup()">+ Add Address</button>
-        </div>
-
-    </div>
-
-    <!-- Address Popup -->
-    <div class="overlay" id="overlay" onclick="closePopup()"></div>
-    <div class="popup" id="popup">
-        <div class="popup-header">
-            <h3 id="popupTitle">Add New Address</h3>
-            <span class="close-btn" onclick="closePopup()">✖</span>
-        </div>
-
-        <div class="popup-body">
-            <div class="input-group">
-                <input type="text" id="fullName" placeholder="Full Name">
-            </div>
-            <div class="input-group">
-                <input type="text" id="phone" placeholder="Phone">
-            </div>
-            <div class="input-group">
-                <input type="text" id="pincode" placeholder="Pincode" oninput="autoFillAddress()">
-            </div>
-            <div class="input-group">
-                <input type="text" id="address" placeholder="Street Address">
-            </div>
-            <div class="grid">
-                <input type="text" id="city" placeholder="City">
-                <input type="text" id="state" placeholder="State">
-            </div>
-            <div class="input-group">
-                <input type="text" id="country" placeholder="Country">
-            </div>
-            <div class="checkbox-group">
-                <input type="checkbox" id="isDefault"> <label for="isDefault">Set as Default</label>
-            </div>
-        </div>
-
-        <div class="popup-footer">
-            <button class="save-btn" onclick="saveAddress()">Save Address</button>
-        </div>
-    </div>
- 
-    <script>
-        const userProfile = JSON.parse(localStorage.getItem("userProfile"));
-        const userId = userProfile ? userProfile.userId : null;
-
-        if (!userId) {
-            alert("User not logged in!");
-            window.location.href = "login.html"; // Redirect if user is not logged in
-        }
-
-        let editingIndex = null;
-
-        // 🔹 Open Popup (For Adding or Editing)
-        function openPopup(index = null) {
-            document.getElementById("popup").style.display = "block";
-            document.getElementById("overlay").style.display = "block"; // Ensure overlay appears
-
-            if (index !== null) {
-                editingIndex = index;
-                const address = addresses[index];
-                document.getElementById("popupTitle").innerText = "Edit Address";
-                document.getElementById("fullName").value = address.fullName;
-                document.getElementById("phone").value = address.phone;
-                document.getElementById("pincode").value = address.pincode;
-                document.getElementById("address").value = address.address;
-                document.getElementById("city").value = address.city;
-                document.getElementById("state").value = address.state;
-                document.getElementById("country").value = address.country;
-                document.getElementById("isDefault").checked = address.isDefaultAddress;
-                document.getElementById("saveButton").innerText = "Update Address";
-            } else {
-                editingIndex = null;
-                document.getElementById("popupTitle").innerText = "Add New Address";
-                document.getElementById("saveButton").innerText = "Save Address";
-                document.querySelectorAll(".popup input").forEach(input => input.value = "");
-                document.getElementById("isDefault").checked = false;
+                const data = await response.json();
+                const addressesList = document.getElementById("addressesList");
+                
+                addressesList.innerHTML = ""; // Clear previous addresses
+                if (!data.addresses || data.addresses.length === 0) {
+                    addressesList.innerHTML = "<p>No saved addresses found.</p>";
+                } else {
+                    data.addresses.forEach((addr, index) => {
+                        const addressItem = document.createElement("div");
+                        addressItem.className = "address-item";
+                        addressItem.innerHTML = `
+                            <p><strong>Street:</strong> ${addr.street}</p>
+                            <p><strong>City:</strong> ${addr.city}</p>
+                            <p><strong>State:</strong> ${addr.state}</p>
+                            <p><strong>Country:</strong> ${addr.country}</p>
+                            <p><strong>Postal Code:</strong> ${addr.postalCode}</p>
+                            <button onclick="removeAddress(${index})">Remove</button>
+                        `;
+                        addressesList.appendChild(addressItem);
+                    });
+                }
+            } catch (error) {
+                console.error("Error fetching addresses:", error);
+                alert("Error fetching addresses!");
             }
         }
 
-        function closePopup() {
-            document.getElementById("popup").style.display = "none";
-            document.getElementById("overlay").style.display = "none"; // Ensure overlay hides
-        }
+        async function saveNewAddress() {
+            const _id = localStorage.getItem("_id");
+            if (!_id) {
+                alert("User ID not found!");
+                return;
+            }
 
+            const newAddress = {
+                street: document.getElementById("newStreet").value,
+                city: document.getElementById("newCity").value,
+                postalCode: document.getElementById("newPostalCode").value,
+                state: document.getElementById("newState").value,
+                country: document.getElementById("newCountry").value
+            };
 
-        // 🔹 Save or Update Address
-        async function saveAddress() {
-    const newAddress = {
-        fullName: document.getElementById("fullName").value.trim(),
-        phone: document.getElementById("phone").value.trim(),
-        pincode: document.getElementById("pincode").value.trim(),
-        address: document.getElementById("address").value.trim(),
-        city: document.getElementById("city").value.trim(),
-        state: document.getElementById("state").value.trim(),
-        country: document.getElementById("country").value.trim(),
-        isDefaultAddress: true  // Always set newly added/updated as default
-    };
-
-    if (!newAddress.fullName || !newAddress.phone || !newAddress.pincode || !newAddress.address || !newAddress.city || !newAddress.state || !newAddress.country) {
-        alert("Please fill all fields.");
-        return;
-    }
-
-    try {
-        const response = await fetch(`${CONFIG.API_URL}/save-address`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId, newAddress, addressIndex: editingIndex })
-        });
-
-        if (response.ok) {
-            alert(editingIndex !== null ? "Address Updated!" : "Address Saved!");
-            closePopup();
-            fetchAddresses();
-        } else {
-            alert("Error saving address");
-        }
-    } catch (error) {
-        console.error("Fetch error:", error);
-    }
-}
-
-        // 🔹 Delete Address
-        async function deleteAddress(index) {
-    if (!confirm("Are you sure you want to delete this address?")) return;
-
-    try {
-        const response = await fetch(`${CONFIG.API_URL}/delete-address`, {
-            method: "DELETE", // Change to DELETE method
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId, index })
-        });
-
-        const data = await response.json();
-        if (response.ok) {
-            alert("Address Deleted!");
-            fetchAddresses(); // Refresh address list
-        } else {
-            alert("Error: " + data.message);
-        }
-    } catch (error) {
-        console.error("Fetch error:", error);
-    }
-}
-
-
-
-        let addresses = [];
-
-        // 🔹 Fetch Addresses
-        async function fetchAddresses() {
-    try {
-        const response = await fetch(`${CONFIG.API_URL}/get-address?userId=${userId}`);
-        addresses = await response.json();
-
-        const addressList = document.getElementById("addressList");
-        addressList.innerHTML = "";
-
-        if (!addresses || addresses.length === 0) {
-            addressList.innerHTML = "<p>No addresses found.</p>";
-            return;
-        }
-
-        addresses.forEach((addr, index) => {
-            const div = document.createElement("div");
-            div.className = "address-box";
-            div.innerHTML = `
-                <input type="radio" name="defaultAddress" value="${index}" ${addr.isDefaultAddress ? "checked" : ""} onchange="setDefaultAddress(${index})">
-                <p><strong>${addr.fullName}</strong></p>
-                <p>${addr.address}, ${addr.city}, ${addr.state}, ${addr.country} - ${addr.pincode}</p>
-                <p>Phone: ${addr.phone}</p>
-                <button class="edit-btn" onclick="openPopup(${index})">Edit</button>
-                <button class="remove-btn" onclick="deleteAddress(${index})">Remove</button>
-            `;
-            addressList.appendChild(div);
-        });
-    } catch (error) {
-        console.error("Fetch error:", error);
-    }
-}
-
-
-
-async function setDefaultAddress(index) {
-    try {
-        const response = await fetch(`${CONFIG.API_URL}/set-default-address`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId, index })
-        });
-
-        if (response.ok) {
-            fetchAddresses();
-        } else {
-            console.error("Error setting default address");
-        }
-    } catch (error) {
-        console.error("Fetch error:", error);
-    }
-}
-
-// function goToPayment() {
-//     const selectedAddressIndex = document.querySelector('input[name="defaultAddress"]:checked');
-    
-//     if (!selectedAddressIndex) {
-//         alert("Please select an address before proceeding to payment.");
-//         return;
-//     }
-
-//     // Get selected address details
-//     const selectedAddress = addresses[selectedAddressIndex.value];
-
-//     // Store selected address in localStorage (or send to backend)
-//     localStorage.setItem("selectedAddress", JSON.stringify(selectedAddress));
-
-//     // Redirect to payment page
-//     window.location.href = "payment.html";
-// }
-
-
-        // 🔹 Auto-fill Address Details using PIN Code
-        function fetchAddressDetails(pinCode) {
-            const apiURL = `https://api.postalpincode.in/pincode/${pinCode}`;
-
-            fetch(apiURL)
-                .then(response => response.json())
-                .then(data => {
-                    if (data[0].Status === "Success") {
-                        const details = data[0].PostOffice[0];
-                        document.getElementById("city").value = details.District;
-                        document.getElementById("state").value = details.State;
-                        document.getElementById("country").value = details.Country;
-                    } else {
-                        alert("Invalid PIN code! Please enter a valid PIN code.");
-                    }
-                })
-                .catch(error => {
-                    console.error("Error fetching PIN code details:", error);
-                    alert("Something went wrong while fetching details. Please try again.");
+            try {
+                const response = await fetch(`http://localhost:4000/users/${_id}/add-address`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(newAddress)
                 });
+
+                if (response.ok) {
+                    alert("Address added successfully!");
+                    closeAddressPopup();
+                    fetchUserAddresses();
+                } else {
+                    alert("Failed to add address!");
+                }
+            } catch (error) {
+                console.error("Error saving address:", error);
+                alert("Error saving address!");
+            }
         }
 
-        // Attach event listener to pincode input field
-        document.getElementById("pincode").addEventListener("input", function () {
-            const pinCode = this.value.trim();
-            if (pinCode.length === 6) {
-                fetchAddressDetails(pinCode);
-            } else {
-                document.getElementById("city").value = "";
-                document.getElementById("state").value = "";
-                document.getElementById("country").value = "";
+        async function removeAddress(index) {
+            if (!confirm("Are you sure you want to remove this address?")) return;
+
+            const _id = localStorage.getItem("_id");
+            if (!_id) {
+                alert("User ID not found!");
+                return;
             }
-        });
 
-        // Fetch addresses on page load
-        fetchAddresses();
+            try {
+                const response = await fetch(`http://localhost:4000/users/${_id}/remove-address/${index}`, {
+                    method: "PUT"
+                });
 
+                if (response.ok) {
+                    alert("Address removed successfully!");
+                    fetchUserAddresses();
+                } else {
+                    alert("Failed to remove address!");
+                }
+            } catch (error) {
+                console.error("Error removing address:", error);
+                alert("Error removing address!");
+            }
+        }
+
+        function openAddressPopup() {
+            document.getElementById("addressPopup").style.display = "flex";
+        }
+
+        function closeAddressPopup() {
+            document.getElementById("addressPopup").style.display = "none";
+        }
+
+        document.addEventListener("DOMContentLoaded", fetchUserAddresses);
     </script>
 </body>
-
 </html>

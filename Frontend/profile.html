@@ -139,7 +139,7 @@
     formData.append("profileImage", file);
 
     try {
-        const response = await fetch(`http://localhost:4000/users/${_id}/upload`, {
+        const response = await fetch(`${CONFIG.API_URL}/users/${_id}/upload`, {
             method: "POST",
             body: formData
         });
@@ -211,7 +211,7 @@
                 const userEmail = getUserEmail();
                 if (!userEmail) throw new Error("No email found");
 
-                fetch(`http://localhost:4000/users/email/${userEmail}`)
+                fetch(`${CONFIG.API_URL}/users/email/${userEmail}`)
                     .then(response => {
                         if (!response.ok) throw new Error("User not found");
                         return response.json();
@@ -276,7 +276,7 @@ async function saveProfile() {
     };
 
     try {
-        const response = await fetch(`http://localhost:4000/users/${_id}`, {
+        const response = await fetch(`${CONFIG.API_URL}/users/${_id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(updatedData)
@@ -322,7 +322,7 @@ async function saveProfile() {
             }
 
             try {
-                const response = await fetch(`http://localhost:4000/users/${_id}/orders`);
+                const response = await fetch(`${CONFIG.API_URL}/users/${_id}/orders`);
                 if (!response.ok) throw new Error("Failed to fetch orders");
 
                 const data = await response.json();
@@ -361,7 +361,7 @@ async function saveProfile() {
             }
 
             try {
-                const response = await fetch(`http://localhost:4000/users/${_id}/addresses`);
+                const response = await fetch(`${CONFIG.API_URL}/users/${_id}/addresses`);
                 if (!response.ok) throw new Error("Failed to fetch addresses");
 
                 const data = await response.json();
@@ -404,7 +404,7 @@ async function saveProfile() {
             }
 
             try {
-                const response = await fetch(`http://localhost:4000/users/${_id}/addresses`);
+                const response = await fetch(`${CONFIG.API_URL}/users/${_id}/addresses`);
                 if (!response.ok) throw new Error("Failed to fetch addresses");
 
                 const data = await response.json();
@@ -453,7 +453,7 @@ async function saveProfile() {
     };
 
     try {
-        const response = await fetch(`http://localhost:4000/users/${_id}/update-address/${index}`, {
+        const response = await fetch(`${CONFIG.API_URL}/users/${_id}/update-address/${index}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(updatedAddress)
@@ -484,7 +484,7 @@ async function saveProfile() {
     }
 
     try {
-        const response = await fetch(`http://localhost:4000/users/${_id}/remove-address/${index}`, {
+        const response = await fetch(`${CONFIG.API_URL}/users/${_id}/remove-address/${index}`, {
             method: "PUT"
         });
 
@@ -518,7 +518,7 @@ async function saveProfile() {
             };
 
             try {
-                const response = await fetch(`http://localhost:4000/users/${_id}/add-address`, {
+                const response = await fetch(`${CONFIG.API_URL}/users/${_id}/add-address`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(newAddress)
