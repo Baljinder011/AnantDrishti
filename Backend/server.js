@@ -13,7 +13,7 @@ const fs = require("fs");
 const dotenv = require("dotenv")
 dotenv.config();
 
-const https = require("https");
+// const https = require("https");
 
 
 
@@ -63,22 +63,22 @@ const PORT = process.env.PORT || 4000
 
 
 
-const options = {
-  key: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/privkey.pem"),
-  cert: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/fullchain.pem"),
-};
+// const options = {
+//   key: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/privkey.pem"),
+//   cert: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/fullchain.pem"),
+// };
 
 
 
 // Enforce HTTPS middleware
 
 
-app.use((req, res, next) => {
-  if (req.protocol !== "https") {
-    return res.redirect("https://" + req.headers.host + req.url);
-  }
-  next();
-});
+// app.use((req, res, next) => {
+//   if (req.protocol !== "https") {
+//     return res.redirect("https://" + req.headers.host + req.url);
+//   }
+//   next();
+// });
 
 
 
@@ -104,21 +104,26 @@ const SECRET_KEY = process.env.CASHFREE_SECRET_KEY || "YOUR_SECRET_KEY";
 
 
 // Function to generate expiry time (30 minutes from now)
-function getExpiryTime() {
-  const now = new Date();
-  now.setMinutes(now.getMinutes() + 30);
-  return now.toISOString();
-}
+const generateOrderId = async () => {
+  const lastOrder = await User.aggregate([
+    { $unwind: "$orders" },
+    { $sort: { "orders.orderId": -1 } },
+    { $limit: 1 },
+    { $project: { "orders.orderId": 1, _id: 0 } },
+  ]);
 
-// Generate Order ID (ORD001, ORD002...)
-async function generateOrderId() {
-  const lastOrder = await Order.findOne().sort({ createdAt: -1 });
-  if (lastOrder && lastOrder.orderId) {
-    const lastNumber = parseInt(lastOrder.orderId.replace("ORD", ""), 10);
-    return `ORD${String(lastNumber + 1).padStart(3, '0')}`;
+  let newOrderId = "ORD001";
+
+  if (lastOrder.length > 0) {
+    const lastOrderId = lastOrder[0].orders.orderId;
+    const orderNumber = parseInt(lastOrderId.replace("ORD", ""), 10) + 1;
+    newOrderId = `ORD${orderNumber.toString().padStart(3, "0")}`;
   }
-  return "ORD001";
-}
+
+  console.log("Generated orderId:", newOrderId); // ✅ Debugging
+  return newOrderId;
+};
+
 
 
 // Create Payment Link & Save Order with linkId
@@ -130,20 +135,16 @@ app.post("/create-payment-link", async (req, res) => {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // ✅ Ensure customer_phone is a string
     customer_phone = String(customer_phone);
 
+    // ✅ Generate order ID
     const orderId = await generateOrderId();
     const linkId = `CF_${crypto.randomBytes(8).toString("hex")}`;
 
     const payload = {
       order_id: orderId,
       link_id: linkId,
-      customer_details: {
-        customer_name,
-        customer_email,
-        customer_phone,
-      },
+      customer_details: { customer_name, customer_email, customer_phone },
       link_amount: amount,
       link_currency: "INR",
       link_purpose: "E-commerce Purchase",
@@ -151,7 +152,7 @@ app.post("/create-payment-link", async (req, res) => {
       link_auto_reminders: true,
       link_expiry_time: new Date(Date.now() + 3600 * 1000).toISOString(),
       link_meta: {
-        return_url: `http://localhost:${PORT}/redirect.html?orderId=${orderId}&linkId=${linkId}&userId=${userId}`, // ✅ Include userId in return URL
+        return_url: `http://localhost:${PORT}/redirect.html?orderId=${orderId}&linkId=${linkId}&userId=${userId}`,
       },
     };
 
@@ -163,6 +164,27 @@ app.post("/create-payment-link", async (req, res) => {
       },
     });
 
+        // ✅ Save Order to MongoDB
+        const newOrder = {
+          orderId,
+          linkId,
+          orderDetails: [],
+          price: amount,
+          paymentDetails: { status: "pending" },
+          status: "pending",
+          createdAt: new Date(),
+        };
+    
+        const updatedUser = await User.findByIdAndUpdate(
+          userId,
+          { $push: { orders: newOrder } },
+          { new: true }
+        );
+    
+        if (!updatedUser) {
+          return res.status(404).json({ error: "User not found" });
+        }
+
     res.json({ success: true, userId, orderId, linkId, linkUrl: response.data.link_url });
   } catch (error) {
     console.error("Cashfree Error:", error.response?.data || error.message);
@@ -172,22 +194,28 @@ app.post("/create-payment-link", async (req, res) => {
 
 
 
+
 // Check Payment Status & Update Order
 app.get("/check-payment-status", async (req, res) => {
   try {
-    const { orderId, linkId } = req.query;
-    if (!orderId || !linkId) {
-      return res.status(400).json({ error: "Missing orderId or linkId" });
+    const { userId, orderId, linkId } = req.query;
+
+    if (!userId || !orderId || !linkId) {
+      return res.status(400).json({ error: "Missing userId, orderId, or linkId" });
     }
 
-    const order = await Order.findOne({ orderId, linkId });
-    if (!order) {
-      return res.status(404).json({ error: "Order not found" });
+    // Find the user with the matching order
+    const user = await User.findOne({ _id: userId, "orders.orderId": orderId, "orders.linkId": linkId });
+
+    if (!user) {
+      return res.status(404).json({ error: "User or Order not found" });
     }
+
+    const order = user.orders.find((o) => o.orderId === orderId && o.linkId === linkId);
 
     console.log(`Checking payment status for Order: ${orderId}, Link ID: ${linkId}`);
 
-    // Use linkId to fetch payment status
+    // Fetch payment status from Cashfree
     const cashfreeResponse = await axios.get(
       `https://sandbox.cashfree.com/pg/links/${linkId}`,
       {
@@ -215,18 +243,20 @@ app.get("/check-payment-status", async (req, res) => {
       paymentStatus = linkStatus.toLowerCase();
     }
 
-    await Order.updateOne(
-      { orderId, linkId },
-      {
-        $set: {
-          status: orderStatus,
-          "paymentDetails.status": paymentStatus,
-          "paymentDetails.paid": paid,
-          "paymentDetails.transactionId": cashfreeResponse.data.reference_id || "",
-          "paymentDetails.timestamp": new Date(),
-        },
-      }
-    );
+    // ✅ Update the order inside the user's `orders` array
+  await User.updateOne(
+  { _id: userId, "orders.orderId": orderId },
+  {
+    $set: {
+      "orders.$.status": orderStatus,
+      "orders.$.paymentDetails.status": paymentStatus,
+      "orders.$.paymentDetails.paid": paid,
+      "orders.$.paymentDetails.transactionId": cashfreeResponse.data.reference_id || "",
+      "orders.$.paymentDetails.timestamp": new Date(),
+    },
+  }
+);
+
 
     res.json({ success: orderStatus === "successful", status: orderStatus });
   } catch (error) {
@@ -235,34 +265,8 @@ app.get("/check-payment-status", async (req, res) => {
   }
 });
 
-app.post("/users/:id/orders", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const newOrder = req.body;
 
-    // ❌ Remove `_id` if it exists (MongoDB will generate it automatically)
-    if (newOrder._id) delete newOrder._id;
 
-    console.log("Received User ID:", id);
-    console.log("Processed Order:", JSON.stringify(newOrder, null, 2));
-
-    const updatedUser = await User.findByIdAndUpdate(
-      id,
-      { $push: { orders: newOrder } },
-      { new: true }
-    );
-
-    if (!updatedUser) {
-      return res.status(404).json({ success: false, message: "User not found" });
-    }
-
-    console.log("Order saved successfully for user:", id);
-    res.status(200).json({ success: true, message: "Order saved", order: newOrder });
-  } catch (error) {
-    console.error("Error saving order:", error);
-    res.status(500).json({ success: false, message: "Error saving order", error: error.message });
-  }
-});
 
 
 
@@ -275,7 +279,7 @@ const userSchema = new mongoose.Schema({
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
   email: { type: String, required: true, unique: true, index: true },
-  phone: { type: String, required: true, unique: true },
+  phone: { type: String, required: true },
   password: { type: String, required: true },
   dob: { type: String, default: "" },
   createdAt: { type: Date, default: Date.now },
@@ -314,7 +318,34 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model("users", userSchema);
 
+app.post("/users/:id/orders", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const newOrder = req.body;
 
+    // ❌ Remove `_id` if it exists (MongoDB will generate it automatically)
+    if (newOrder._id) delete newOrder._id;
+
+    console.log("Received User ID:", id);
+    console.log("Processed Order:", JSON.stringify(newOrder, null, 2));
+
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      { $push: { orders: newOrder } },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    console.log("Order saved successfully for user:", id);
+    res.status(200).json({ success: true, message: "Order saved", order: newOrder });
+  } catch (error) {
+    console.error("Error saving order:", error);
+    res.status(500).json({ success: false, message: "Error saving order", error: error.message });
+  }
+});
 
 
 
@@ -367,7 +398,7 @@ app.get("/order", async (req, res) => {
       return res.status(400).json({ error: "Missing orderId" });
     }
 
-    const order = await Order.findOne({ orderId });
+    const order = await User.findOne({ orderId });
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
     }
@@ -682,9 +713,16 @@ app.post("/signup", async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
+    // Check if user exists with the same email
+    const existingEmail = await User.findOne({ email });
+    if (existingEmail) {
+      return res.status(400).json({ message: "User with this email already exists" });
+    }
+
+    // Check if user exists with the same phone number
+    const existingPhone = await User.findOne({ phone });
+    if (existingPhone) {
+      return res.status(400).json({ message: "User with this phone number already exists" });
     }
 
     const newUser = new User({ firstName, lastName, email, password, phone });
@@ -707,7 +745,6 @@ app.post("/signup", async (req, res) => {
     res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 });
-
 // ✅ Login Route
 app.post("/login", async (req, res) => {
   try {
@@ -1030,7 +1067,7 @@ app.put('/products/:id/status', async (req, res) => {
 app.delete("/delete-order/:orderId", async (req, res) => {
   try {
     const { orderId } = req.params;
-    const deletedOrder = await Order.findOneAndDelete({ orderId });
+    const deletedOrder = await User.findOneAndDelete({ orderId });
 
     if (!deletedOrder) {
       return res.status(404).json({ success: false, message: "Order not found" });
@@ -1107,14 +1144,15 @@ app.delete("/delete-order/:orderId", async (req, res) => {
 
 
 // Start Server
-// app.listen(PORT, () => {
-//   console.log(`Server running on http://localhost:${PORT}`);
-// });
+
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});
 
 
 
 // Start HTTPS server
 
-https.createServer(options, app).listen(PORT, () => {
-  console.log(`Secure server running on HTTPS at port ${PORT}`);
-});
+// https.createServer(options, app).listen(PORT, () => {
+//   console.log(`Secure server running on HTTPS at port ${PORT}`);
+// });

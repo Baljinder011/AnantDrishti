@@ -39,6 +39,12 @@
             background: #218838;
         }
     </style>
+    <script>
+        // Automatically redirect to Orders section after 5 seconds
+        setTimeout(() => {
+            window.location.href = "profile.html"; // Redirect to profile page
+        }, 5000);
+    </script>
 </head>
 <body>
 
@@ -46,8 +52,21 @@
         <img src="https://cdn-icons-png.flaticon.com/512/148/148767.png" alt="Success" class="success-image"> 
         <h2>Payment Successful!</h2>
         <p>Thank you for your purchase. Your payment has been processed successfully.</p>
-        <a href="orders.html" class="btn">see orders</a>
+        <p>You will be redirected to your orders in <span id="countdown">5</span> seconds...</p>
+        <a href="profile.html" class="btn">See Orders Now</a>
     </div>
+
+    <script>
+        // Countdown Timer for Redirect
+        let count = 5;
+        const countdownElement = document.getElementById("countdown");
+
+        const countdownInterval = setInterval(() => {
+            count--;
+            countdownElement.innerText = count;
+            if (count === 0) clearInterval(countdownInterval);
+        }, 1000);
+    </script>
 
 </body>
 </html>

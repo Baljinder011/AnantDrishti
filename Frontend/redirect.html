@@ -4,28 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checking Payment Status...</title>
-    <script src="config.js"></script> <!-- Ensure config is loaded first -->
+    <script src="config.js"></script> <!-- Ensure config.js is loaded first -->
 </head>
 <body>
     <h1>Checking Payment Status... Redirecting in <span id="countdown">2</span> seconds...</h1>
 
     <script>
-        // Function to get query parameters from URL
-        function getQueryParam(name) {
-            const params = new URLSearchParams(window.location.search);
-            return params.get(name);
+        // ✅ Function to get query parameters from URL
+        function getQueryParam(param) {
+            return new URLSearchParams(window.location.search).get(param);
         }
 
-        // Get orderId and linkId from URL
+        // ✅ Extract orderId, linkId, and userId
         const orderId = getQueryParam("orderId");
         const linkId = getQueryParam("linkId");
+        const userId = getQueryParam("userId");
 
-        if (!orderId || !linkId) {
-            document.body.innerHTML = "<h2>Error: Missing Order ID or Link ID</h2>";
-            throw new Error("Missing orderId or linkId in URL");
+        if (!orderId || !linkId || !userId) {
+            document.body.innerHTML = "<h2>Error: Missing Order ID, Link ID, or User ID</h2>";
+            console.error("Missing orderId, linkId, or userId in URL");
+            throw new Error("Missing required query parameters");
         }
 
-        // Countdown Timer
+        // ✅ Debugging: Log extracted values
+        console.log("Extracted Order ID:", orderId);
+        console.log("Extracted Link ID:", linkId);
+        console.log("Extracted User ID:", userId);
+
+        // ✅ Countdown Timer (2 seconds)
         let timeLeft = 2;
         const countdownElement = document.getElementById("countdown");
         const countdownTimer = setInterval(() => {
@@ -37,10 +43,10 @@
             }
         }, 1000);
 
-        // Function to check payment status and update order
+        // ✅ Function to check payment status and update order
         async function checkPaymentStatus() {
             try {
-                const response = await fetch(`${CONFIG.API_URL}/check-payment-status?orderId=${orderId}&linkId=${linkId}`);
+                const response = await fetch(`${CONFIG.API_URL}/check-payment-status?orderId=${orderId}&linkId=${linkId}&userId=${userId}`);
                 const data = await response.json();
 
                 console.log("Payment Status Response:", data);
@@ -50,21 +56,19 @@
                     return;
                 }
 
-                if (data.status === "successful") {
-                    window.location.href = "/success.html"; // Redirect to success page
-                } else {
-                    window.location.href = "/failure.html"; // Redirect to failure page
-                }
+                // ✅ Redirect based on payment status (including userId in URL)
+                const redirectPage = data.status === "successful" ? "success.html" : "failure.html";
+                window.location.href = `/${redirectPage}?userId=${userId}`;
             } catch (error) {
                 console.error("Error checking payment status:", error);
                 document.body.innerHTML = "<h2>Error checking payment status. Please try again.</h2>";
             }
         }
 
-        // Function to fetch order details
+        // ✅ Function to fetch order details (for debugging/logging)
         async function getOrderDetails() {
             try {
-                const response = await fetch(`${CONFIG.API_URL}/order?orderId=${orderId}`);
+                const response = await fetch(`${CONFIG.API_URL}/order?orderId=${orderId}&userId=${userId}`);
                 const data = await response.json();
                 console.log("Order Details:", data);
             } catch (error) {
@@ -72,7 +76,7 @@
             }
         }
 
-        // Fetch order details
+        // ✅ Fetch order details
         getOrderDetails();
     </script>
 </body>
