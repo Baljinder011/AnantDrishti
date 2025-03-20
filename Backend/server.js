@@ -13,37 +13,37 @@ const fs = require("fs");
 const dotenv = require("dotenv")
 dotenv.config();
 
-const https = require("https");
+// const https = require("https");
 
 
 
 const app = express();
 
 // :white_tick: Define allowed origins
-const allowedOrigins = ['https://api.indraq.tech', 'https://indraq.tech', 'http://localhost:3000', 'http://localhost:3001'];
-// :white_tick: CORS Middleware
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // Allow requests with no origin (e.g., mobile apps, curl)
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true, // REQUIRED for cookies/auth headers
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"]
-  })
-);
+// const allowedOrigins = ['https://api.indraq.tech', 'https://indraq.tech', 'http://localhost:3000', 'http://localhost:3001'];
+// // :white_tick: CORS Middleware
+// app.use(
+//   cors({
+//     origin: function (origin, callback) {
+//       // Allow requests with no origin (e.g., mobile apps, curl)
+//       if (!origin) return callback(null, true);
+//       if (allowedOrigins.includes(origin)) {
+//         callback(null, true);
+//       } else {
+//         callback(new Error("Not allowed by CORS"));
+//       }
+//     },
+//     credentials: true, // REQUIRED for cookies/auth headers
+//     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+//     allowedHeaders: ["Content-Type", "Authorization"]
+//   })
+// );
 
-// app.use(cors({
-//   origin: '*',  // Update this to match your Go Live URL if different
-//   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-//   allowedHeaders: ['Content-Type', 'Authorization']
-// }))
+app.use(cors({
+  origin: '*',  // Update this to match your Go Live URL if different
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}))
 app.use(express.json());
 
 const frontendPath = path.join(__dirname, "..", "Frontend"); // Adjust if needed
@@ -63,22 +63,22 @@ const PORT = process.env.PORT || 4000
 
 
 
-const options = {
-  key: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/privkey.pem"),
-  cert: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/fullchain.pem"),
-};
+// const options = {
+//   key: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/privkey.pem"),
+//   cert: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/fullchain.pem"),
+// };
 
 
 
 // Enforce HTTPS middleware
 
 
-app.use((req, res, next) => {
-  if (req.protocol !== "https") {
-    return res.redirect("https://" + req.headers.host + req.url);
-  }
-  next();
-});
+// app.use((req, res, next) => {
+//   if (req.protocol !== "https") {
+//     return res.redirect("https://" + req.headers.host + req.url);
+//   }
+//   next();
+// });
 
 
 
@@ -124,9 +124,9 @@ async function generateOrderId() {
 // Create Payment Link & Save Order with linkId
 app.post("/create-payment-link", async (req, res) => {
   try {
-    let { customer_name, customer_email, customer_phone, amount } = req.body;
+    let { userId, customer_name, customer_email, customer_phone, amount } = req.body;
 
-    if (!customer_name || !customer_email || !customer_phone || !amount) {
+    if (!userId || !customer_name || !customer_email || !customer_phone || !amount) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
@@ -142,7 +142,7 @@ app.post("/create-payment-link", async (req, res) => {
       customer_details: {
         customer_name,
         customer_email,
-        customer_phone, // ✅ Now it's a string
+        customer_phone,
       },
       link_amount: amount,
       link_currency: "INR",
@@ -151,7 +151,7 @@ app.post("/create-payment-link", async (req, res) => {
       link_auto_reminders: true,
       link_expiry_time: new Date(Date.now() + 3600 * 1000).toISOString(),
       link_meta: {
-        return_url: `http://localhost:${PORT}/redirect.html?orderId=${orderId}&linkId=${linkId}`,
+        return_url: `http://localhost:${PORT}/redirect.html?orderId=${orderId}&linkId=${linkId}&userId=${userId}`, // ✅ Include userId in return URL
       },
     };
 
@@ -163,21 +163,10 @@ app.post("/create-payment-link", async (req, res) => {
       },
     });
 
-    const newOrder = new Order({
-      orderId,
-      linkId,
-      customerName: customer_name,
-      customerEmail: customer_email,
-      customerPhone: customer_phone, // ✅ Now it's always stored as a string
-      Price: amount,
-      status: "pending",
-    });
-
-    await newOrder.save();
-    res.json({ success: true, orderId, linkId, linkUrl: response.data.link_url });
+    res.json({ success: true, userId, orderId, linkId, linkUrl: response.data.link_url });
   } catch (error) {
     console.error("Cashfree Error:", error.response?.data || error.message);
-    res.status(500).json({ error: error.response?.data || "Failed to create payment link" });
+    res.status(500).json({ error: "Failed to create payment link" });
   }
 });
 
@@ -246,82 +235,128 @@ app.get("/check-payment-status", async (req, res) => {
   }
 });
 
-
-// Order Schema
-const orderSchema = new mongoose.Schema({
-  orderId: { type: String, unique: true }, // Custom Order ID
-  linkId: String,
-  customerName: String,
-  customerEmail: String,
-  customerPhone: String,
-  orderDetails: Array,
-  Price: Number,
-  paymentDetails: {
-    method: String,
-    transactionId: String,
-    status: { type: String, default: 'pending' }, // Payment status
-    paid: { type: Boolean, default: false }, // New field indicating if payment is made
-    timestamp: Date
-  },
-  status: { type: String, default: 'pending' },  // New field for order status
-  createdAt: { type: Date, default: Date.now }
-});
-
-const Order = mongoose.model("Order", orderSchema);
-
-
-
-
-
-
-
-// Save Order Before Payment
-app.post("/save-order", async (req, res) => {
+app.post("/users/:id/orders", async (req, res) => {
   try {
-    const { orderId, linkId, customerName, customerEmail, customerPhone, orderDetails, paymentDetails, Price } = req.body;
+    const { id } = req.params;
+    const newOrder = req.body;
 
-    if (!orderId || !linkId || !customerName || !customerEmail || !customerPhone || !orderDetails || orderDetails.length === 0 || !Price) {
-      return res.status(400).json({ error: "Missing required fields" });
+    // ❌ Remove `_id` if it exists (MongoDB will generate it automatically)
+    if (newOrder._id) delete newOrder._id;
+
+    console.log("Received User ID:", id);
+    console.log("Processed Order:", JSON.stringify(newOrder, null, 2));
+
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      { $push: { orders: newOrder } },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    const existingOrder = await Order.findOne({ orderId });
-    if (existingOrder) {
-      return res.json({ success: true, message: "Order already exists", orderId });
-    }
-
-    const newOrder = new Order({
-      orderId,
-      linkId,
-      customerName,
-      customerEmail,
-      customerPhone,
-      Price,  // ✅ Now correctly included
-      status: "pending"
-    });
-
-    await newOrder.save();
-
-    res.json({ success: true, orderId });
+    console.log("Order saved successfully for user:", id);
+    res.status(200).json({ success: true, message: "Order saved", order: newOrder });
   } catch (error) {
     console.error("Error saving order:", error);
-    res.status(500).json({ error: "Failed to save order" });
+    res.status(500).json({ success: false, message: "Error saving order", error: error.message });
   }
 });
 
 
 
-app.get('/get-orders', async (req, res) => {
-  try {
-    // Fetch all orders from the database
-    const orders = await Order.find({});
 
-    // Return the orders
-    res.json({ success: true, orders });
-  } catch (error) {
-    console.error("Error fetching orders:", error);
-    res.status(500).json({ success: false, message: 'Failed to fetch orders' });
-  }
+
+
+
+const userSchema = new mongoose.Schema({
+  profileImage: { type: String, default: "" },
+  firstName: { type: String, required: true },
+  lastName: { type: String, required: true },
+  email: { type: String, required: true, unique: true, index: true },
+  phone: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  dob: { type: String, default: "" },
+  createdAt: { type: Date, default: Date.now },
+
+  address: [
+    {
+      fullName: { type: String, required: true },
+      phone: { type: String, required: true },
+      email: { type: String, required: true },
+      street: { type: String, required: true },
+      city: { type: String, required: true },
+      postalCode: { type: String, required: true },
+      state: { type: String, required: true },
+      country: { type: String, required: true },
+    },
+  ],
+
+  orders: [
+    {
+      orderId: { type: String, required: true, unique: true }, // Custom Order ID
+      linkId: String,
+      orderDetails: Array,
+      price: { type: Number, required: true, min: 0 },
+      paymentDetails: {
+        method: String,
+        transactionId: String,
+        status: { type: String, default: "pending" },
+        paid: { type: Boolean, default: false },
+        timestamp: Date,
+      },
+      status: { type: String, default: "pending" },
+      createdAt: { type: Date, default: Date.now },
+    },
+  ],
 });
+
+const User = mongoose.model("users", userSchema);
+
+
+
+
+
+
+
+
+// Order Schema
+// const orderSchema = new mongoose.Schema({
+//   orderId: { type: String, unique: true }, // Custom Order ID
+//   linkId: String,
+//   customerName: String,
+//   customerEmail: String,
+//   customerPhone: String,
+//   orderDetails: Array,
+//   Price: Number,
+//   paymentDetails: {
+//     method: String,
+//     transactionId: String,
+//     status: { type: String, default: 'pending' }, // Payment status
+//     paid: { type: Boolean, default: false }, // New field indicating if payment is made
+//     timestamp: Date
+//   },
+//   status: { type: String, default: 'pending' },  // New field for order status
+//   createdAt: { type: Date, default: Date.now }
+// });
+
+// const Order = mongoose.model("Order", orderSchema);
+
+
+
+// app.get('/get-orders', async (req, res) => {
+//   try {
+//     // Fetch all orders from the database
+//     const orders = await Order.find({});
+
+//     // Return the orders
+//     res.json({ success: true, orders });
+//   } catch (error) {
+//     console.error("Error fetching orders:", error);
+//     res.status(500).json({ success: false, message: 'Failed to fetch orders' });
+//   }
+// });
 
 
 // Fetch Order by Order ID
@@ -359,38 +394,38 @@ app.get("/failure.html", (req, res) => res.sendFile(path.join(frontendPath, "fai
 
 
 
-const userSchema = new mongoose.Schema({
-  profileImage: { type: String, default: "" },
-  firstName: { type: String, required: true },
-  lastName: { type: String, required: true },
-  email: { type: String, required: true },
-  phone: { type: String, required: true },
-  password: { type: String, required: true },
-  dob: { type: String, default: "" },
-  createdAt: { type: Date, default: Date.now },
-  address: [  // This is the correct field name
-    {
-      fullName:String,
-      phone:Number,
-      email:String,
-      street: String,
-      city: String,
-      postalCode: Number,
-      state: String,
-      country: String,
-    },
-  ],
-  orders: [
-    {
-      orderId: String,
-      productName: String,
-      price: Number,
-      status: String,
-    },
-  ],
-});
+// const userSchema = new mongoose.Schema({
+//   profileImage: { type: String, default: "" },
+//   firstName: { type: String, required: true },
+//   lastName: { type: String, required: true },
+//   email: { type: String, required: true },
+//   phone: { type: String, required: true },
+//   password: { type: String, required: true },
+//   dob: { type: String, default: "" },
+//   createdAt: { type: Date, default: Date.now },
+//   address: [  // This is the correct field name
+//     {
+//       fullName:String,
+//       phone:Number,
+//       email:String,
+//       street: String,
+//       city: String,
+//       postalCode: Number,
+//       state: String,
+//       country: String,
+//     },
+//   ],
+//   orders: [
+//     {
+//       orderId: String,
+//       productName: String,
+//       price: Number,
+//       status: String,
+//     },
+//   ],
+// });
 
-const User = mongoose.model("users", userSchema);
+// const User = mongoose.model("users", userSchema);
 
 
 
@@ -409,6 +444,8 @@ app.get("/users/:id/orders", async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
+
+
 
 app.put("/users/:id/update-address/:addressId", async (req, res) => {
   try {
@@ -1070,14 +1107,14 @@ app.delete("/delete-order/:orderId", async (req, res) => {
 
 
 // Start Server
-// app.listen(PORT, () => {
-//   console.log(`Server running on http://localhost:${PORT}`);
-// });
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});
 
 
 
 // Start HTTPS server
 
-https.createServer(options, app).listen(PORT, () => {
-  console.log(`Secure server running on HTTPS at port ${PORT}`);
-});
+// https.createServer(options, app).listen(PORT, () => {
+//   console.log(`Secure server running on HTTPS at port ${PORT}`);
+// });

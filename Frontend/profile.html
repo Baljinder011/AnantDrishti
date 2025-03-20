@@ -29,10 +29,8 @@
             </div>
             <div class="section-card" onclick="showDetails('orders')">
                 <div class="section-icon orders-icon">📦</div>
-                <a href="orders.html">
                 <div class="section-title">My Orders</div>
                 <div class="section-subtitle">Check Your Orders</div>
-                </a>
             </div>
             <div class="section-card" onclick="showDetails('addresses')">
                 <div class="section-icon address-icon">📍</div>
@@ -318,42 +316,50 @@ async function saveProfile() {
 
         // Fetch and display orders
         async function fetchOrders() {
-            const _id = localStorage.getItem("_id"); // Retrieve user ID from localStorage
-            if (!_id) {
-                alert("User ID not found! Please log in again.");
-                return;
-            }
+    const _id = localStorage.getItem("_id"); 
+    if (!_id) {
+        alert("User ID not found! Please log in again.");
+        return;
+    }
 
-            try {
-                const response = await fetch(`${CONFIG.API_URL}/users/${_id}/orders`);
-                if (!response.ok) throw new Error("Failed to fetch orders");
+    try {
+        console.log("Fetching orders for user ID:", _id);
+        const response = await fetch(`${CONFIG.API_URL}/users/${_id}/orders`);
 
-                const data = await response.json();
-                const ordersContainer = document.getElementById("ordersList");
-                ordersContainer.innerHTML = ""; // Clear previous orders
-
-                if (!data.orders || data.orders.length === 0) {
-                    ordersContainer.innerHTML = "<p>No orders found.</p>";
-                    return;
-                }
-
-                data.orders.forEach(order => {
-                    const orderDiv = document.createElement("div");
-                    orderDiv.className = "order-item"; // Optional class for styling
-                    orderDiv.innerHTML = `
-                        <p><strong>Order ID:</strong> ${order.orderId}</p>
-                        <p><strong>Product:</strong> ${order.productName}</p>
-                        <p><strong>Price:</strong> $${order.price}</p>
-                        <p><strong>Status:</strong> ${order.status}</p>
-                        <hr>
-                    `;
-                    ordersContainer.appendChild(orderDiv);
-                });
-            } catch (error) {
-                console.error("Error fetching orders:", error);
-                alert("Error fetching orders!");
-            }
+        if (!response.ok) {
+            console.error("Failed to fetch orders. Status:", response.status);
+            alert("Failed to fetch orders");
+            return;
         }
+
+        const data = await response.json();
+        console.log("Orders fetched:", data); // Debugging log
+
+        const ordersContainer = document.getElementById("ordersList");
+        ordersContainer.innerHTML = ""; 
+
+        if (!data.orders || data.orders.length === 0) {
+            ordersContainer.innerHTML = "<p>No orders found.</p>";
+            return;
+        }
+
+        data.orders.forEach(order => {
+            const orderDiv = document.createElement("div");
+            orderDiv.className = "order-item"; 
+            orderDiv.innerHTML = `
+                <p><strong>Product:</strong> ${order.productName}</p>
+                <p><strong>Price:</strong> ₹${order.price}</p>
+                <p><strong>Status:</strong> ${order.status}</p>
+                <hr>
+            `;
+            ordersContainer.appendChild(orderDiv);
+        });
+    } catch (error) {
+        console.error("Error fetching orders:", error);
+        alert("Error fetching orders!");
+    }
+}
+
 
         // Fetch and display user addresses with edit and remove buttons
         async function fetchUserAddresses() {

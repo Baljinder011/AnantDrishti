@@ -195,13 +195,19 @@
 
 
 document.getElementById("payButton").addEventListener("click", async function () {
+    const userId = localStorage.getItem("_id"); // Get user ID from local storage
+    if (!userId) {
+        alert("User not logged in. Please log in to continue.");
+        return;
+    }
+
     const selectedAddress = JSON.parse(localStorage.getItem("selectedAddress"));
     if (!selectedAddress) {
         alert("Please select an address before proceeding.");
         return;
     }
 
-    const customerName = selectedAddress.fullName;  // ✅ Fix: Use fullName from address
+    const customerName = selectedAddress.fullName; 
     const customerEmail = selectedAddress.email;
     const customerPhone = selectedAddress.phone;
     const amount = parseFloat(document.getElementById("total-price").innerText.trim());
@@ -230,11 +236,12 @@ document.getElementById("payButton").addEventListener("click", async function ()
     const shippingMethod = shippingMethodElement.value;
 
     try {
-        // Step 1: Create Payment Link
+        // Step 1: Create Payment Link (Pass `userId`)
         const paymentResponse = await fetch(`${CONFIG.API_URL}/create-payment-link`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
+                userId,  // ✅ Sending userId
                 customer_name: customerName,
                 customer_email: customerEmail,
                 customer_phone: customerPhone,
@@ -253,25 +260,26 @@ document.getElementById("payButton").addEventListener("click", async function ()
             return;
         }
 
-        // Step 2: Save Order Before Redirecting
+        // Step 2: Save Order in User Schema (Pass `userId`, `orderId`, `linkId`)
         const orderData = {
-            orderId: paymentResult.orderId,
-            linkId: paymentResult.linkUrl,  // ✅ Save linkId for tracking
+            _id: paymentResult.orderId,  // ✅ Storing the payment order ID
+            linkId: paymentResult.linkId,  
+            userId,  // ✅ Storing userId inside the order
             customerName,
             customerEmail,
             customerPhone,
             orderDetails,
-            Price: amount,  // ✅ Fix: Ensure total price is saved
+            price: amount,  
             paymentDetails: {
                 method: "cashfree",
-                transactionId: "",
+                transactionId: "",  // Will be updated after payment
                 status: "pending",
                 paid: false
             },
             status: "pending"
         };
 
-        const saveOrderResponse = await fetch(`${CONFIG.API_URL}/save-order`, {
+        const saveOrderResponse = await fetch(`${CONFIG.API_URL}/users/${userId}/orders`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(orderData)
@@ -284,16 +292,20 @@ document.getElementById("payButton").addEventListener("click", async function ()
             return;
         }
 
-        // Step 3: Store Order ID in Local Storage
+        // Step 3: Store Order ID & Link ID in Local Storage
         localStorage.setItem("orderId", paymentResult.orderId);
+        localStorage.setItem("linkId", paymentResult.linkId);
 
-        // Step 4: Redirect to Cashfree Payment Page
+        // Step 4: Redirect to Payment Page
         window.location.href = paymentResult.linkUrl;
     } catch (error) {
         console.error("Error:", error);
         alert("Error in payment process: " + error.message);
     }
 });
+
+
+
 
 
 
