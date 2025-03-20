@@ -60,8 +60,8 @@
         <p><strong>Email:</strong> <input class="form-input" id="email" readonly></p>
         <p><strong>Phone:</strong> <input class="form-input" id="phone" readonly></p>
 
-        <button class="edit-btn" onclick="editProfile()">Edit</button>
-        <button class="save-btn" onclick="saveProfile()" style="display: none;">Save</button>
+        <button class="edit-btn" id="editProfileBtn" onclick="editProfile()">Edit Profile</button>
+        <button class="save-btn" id="saveProfileBtn" onclick="saveProfile()" style="display: none;">Save Profile</button>
         
         <div class="back-btn" onclick="goBack()">Back</div>
     </div>
@@ -71,7 +71,7 @@
     <h2>Saved Addresses</h2>
     <div id="addressesList">Loading...</div>
     <button class="edit-btn" onclick="openAddressPopup()">Add New Address</button>
-    <button class="save-btn" onclick="fetchUserAddresses()">Refresh Addresses</button>
+    <!-- <button class="save-btn" onclick="fetchUserAddresses()">Refresh Addresses</button> -->
     <div class="back-btn" onclick="goBack()">Back</div>
 </div>
 
@@ -148,16 +148,18 @@
         if (response.ok) {
             const data = await response.json();
             alert("Profile image updated!");
-            document.getElementById("profileImagePreview").src = data.imageUrl;
+            document.getElementById("profileImagePreview").src = `${CONFIG.API_URL}${data.imageUrl}`;
             document.getElementById("upload-btn").style.display = "none";
 
             // Update user profile in localStorage with new image URL
             const storedUserProfile = localStorage.getItem("userProfile");
-            if (storedUserProfile) {
-                const userProfile = JSON.parse(storedUserProfile);
-                userProfile.profileImage = data.imageUrl;
-                localStorage.setItem("userProfile", JSON.stringify(userProfile));
-            } else {
+if (storedUserProfile) {
+    const userProfile = JSON.parse(storedUserProfile);
+    userProfile.profileImage = `${CONFIG.API_URL}${data.imageUrl}`;
+    localStorage.setItem("userProfile", JSON.stringify(userProfile));
+}
+
+            else {
                 // If no stored profile, fetch updated user data
                 fetchUserData();
             }
@@ -248,70 +250,84 @@
             }
         }
 
-       // Enable editing for profile section
-       function editProfile() {
-    console.log("Edit button clicked");
-
-    document.querySelectorAll("#profileDetails .form-input").forEach(input => {
-        input.removeAttribute("readonly");
-    });
-
-    // Show the Save button and hide the Edit button
-    document.querySelector(".edit-btn").style.display = "none";
-    document.querySelector(".save-btn").style.display = "inline-block";
-}
-
-
-// Save updated profile data and update backend
-async function saveProfile() {
-    const _id = localStorage.getItem("_id"); // Retrieve _id directly
-    if (!_id) {
-        alert("User ID not found!");
-        return;
-    }
-
-    const updatedData = {
-        firstName: document.getElementById("firstName").value,
-        lastName: document.getElementById("lastName").value,
-        phone: document.getElementById("phone").value
-    };
-
-    try {
-        const response = await fetch(`${CONFIG.API_URL}/users/${_id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(updatedData)
-        });
-
-        if (response.ok) {
-            const updatedUser = await response.json();
-
-            // Update UI with new data
-            document.getElementById("firstName").value = updatedUser.firstName;
-            document.getElementById("lastName").value = updatedUser.lastName;
-            document.getElementById("phone").value = updatedUser.phone;
-
-            // Update local storage
-            localStorage.setItem("userProfile", JSON.stringify(updatedUser));
-
-            // Make fields readonly again
-            document.querySelectorAll("#profileDetails .form-input").forEach(input => {
-                input.setAttribute("readonly", true);
-            });
-
-            // Show edit button, hide save button
-            document.querySelector(".edit-btn").style.display = "inline-block";
-            document.querySelector(".save-btn").style.display = "none";
-
-            alert("Profile updated successfully!");
-        } else {
-            alert("Failed to update profile!");
+        // Edit Profile Function - Make fields editable
+        function editProfile() {
+            // Make input fields editable
+            document.getElementById("firstName").readOnly = false;
+            document.getElementById("lastName").readOnly = false;
+            document.getElementById("phone").readOnly = false;
+            
+            // Email should remain readonly as it's often used as an identifier
+            // document.getElementById("email").readOnly = false;
+            
+            // Add active class to editable fields
+            document.getElementById("firstName").classList.add("editable");
+            document.getElementById("lastName").classList.add("editable");
+            document.getElementById("phone").classList.add("editable");
+            
+            // Show save button and hide edit button
+            document.getElementById("saveProfileBtn").style.display = "inline-block";
+            document.getElementById("editProfileBtn").style.display = "none";
         }
-    } catch (error) {
-        console.error("Error updating profile:", error);
-        alert("Error updating profile!");
-    }
-}
+        
+        // Save Profile Function - Send updated profile to backend
+        async function saveProfile() {
+            const _id = localStorage.getItem("_id");
+            if (!_id) {
+                alert("User ID not found! Please log in again.");
+                return;
+            }
+            
+            // Gather updated profile data
+            const updatedProfile = {
+                firstName: document.getElementById("firstName").value,
+                lastName: document.getElementById("lastName").value,
+                phone: document.getElementById("phone").value
+                // Email is typically not changed this way
+            };
+            
+            try {
+                const response = await fetch(`${CONFIG.API_URL}/users/${_id}/update`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(updatedProfile)
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    alert("Profile updated successfully!");
+                    
+                    // Update stored user profile
+                    const storedUserProfile = localStorage.getItem("userProfile");
+                    if (storedUserProfile) {
+                        const userProfile = JSON.parse(storedUserProfile);
+                        userProfile.firstName = updatedProfile.firstName;
+                        userProfile.lastName = updatedProfile.lastName;
+                        userProfile.phone = updatedProfile.phone;
+                        localStorage.setItem("userProfile", JSON.stringify(userProfile));
+                    }
+                    
+                    // Reset fields to readonly
+                    document.getElementById("firstName").readOnly = true;
+                    document.getElementById("lastName").readOnly = true;
+                    document.getElementById("phone").readOnly = true;
+                    
+                    // Remove editable class
+                    document.getElementById("firstName").classList.remove("editable");
+                    document.getElementById("lastName").classList.remove("editable");
+                    document.getElementById("phone").classList.remove("editable");
+                    
+                    // Show edit button and hide save button
+                    document.getElementById("saveProfileBtn").style.display = "none";
+                    document.getElementById("editProfileBtn").style.display = "inline-block";
+                } else {
+                    alert("Failed to update profile!");
+                }
+            } catch (error) {
+                console.error("Error updating profile:", error);
+                alert("Error updating profile!");
+            }
+        }
 
 
         // Fetch and display orders
@@ -422,91 +438,166 @@ async function saveProfile() {
     }
 
     function openEditAddressPopup(addressId) {
-        fetchUserAddresses().then(() => {
-            const address = document.querySelector(`[data-id="${addressId}"]`);
+    const _id = localStorage.getItem("_id");
+    if (!_id) {
+        alert("User ID not found! Please log in again.");
+        return;
+    }
+    
+    // Fetch the specific address data to ensure we have the latest data
+    fetch(`${CONFIG.API_URL}/users/${_id}/addresses`)
+        .then(response => response.json())
+        .then(data => {
+            if (!data.addresses) {
+                alert("No addresses found!");
+                return;
+            }
+            
+            // Find the specific address by ID
+            const address = data.addresses.find(addr => addr._id === addressId);
             if (!address) {
                 alert("Address not found!");
                 return;
             }
-
+            
+            // Fill the edit form with address data
             document.getElementById("editAddressId").value = addressId;
-            document.getElementById("editStreet").value = address.querySelector("p:nth-child(1)").textContent.replace("Street:", "").trim();
-            document.getElementById("editCity").value = address.querySelector("p:nth-child(2)").textContent.replace("City:", "").trim();
-            document.getElementById("editState").value = address.querySelector("p:nth-child(3)").textContent.replace("State:", "").trim();
-            document.getElementById("editCountry").value = address.querySelector("p:nth-child(4)").textContent.replace("Country:", "").trim();
-            document.getElementById("editPostalCode").value = address.querySelector("p:nth-child(5)").textContent.replace("Postal Code:", "").trim();
-
+            document.getElementById("editStreet").value = address.street || "";
+            document.getElementById("editCity").value = address.city || "";
+            document.getElementById("editState").value = address.state || "";
+            document.getElementById("editCountry").value = address.country || "";
+            document.getElementById("editPostalCode").value = address.postalCode || "";
+            
+            // These fields might need to be added to your form if they're required by your schema
+            if (!document.getElementById("editFullName")) {
+                const fullNameInput = document.createElement("input");
+                fullNameInput.className = "form-input";
+                fullNameInput.id = "editFullName";
+                fullNameInput.placeholder = "Full Name";
+                fullNameInput.value = address.fullName || "";
+                
+                const phoneInput = document.createElement("input");
+                phoneInput.className = "form-input";
+                phoneInput.id = "editPhone";
+                phoneInput.placeholder = "Phone Number";
+                phoneInput.value = address.phone || "";
+                
+                const emailInput = document.createElement("input");
+                emailInput.className = "form-input";
+                emailInput.id = "editEmail";
+                emailInput.placeholder = "Email";
+                emailInput.value = address.email || "";
+                
+                // Get the popup content and insert these fields at the beginning
+                const popupContent = document.querySelector("#editAddressPopup .popup-content");
+                popupContent.insertBefore(emailInput, document.getElementById("editStreet"));
+                popupContent.insertBefore(phoneInput, emailInput);
+                popupContent.insertBefore(fullNameInput, phoneInput);
+            } else {
+                document.getElementById("editFullName").value = address.fullName || "";
+                document.getElementById("editPhone").value = address.phone || "";
+                document.getElementById("editEmail").value = address.email || "";
+            }
+            
+            // Show the popup
             document.getElementById("editAddressPopup").style.display = "flex";
+        })
+        .catch(error => {
+            console.error("Error fetching address data:", error);
+            alert("Error loading address data!");
         });
-    }
+}
 
-    function closeEditAddressPopup() {
-        document.getElementById("editAddressPopup").style.display = "none";
+// Function to update an address
+async function updateAddress() {
+    const _id = localStorage.getItem("_id");
+    if (!_id) {
+        alert("User ID not found!");
+        return;
     }
-
-    async function updateAddress() {
-        const _id = localStorage.getItem("_id");
-        if (!_id) {
-            alert("User ID not found!");
+    
+    const addressId = document.getElementById("editAddressId").value;
+    
+    // Get all the required fields from your schema
+    const updatedAddress = {
+        fullName: document.getElementById("editFullName").value.trim(),
+        phone: document.getElementById("editPhone").value.trim(),
+        email: document.getElementById("editEmail").value.trim(),
+        street: document.getElementById("editStreet").value.trim(),
+        city: document.getElementById("editCity").value.trim(),
+        postalCode: document.getElementById("editPostalCode").value.trim(),
+        state: document.getElementById("editState").value.trim(),
+        country: document.getElementById("editCountry").value.trim()
+    };
+    
+    // Validate all fields
+    for (const [key, value] of Object.entries(updatedAddress)) {
+        if (!value) {
+            alert(`${key.charAt(0).toUpperCase() + key.slice(1)} is required!`);
             return;
         }
-
-        const addressId = document.getElementById("editAddressId").value;
-        const updatedAddress = {
-            street: document.getElementById("editStreet").value,
-            city: document.getElementById("editCity").value,
-            state: document.getElementById("editState").value,
-            country: document.getElementById("editCountry").value,
-            postalCode: document.getElementById("editPostalCode").value
-        };
-
-        try {
-            const response = await fetch(`${CONFIG.API_URL}/users/${_id}/update-address/${addressId}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(updatedAddress)
-            });
-
-            if (response.ok) {
-                alert("Address updated successfully!");
-                closeEditAddressPopup();
-                fetchUserAddresses();
-            } else {
-                alert("Failed to update address!");
-            }
-        } catch (error) {
-            console.error("Error updating address:", error);
-            alert("Error updating address!");
+    }
+    
+    try {
+        console.log("Updating address:", updatedAddress);
+        
+        const response = await fetch(`${CONFIG.API_URL}/users/${_id}/update-address/${addressId}`, {
+            method: "PUT",
+            headers: { 
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(updatedAddress)
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.message || "Failed to update address");
         }
+        
+        alert("Address updated successfully!");
+        closeEditAddressPopup();
+        fetchUserAddresses(); // Refresh the addresses list
+    } catch (error) {
+        console.error("Error updating address:", error);
+        alert(`Error updating address: ${error.message}`);
+    }
+}
+
+// Function to remove an address
+async function removeAddress(addressId) {
+    if (!confirm("Are you sure you want to remove this address?")) return;
+
+    const _id = localStorage.getItem("_id");
+    if (!_id) {
+        alert("User ID not found!");
+        return;
     }
 
-    // Remove an address
-  
-    async function removeAddress(index) {
-            if (!confirm("Are you sure you want to remove this address?")) return;
-
-            const _id = localStorage.getItem("_id");
-            if (!_id) {
-                alert("User ID not found!");
-                return;
-            }
-
-            try {
-                const response = await fetch(`${CONFIG.API_URL}/users/${_id}/remove-address/${index}`, {
-                    method: "PUT"
-                });
-
-                if (response.ok) {
-                    alert("Address removed successfully!");
-                    fetchUserAddresses();
-                } else {
-                    alert("Failed to remove address!");
-                }
-            } catch (error) {
-                console.error("Error removing address:", error);
-                alert("Error removing address!");
-            }
+    try {
+        console.log("Removing address with ID:", addressId);
+        
+        const response = await fetch(`${CONFIG.API_URL}/users/${_id}/remove-address/${addressId}`, {
+            method: "PUT"
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.message || "Failed to remove address");
         }
+        
+        alert("Address removed successfully!");
+        fetchUserAddresses(); // Refresh the list
+    } catch (error) {
+        console.error("Error removing address:", error);
+        alert(`Error removing address: ${error.message}`);
+    }
+}
+
+function closeEditAddressPopup() {
+    document.getElementById("editAddressPopup").style.display = "none";
+}
 
 
         // Save a new address to the backend

@@ -19,7 +19,7 @@ const https = require("https");
 
 const app = express();
 
-// // :white_tick: Define allowed origins
+// :white_tick: Define allowed origins
 // const allowedOrigins = ['https://api.indraq.tech', 'https://indraq.tech', 'http://localhost:3000', 'http://localhost:3001'];
 // // :white_tick: CORS Middleware
 // app.use(
@@ -152,7 +152,9 @@ app.post("/create-payment-link", async (req, res) => {
       link_auto_reminders: true,
       link_expiry_time: new Date(Date.now() + 3600 * 1000).toISOString(),
       link_meta: {
-        return_url: `http://localhost:${PORT}/redirect.html?orderId=${orderId}&linkId=${linkId}&userId=${userId}`,
+        return_url: `http://127.0.0.1:5501/Frontend/redirect.html?orderId=${orderId}&linkId=${linkId}&userId=${userId}`,
+        // return_url: `https://indraq.tech/redirect.html?orderId=${orderId}&linkId=${linkId}&userId=${userId}`,
+
       },
     };
 
@@ -265,8 +267,68 @@ app.get("/check-payment-status", async (req, res) => {
   }
 });
 
+// Fetch Order by Order ID
+app.get("/order", async (req, res) => {
+  try {
+    const { orderId } = req.query;
+    if (!orderId) {
+      return res.status(400).json({ error: "Missing orderId" });
+    }
+
+    const order = await User.findOne({ orderId });
+    if (!order) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    res.json({ success: true, order });
+  } catch (error) {
+    console.error("Error fetching order:", error);
+    res.status(500).json({ error: "Failed to fetch order" });
+  }
+});
 
 
+
+
+
+// Serve Static Pages
+app.get("/redirect.html", (req, res) => res.sendFile(path.join(frontendPath, "redirect.html")));
+app.get("/success.html", (req, res) => res.sendFile(path.join(frontendPath, "/success.html")));
+app.get("/failure.html", (req, res) => res.sendFile(path.join(frontendPath, "failure.html")));
+
+
+
+
+
+
+app.post("/users/:id/orders", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const newOrder = req.body;
+
+    // ❌ Remove `_id` if it exists (MongoDB will generate it automatically)
+    if (newOrder._id) delete newOrder._id;
+
+    console.log("Received User ID:", id);
+    console.log("Processed Order:", JSON.stringify(newOrder, null, 2));
+
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      { $push: { orders: newOrder } },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    console.log("Order saved successfully for user:", id);
+    res.status(200).json({ success: true, message: "Order saved", order: newOrder });
+  } catch (error) {
+    console.error("Error saving order:", error);
+    res.status(500).json({ success: false, message: "Error saving order", error: error.message });
+  }
+});
 
 
 
@@ -318,34 +380,185 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model("users", userSchema);
 
-app.post("/users/:id/orders", async (req, res) => {
+
+app.put("/users/:id/update-address/:addressId", async (req, res) => {
   try {
-    const { id } = req.params;
-    const newOrder = req.body;
+    const userId = req.params.id;
+    const addressId = req.params.addressId;
+    
+    // Log the request data for debugging
+    console.log("Update Address Request:", {
+      userId,
+      addressId,
+      body: req.body
+    });
 
-    // ❌ Remove `_id` if it exists (MongoDB will generate it automatically)
-    if (newOrder._id) delete newOrder._id;
+    // Check if all required fields are present
+    const { fullName, phone, email, street, city, postalCode, state, country } = req.body;
+    
+    if (!fullName || !phone || !email || !street || !city || !postalCode || !state || !country) {
+      return res.status(400).json({ 
+        message: "Missing required address fields",
+        requiredFields: ["fullName", "phone", "email", "street", "city", "postalCode", "state", "country"]
+      });
+    }
 
-    console.log("Received User ID:", id);
-    console.log("Processed Order:", JSON.stringify(newOrder, null, 2));
-
-    const updatedUser = await User.findByIdAndUpdate(
-      id,
-      { $push: { orders: newOrder } },
+    // Use findOneAndUpdate with the positional $ operator
+    const result = await User.findOneAndUpdate(
+      { 
+        _id: userId, 
+        "address._id": addressId 
+      },
+      {
+        $set: {
+          "address.$": req.body
+        }
+      },
       { new: true }
     );
 
-    if (!updatedUser) {
-      return res.status(404).json({ success: false, message: "User not found" });
+    if (!result) {
+      return res.status(404).json({ message: "User or address not found" });
     }
 
-    console.log("Order saved successfully for user:", id);
-    res.status(200).json({ success: true, message: "Order saved", order: newOrder });
+    res.json({ 
+      message: "Address updated successfully!", 
+      addresses: result.address 
+    });
   } catch (error) {
-    console.error("Error saving order:", error);
-    res.status(500).json({ success: false, message: "Error saving order", error: error.message });
+    console.error("Error updating address:", error);
+    res.status(500).json({ 
+      message: "Error updating address", 
+      error: error.message 
+    });
   }
 });
+
+// Remove a Specific Address
+app.put("/users/:id/remove-address/:addressId", async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const addressId = req.params.addressId;
+    
+    // Log the request data for debugging
+    console.log("Remove Address Request:", {
+      userId,
+      addressId
+    });
+
+    // Use mongoose's $pull operator to remove the address
+    const result = await User.findByIdAndUpdate(
+      userId,
+      {
+        $pull: {
+          address: { _id: addressId }
+        }
+      },
+      { new: true }
+    );
+
+    if (!result) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check if the address was actually removed
+    const addressWasRemoved = result.address.every(addr => addr._id.toString() !== addressId);
+    
+    if (!addressWasRemoved) {
+      return res.status(404).json({ message: "Address not found or could not be removed" });
+    }
+
+    res.json({ 
+      message: "Address removed successfully!", 
+      addresses: result.address 
+    });
+  } catch (error) {
+    console.error("Error removing address:", error);
+    res.status(500).json({ 
+      message: "Error removing address", 
+      error: error.message 
+    });
+  }
+});
+
+
+// Ensure `uploads/Userprofile/` folder exists
+const uploadDir = path.join(__dirname, "uploads/Userprofile");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const userStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  },
+});
+
+const uploadProfile = multer({ storage: userStorage });
+
+// Upload Profile Image and Update User
+app.post("/users/:id/upload", uploadProfile.single("profileImage"), async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+
+    const imageUrl = `/uploads/Userprofile/${req.file.filename}`;
+
+    await User.findByIdAndUpdate(id, { profileImage: imageUrl });
+
+    res.json({ message: "Profile image updated!", imageUrl });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.get("/users/:id/profile", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id);
+
+    if (!user || !user.profileImage) {
+      return res.status(404).json({ error: "User or profile image not found" });
+    }
+
+    res.json({ imageUrl: `http://localhost:4000${user.profileImage}` });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Update User Profile API
+app.put("/users/:id", uploadProfile.single("profileImage"), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { firstName, lastName, phone } = req.body;
+    const profileImage = req.file ? `/uploads/Userprofile/${req.file.filename}` : undefined;
+
+    const updateFields = { firstName, lastName, phone };
+    if (profileImage) updateFields.profileImage = profileImage;
+
+    const updatedUser = await User.findByIdAndUpdate(id, { $set: updateFields }, { new: true });
+
+    if (!updatedUser) return res.status(404).json({ message: "User not found" });
+
+    res.json(updatedUser);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+
+
+
+
+
 
 
 
@@ -388,37 +601,6 @@ app.post("/users/:id/orders", async (req, res) => {
 //     res.status(500).json({ success: false, message: 'Failed to fetch orders' });
 //   }
 // });
-
-
-// Fetch Order by Order ID
-app.get("/order", async (req, res) => {
-  try {
-    const { orderId } = req.query;
-    if (!orderId) {
-      return res.status(400).json({ error: "Missing orderId" });
-    }
-
-    const order = await User.findOne({ orderId });
-    if (!order) {
-      return res.status(404).json({ error: "Order not found" });
-    }
-
-    res.json({ success: true, order });
-  } catch (error) {
-    console.error("Error fetching order:", error);
-    res.status(500).json({ error: "Failed to fetch order" });
-  }
-});
-
-
-
-
-
-// Serve Static Pages
-app.get("/redirect.html", (req, res) => res.sendFile(path.join(frontendPath, "redirect.html")));
-app.get("/success.html", (req, res) => res.sendFile(path.join(frontendPath, "success.html")));
-app.get("/failure.html", (req, res) => res.sendFile(path.join(frontendPath, "failure.html")));
-
 
 
 
@@ -478,46 +660,7 @@ app.get("/users/:id/orders", async (req, res) => {
 
 
 
-app.put("/users/:id/update-address/:addressId", async (req, res) => {
-  try {
-      const user = await User.findById(req.params.id);
-      if (!user) return res.status(404).json({ message: "User not found" });
 
-      // Find the specific address by its _id
-      const address = user.address.id(req.params.addressId);
-      if (!address) return res.status(404).json({ message: "Address not found" });
-
-      // Update the fields
-      Object.assign(address, req.body);
-      await user.save();
-
-      res.json({ message: "Address updated successfully!", addresses: user.address });
-  } catch (error) {
-      res.status(500).json({ message: "Error updating address", error });
-  }
-});
-
-
-
-// Remove a Specific Address
-app.put("/users/:id/remove-address/:addressId", async (req, res) => {
-  try {
-      const user = await User.findById(req.params.id);
-      if (!user) return res.status(404).json({ message: "User not found" });
-
-      // Find the address by _id
-      const addressIndex = user.address.findIndex(addr => addr._id.toString() === req.params.addressId);
-      if (addressIndex === -1) return res.status(404).json({ message: "Address not found" });
-
-      // Remove the address from the array
-      user.address.splice(addressIndex, 1);
-      await user.save();
-
-      res.json({ message: "Address removed successfully!", addresses: user.address });
-  } catch (error) {
-      res.status(500).json({ message: "Error removing address", error });
-  }
-});
 
 
 
@@ -593,6 +736,23 @@ app.put("/users/:id", async (req, res) => {
   }
 });
 
+
+app.put("/users/:id/update", async (req, res) => {
+  try {
+      const { firstName, lastName, phone } = req.body;
+      const updatedUser = await User.findByIdAndUpdate(
+          req.params.id,
+          { firstName, lastName, phone },
+          { new: true }
+      );
+      if (!updatedUser) return res.status(404).json({ message: "User not found" });
+      res.json(updatedUser);
+  } catch (error) {
+      res.status(500).json({ message: "Error updating profile", error });
+  }
+});
+
+
 // app.get("/users/:id", async (req, res) => {
 //   try {
 //     const user = await User.findById(req.params.id);
@@ -609,77 +769,6 @@ app.put("/users/:id", async (req, res) => {
 // });
 
 
-
-// Ensure `uploads/Userprofile/` folder exists
-const uploadDir = path.join(__dirname, "uploads/Userprofile");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const userStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`);
-  },
-});
-
-const uploadProfile = multer({ storage: userStorage });
-
-// Upload Profile Image and Update User
-app.post("/users/:id/upload", uploadProfile.single("profileImage"), async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
-
-    const imageUrl = `/uploads/Userprofile/${req.file.filename}`;
-
-    await User.findByIdAndUpdate(id, { profileImage: imageUrl });
-
-    res.json({ message: "Profile image updated!", imageUrl });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Server error" });
-  }
-});
-
-app.get("/users/:id/profile", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const user = await User.findById(id);
-
-    if (!user || !user.profileImage) {
-      return res.status(404).json({ error: "User or profile image not found" });
-    }
-
-    res.json({ imageUrl: `http://localhost:4000${user.profileImage}` });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Server error" });
-  }
-});
-
-// Update User Profile API
-app.put("/users/:id", uploadProfile.single("profileImage"), async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { firstName, lastName, phone } = req.body;
-    const profileImage = req.file ? `/uploads/Userprofile/${req.file.filename}` : undefined;
-
-    const updateFields = { firstName, lastName, phone };
-    if (profileImage) updateFields.profileImage = profileImage;
-
-    const updatedUser = await User.findByIdAndUpdate(id, { $set: updateFields }, { new: true });
-
-    if (!updatedUser) return res.status(404).json({ message: "User not found" });
-
-    res.json(updatedUser);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
-  }
-});
 
 
 
