@@ -360,13 +360,22 @@ if (storedUserProfile) {
         }
 
         data.orders.forEach(order => {
-            if (!order.orderDetails || order.orderDetails.length === 0) {
+            if (!Array.isArray(order.orderDetails) || order.orderDetails.length === 0) {
                 return;
             }
 
-            // Display Payment Status
-            const paymentStatus = order.paymentStatus || "Pending"; // Default to "Pending" if not available
-            const paymentStatusColor = paymentStatus.toLowerCase() === "paid" ? "green" : "red";
+            // Order Wrapper
+            const orderWrapper = document.createElement("div");
+            orderWrapper.className = "order-wrapper";
+
+            // Order Header
+            const orderHeader = document.createElement("div");
+            orderHeader.className = "order-header";
+            orderHeader.innerHTML = `
+                <h3>Order ID: ${order.orderId}</h3>
+                <p><strong>Order Date:</strong> ${new Date(order.date || Date.now()).toLocaleString()}</p>
+            `;
+            orderWrapper.appendChild(orderHeader);
 
             order.orderDetails.forEach(item => {
                 const orderDiv = document.createElement("div");
@@ -378,11 +387,20 @@ if (storedUserProfile) {
                     <p><strong>Color:</strong> ${item.color}</p>
                     <p><strong>Size:</strong> ${item.size}</p>
                     <p><strong>Quantity:</strong> ${item.quantity}</p>
-                    <p><strong>Payment Status:</strong> <span style="color: ${paymentStatusColor}; font-weight: bold;">${paymentStatus}</span></p>
-                    <hr>
                 `;
-                ordersContainer.appendChild(orderDiv);
+
+                orderWrapper.appendChild(orderDiv);
             });
+
+            // Payment Status
+            const paymentStatus = order.paymentStatus || "Pending";
+            const paymentStatusColor = paymentStatus.toLowerCase() === "Paid" ? "green" : "red";
+            const paymentStatusDiv = document.createElement("p");
+            paymentStatusDiv.innerHTML = `<strong>Payment Status:</strong> <span style="color: ${paymentStatusColor}; font-weight: bold;">${paymentStatus}</span>`;
+            orderWrapper.appendChild(paymentStatusDiv);
+
+            // Append to main container
+            ordersContainer.appendChild(orderWrapper);
         });
     } catch (error) {
         console.error("Error fetching orders:", error);

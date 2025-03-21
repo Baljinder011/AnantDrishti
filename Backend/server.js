@@ -19,31 +19,30 @@ const https = require("https");
 
 const app = express();
 
-// :white_tick: Define allowed origins
-// const allowedOrigins = ['https://api.indraq.tech', 'https://indraq.tech', 'http://localhost:3000', 'http://localhost:3001'];
-// // :white_tick: CORS Middleware
-// app.use(
-//   cors({
-//     origin: function (origin, callback) {
-//       // Allow requests with no origin (e.g., mobile apps, curl)
-//       if (!origin) return callback(null, true);
-//       if (allowedOrigins.includes(origin)) {
-//         callback(null, true);
-//       } else {
-//         callback(new Error("Not allowed by CORS"));
-//       }
-//     },
-//     credentials: true, // REQUIRED for cookies/auth headers
-//     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-//     allowedHeaders: ["Content-Type", "Authorization"]
-//   })
-// );
+const allowedOrigins = ['https://api.indraq.tech', 'https://indraq.tech', 'https://api.testindraq.com', 'https://testindraq.com'];
+// :white_tick: CORS Middleware
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Allow requests with no origin (e.g., mobile apps, curl)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true, // REQUIRED for cookies/auth headers
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+  })
+);
 
-app.use(cors({
-  origin: '*',  // Update this to match your Go Live URL if different
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}))
+// app.use(cors({
+//   origin: '*',  // Update this to match your Go Live URL if different
+//   methods: ['GET', 'POST', 'PUT', 'DELETE'],
+//   allowedHeaders: ['Content-Type', 'Authorization']
+// }))
 app.use(express.json());
 
 const frontendPath = path.join(__dirname, "..", "Frontend"); // Adjust if needed
@@ -107,20 +106,18 @@ const SECRET_KEY = process.env.CASHFREE_SECRET_KEY || "YOUR_SECRET_KEY";
 const generateOrderId = async () => {
   const lastOrder = await User.aggregate([
     { $unwind: "$orders" },
-    { $sort: { "orders.orderId": -1 } },
-    { $limit: 1 },
-    { $project: { "orders.orderId": 1, _id: 0 } },
+    { $project: { numericOrderId: { $toInt: { $substr: ["$orders.orderId", 3, -1] } } } },
+    { $sort: { numericOrderId: -1 } },
+    { $limit: 1 }
   ]);
 
   let newOrderId = "ORD001";
-
   if (lastOrder.length > 0) {
-    const lastOrderId = lastOrder[0].orders.orderId;
-    const orderNumber = parseInt(lastOrderId.replace("ORD", ""), 10) + 1;
-    newOrderId = `ORD${orderNumber.toString().padStart(3, "0")}`;
+    const lastOrderId = lastOrder[0].numericOrderId;
+    newOrderId = `ORD${(lastOrderId + 1).toString().padStart(3, "0")}`;
   }
 
-  console.log("Generated orderId:", newOrderId); // ✅ Debugging
+  console.log("Generated orderId:", newOrderId);
   return newOrderId;
 };
 
@@ -152,8 +149,8 @@ app.post("/create-payment-link", async (req, res) => {
       link_auto_reminders: true,
       link_expiry_time: new Date(Date.now() + 3600 * 1000).toISOString(),
       link_meta: {
-        // return_url: `http://127.0.0.1:5501/Frontend/redirect.html?orderId=${orderId}&linkId=${linkId}&userId=${userId}`,
-        return_url: `https://indraq.tech/redirect.html?orderId=${orderId}&linkId=${linkId}&userId=${userId}`,
+        return_url: `http://127.0.0.1:5501/Frontend/redirect.html?orderId=${orderId}&linkId=${linkId}&userId=${userId}`,
+        // return_url: `https://indraq.tech/redirect.html?orderId=${orderId}&linkId=${linkId}&userId=${userId}`,
 
       },
     };
@@ -267,25 +264,8 @@ app.get("/check-payment-status", async (req, res) => {
   }
 });
 
-// Fetch Order by Order ID
-app.get("/order", async (req, res) => {
-  try {
-    const { orderId } = req.query;
-    if (!orderId) {
-      return res.status(400).json({ error: "Missing orderId" });
-    }
 
-    const order = await User.findOne({ orderId });
-    if (!order) {
-      return res.status(404).json({ error: "Order not found" });
-    }
 
-    res.json({ success: true, order });
-  } catch (error) {
-    console.error("Error fetching order:", error);
-    res.status(500).json({ error: "Failed to fetch order" });
-  }
-});
 
 
 
@@ -332,7 +312,19 @@ app.post("/users/:id/orders", async (req, res) => {
 
 
 
+app.get("/users/:id/orders", async (req, res) => {
+  const { id } = req.params;
 
+  try {
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.status(200).json({ orders: user.orders || [] });
+  } catch (error) {
+    console.error("Error fetching orders:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
 
 
 
@@ -644,19 +636,7 @@ app.put("/users/:id", uploadProfile.single("profileImage"), async (req, res) => 
 
 
 
-app.get("/users/:id/orders", async (req, res) => {
-  const { id } = req.params;
 
-  try {
-    const user = await User.findById(id);
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    res.status(200).json({ orders: user.orders || [] });
-  } catch (error) {
-    console.error("Error fetching orders:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
 
 
 
@@ -961,6 +941,54 @@ app.get("/products/search", async (req, res) => {
 
 
 
+// // Product Schema & Model
+// const productSchema = new mongoose.Schema({
+//   name: String,
+//   description: String,
+//   image: String,
+//   price: Number,
+//   stock: Number,
+//   status: { type: String, enum: ['available', 'out of stock'], default: 'available' },
+//   category: String,
+//   discount: Number,
+//   size: String,
+//   color: String,
+// });
+// const Product = mongoose.model('products', productSchema);
+
+
+
+
+// // Configure multer for file uploads
+// const storage = multer.diskStorage({
+//   destination: function (req, file, cb) {
+//     cb(null, 'uploads/Products/');
+//   },
+//   filename: function (req, file, cb) {
+//     cb(null, file.originalname);
+//   }
+// });
+
+// const upload = multer({ storage: storage });
+
+
+
+
+
+// app.get('/products', async (req, res) => {
+//   try {
+//     let query = {};
+//     let limit = parseInt(req.query.limit) || 0; // Convert limit to a number, default 0 (no limit)
+
+//     const products = await Product.find(query).limit(limit);
+//     res.json(products);
+//   } catch (error) {
+//     res.status(500).json({ error: 'Failed to fetch products' });
+//   }
+// });
+
+
+
 // Product Schema & Model
 const productSchema = new mongoose.Schema({
   name: String,
@@ -974,9 +1002,9 @@ const productSchema = new mongoose.Schema({
   size: String,
   color: String,
 });
+
+
 const Product = mongoose.model('products', productSchema);
-
-
 
 
 // Configure multer for file uploads
@@ -988,31 +1016,23 @@ const storage = multer.diskStorage({
     cb(null, file.originalname);
   }
 });
-
 const upload = multer({ storage: storage });
 
 
-
+// Create Product
 app.post('/products', upload.single('image'), async (req, res) => {
   try {
     console.log(":inbox_tray: Incoming Request Body:", req.body);
     console.log(":outbox_tray: Uploaded File:", req.file);
-
     if (!req.body.name || !req.body.price || !req.body.category) {
       return res.status(400).json({ error: "Missing required fields" });
     }
-
     if (!req.file) {
       return res.status(400).json({ error: "Image upload failed" });
     }
-
     const imagePath = `/uploads/Products/${req.file.originalname}`;
-    console.log("saving image path:", imagePath);
     const product = new Product({ ...req.body, image: imagePath });
     await product.save();
-
-
-    console.log("product saved successfully:", product)
     res.status(201).json(product);
   } catch (error) {
     console.error(":x: Error adding product:", error);
@@ -1021,36 +1041,29 @@ app.post('/products', upload.single('image'), async (req, res) => {
 });
 
 
-
-
-app.get('/products', async (req, res) => {
+// Product fetch route
+app.get("/products", async (req, res) => {
   try {
-    let query = {};
-    let limit = parseInt(req.query.limit) || 0; // Convert limit to a number, default 0 (no limit)
-
-    const products = await Product.find(query).limit(limit);
+    const products = await Product.find({});
     res.json(products);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch products' });
+    console.error("Error fetching products:", error);
+    res.status(500).send("Error fetching products");
   }
 });
-
 
 
 app.get("/products/:id", async (req, res) => {
   try {
     const { id } = req.params;
-
     // Validate ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: ":x: Invalid product ID format" });
     }
-
     const product = await Product.findById(id);
     if (!product) {
       return res.status(404).json({ message: ":x: Product not found" });
     }
-
     res.status(200).json(product);
   } catch (error) {
     console.error(":x: Error fetching product:", error);
@@ -1058,34 +1071,32 @@ app.get("/products/:id", async (req, res) => {
   }
 });
 
+
 app.delete('/products/:id', async (req, res) => {
   try {
     const product = await Product.findByIdAndDelete(req.params.id);
     if (!product) return res.status(404).json({ message: 'Product not found' });
-
     res.json({ success: true, message: 'Product deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Error deleting product', error });
   }
 });
 
+
 // Update Product
 app.put('/products/:id', upload.single('image'), async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ message: "Product not found" });
-
     let imagePath = product.image; // Keep existing image if not updated
     if (req.file) {
-      imagePath = `/uploads/Products/${req.file.originalname}`; // :white_check_mark: Store new image in correct folder
+      imagePath = `/uploads/Products/${req.file.originalname}`; // :white_tick: Store new image in correct folder
     }
-
     const updatedProduct = await Product.findByIdAndUpdate(
       req.params.id,
       { ...req.body, image: imagePath },
       { new: true }
     );
-
     res.json(updatedProduct);
   } catch (error) {
     console.error(":x: Error updating product:", error);
@@ -1094,54 +1105,25 @@ app.put('/products/:id', upload.single('image'), async (req, res) => {
 });
 
 
-
 app.put('/products/:id/status', async (req, res) => {
   try {
     console.log("Received request to update product status for ID:", req.params.id);
-
     const product = await Product.findById(req.params.id);
     if (!product) {
       console.log("Product not found");
       return res.status(404).json({ message: 'Product not found' });
     }
-
     // Toggle status
     product.status = product.status === 'available' ? 'out of stock' : 'available';
-
     // Save changes
     await product.save();
     console.log("Product status updated:", product.status);
-
     res.json({ success: true, message: 'Product status updated', product });
   } catch (error) {
     console.error("Error updating product status:", error);
     res.status(500).json({ message: 'Error updating product status', error });
   }
 });
-
-
-
-
-// const profileSchema = new mongoose.Schema({
-//   name: String,
-//   email: { type: String, required: true, unique: true },
-//   phone: String,
-//   dob: String,
-//   image: String, // Store image file path
-// });
-// profileSchema.index({ email: 1 });
-// const Profile = mongoose.model("Profile", profileSchema);
-
-
-
-
-
-
-
-
-
-
-
 
 
 
