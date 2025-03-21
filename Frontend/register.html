@@ -145,7 +145,6 @@
       // Generate userId (firstName + 001)
       const userId = firstName.toLowerCase() + "001";
 
-      // Clear errors before submitting
       clearError();
 
       try {
@@ -165,7 +164,6 @@
   if (response.ok) {
     const { _id, firstName, lastName, email, phone } = data.user;
 
-    // Save user data in localStorage and redirect
     localStorage.setItem('userProfile', JSON.stringify({ _id, firstName, lastName, email, phone }));
     localStorage.setItem('isLoggedIn', 'true');
     

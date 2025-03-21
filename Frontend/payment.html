@@ -151,7 +151,7 @@ document.getElementById("payButton").addEventListener("click", async function ()
     const shippingMethod = shippingMethodElement.value;
 
     try {
-        // Step 1: Create Payment Link (Pass `userId`)
+        // Step 1: Create Payment Link (Pass `userId`, address, and shipping method)
         const paymentResponse = await fetch(`${CONFIG.API_URL}/create-payment-link`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -160,7 +160,9 @@ document.getElementById("payButton").addEventListener("click", async function ()
                 customer_name: customerName,
                 customer_email: customerEmail,
                 customer_phone: customerPhone,
-                amount
+                amount,
+                shippingMethod,
+                deliveryAddress: selectedAddress // ✅ Send the entire selected address object
             })
         });
 
@@ -177,17 +179,16 @@ document.getElementById("payButton").addEventListener("click", async function ()
 
         // Step 2: Save Order in User Schema (Pass `userId`, `orderId`, `linkId`)
         const orderData = {
-            orderId: paymentResult.orderId,  // ✅ Storing the payment order ID
+            orderId: paymentResult.orderId,
             linkId: paymentResult.linkId,  
-            userId,  // ✅ Storing userId inside the order
-            customerName,
-            customerEmail,
-            customerPhone,
+            userId,
             orderDetails,
-            price: amount,  
+            price: amount,
+            shippingMethod,
+            deliveryAddress: selectedAddress, // ✅ Include the delivery address
             paymentDetails: {
                 method: "cashfree",
-                transactionId: "",  // Will be updated after payment
+                transactionId: "",
                 status: "pending",
                 paid: false
             },

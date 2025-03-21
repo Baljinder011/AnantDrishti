@@ -492,3 +492,40 @@ body {
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
 }
+
+.order-address {
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  padding: 15px;
+  margin-top: 10px;
+  border-radius: 8px;
+  box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+  font-family: Arial, sans-serif;
+}
+
+.order-address h4 {
+  font-size: 18px;
+  color: #333;
+  margin-bottom: 8px;
+  border-bottom: 2px solid #007bff;
+  padding-bottom: 5px;
+}
+
+.order-address p {
+  font-size: 14px;
+  color: #555;
+  margin: 4px 0;
+}
+
+.order-address strong {
+  color: #222;
+}
+
+.order-wrapper {
+  border: 1px solid #ccc;
+  padding: 15px;
+  border-radius: 10px;
+  background: #fff;
+  margin-bottom: 20px;
+  box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+}

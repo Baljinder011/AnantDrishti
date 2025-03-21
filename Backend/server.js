@@ -33,16 +33,16 @@ app.use(
       }
     },
     credentials: true, // REQUIRED for cookies/auth headers
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS","PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"]
   })
 );
 
-// app.use(cors({
-//   origin: '*',  // Update this to match your Go Live URL if different
-//   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-//   allowedHeaders: ['Content-Type', 'Authorization']
-// }))
+app.use(cors({
+  origin: '*',  // Update this to match your Go Live URL if different
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}))
 app.use(express.json());
 
 const frontendPath = path.join(__dirname, "..", "Frontend"); // Adjust if needed
@@ -126,9 +126,17 @@ const generateOrderId = async () => {
 // Create Payment Link & Save Order with linkId
 app.post("/create-payment-link", async (req, res) => {
   try {
-    let { userId, customer_name, customer_email, customer_phone, amount } = req.body;
+    let { 
+      userId, 
+      customer_name, 
+      customer_email, 
+      customer_phone, 
+      amount,
+      shippingMethod,
+      deliveryAddress // Added delivery address
+    } = req.body;
 
-    if (!userId || !customer_name || !customer_email || !customer_phone || !amount) {
+    if (!userId || !customer_name || !customer_email || !customer_phone || !amount || !deliveryAddress) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
@@ -149,9 +157,8 @@ app.post("/create-payment-link", async (req, res) => {
       link_auto_reminders: true,
       link_expiry_time: new Date(Date.now() + 3600 * 1000).toISOString(),
       link_meta: {
-        return_url: `http://127.0.0.1:5501/Frontend/redirect.html?orderId=${orderId}&linkId=${linkId}&userId=${userId}`,
-        // return_url: `https://indraq.tech/redirect.html?orderId=${orderId}&linkId=${linkId}&userId=${userId}`,
-
+        // return_url: `http://127.0.0.1:5501/Frontend/redirect.html?orderId=${orderId}&linkId=${linkId}&userId=${userId}`,
+        return_url: `https://indraq.tech/redirect.html?orderId=${orderId}&linkId=${linkId}&userId=${userId}`,
       },
     };
 
@@ -163,26 +170,38 @@ app.post("/create-payment-link", async (req, res) => {
       },
     });
 
-        // ✅ Save Order to MongoDB
-        const newOrder = {
-          orderId,
-          linkId,
-          orderDetails: [],
-          price: amount,
-          paymentDetails: { status: "pending" },
-          status: "pending",
-          createdAt: new Date(),
-        };
-    
-        const updatedUser = await User.findByIdAndUpdate(
-          userId,
-          { $push: { orders: newOrder } },
-          { new: true }
-        );
-    
-        if (!updatedUser) {
-          return res.status(404).json({ error: "User not found" });
-        }
+    // ✅ Save Order to MongoDB with delivery address
+    const newOrder = {
+      orderId,
+      linkId,
+      orderDetails: [],
+      price: amount,
+      shippingMethod: shippingMethod || "standard",
+      deliveryAddress: {
+        fullName: deliveryAddress.fullName,
+        phone: deliveryAddress.phone,
+        email: deliveryAddress.email,
+        street: deliveryAddress.street,
+        city: deliveryAddress.city,
+        postalCode: deliveryAddress.postalCode,
+        state: deliveryAddress.state,
+        country: deliveryAddress.country,
+      },
+      // Add the delivery address
+      paymentDetails: { status: "pending" },
+      status: "pending",
+      createdAt: new Date(),
+    };
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $push: { orders: newOrder } },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
 
     res.json({ success: true, userId, orderId, linkId, linkUrl: response.data.link_url });
   } catch (error) {
@@ -190,7 +209,6 @@ app.post("/create-payment-link", async (req, res) => {
     res.status(500).json({ error: "Failed to create payment link" });
   }
 });
-
 
 
 
@@ -243,18 +261,19 @@ app.get("/check-payment-status", async (req, res) => {
     }
 
     // ✅ Update the order inside the user's `orders` array
-  await User.updateOne(
-  { _id: userId, "orders.orderId": orderId },
-  {
-    $set: {
-      "orders.$.status": orderStatus,
-      "orders.$.paymentDetails.status": paymentStatus,
-      "orders.$.paymentDetails.paid": paid,
-      "orders.$.paymentDetails.transactionId": cashfreeResponse.data.reference_id || "",
-      "orders.$.paymentDetails.timestamp": new Date(),
-    },
-  }
-);
+    await User.updateOne(
+      { _id: userId, "orders.orderId": orderId },
+      {
+        $set: {
+          "orders.$.status": orderStatus,
+          "orders.$.paymentDetails.status": paymentStatus,
+          "orders.$.paymentDetails.paid": paid,
+          "orders.$.paymentDetails.transactionId": cashfreeResponse.data.reference_id || "",
+          "orders.$.paymentDetails.timestamp": new Date(),
+        },
+      }
+    );
+    ;
 
 
     res.json({ success: orderStatus === "successful", status: orderStatus });
@@ -280,7 +299,6 @@ app.get("/failure.html", (req, res) => res.sendFile(path.join(frontendPath, "fai
 
 
 
-
 app.post("/users/:id/orders", async (req, res) => {
   try {
     const { id } = req.params;
@@ -291,6 +309,14 @@ app.post("/users/:id/orders", async (req, res) => {
 
     console.log("Received User ID:", id);
     console.log("Processed Order:", JSON.stringify(newOrder, null, 2));
+
+    // Ensure delivery address is present
+    if (!newOrder.deliveryAddress) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Missing delivery address information" 
+      });
+    }
 
     const updatedUser = await User.findByIdAndUpdate(
       id,
@@ -316,7 +342,8 @@ app.get("/users/:id/orders", async (req, res) => {
   const { id } = req.params;
 
   try {
-    const user = await User.findById(id);
+    const user = await User.findById(id, { orders: 1 });
+
     if (!user) return res.status(404).json({ message: "User not found" });
 
     res.status(200).json({ orders: user.orders || [] });
@@ -325,6 +352,7 @@ app.get("/users/:id/orders", async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
+
 
 
 
@@ -357,6 +385,17 @@ const userSchema = new mongoose.Schema({
       linkId: String,
       orderDetails: Array,
       price: { type: Number, required: true, min: 0 },
+      shippingMethod: { type: String, default: "standard" },
+      deliveryAddress: {
+        fullName: String,
+        phone: String,
+        email: String,
+        street: String,
+        city: String,
+        postalCode: String,
+        state: String,
+        country: String
+      },
       paymentDetails: {
         method: String,
         transactionId: String,
@@ -371,6 +410,64 @@ const userSchema = new mongoose.Schema({
 });
 
 const User = mongoose.model("users", userSchema);
+
+
+app.put("/users/:id", async (req, res) => {
+  try {
+    const { firstName, lastName, phone, address } = req.body;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      { firstName, lastName, phone, address },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json(updatedUser);
+  } catch (error) {
+    console.error("Error updating user:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+
+app.put("/users/:id/update", async (req, res) => {
+  try {
+      const { firstName, lastName, phone } = req.body;
+      const updatedUser = await User.findByIdAndUpdate(
+          req.params.id,
+          { firstName, lastName, phone },
+          { new: true }
+      );
+      if (!updatedUser) return res.status(404).json({ message: "User not found" });
+      res.json(updatedUser);
+  } catch (error) {
+      res.status(500).json({ message: "Error updating profile", error });
+  }
+});
+
+
+app.get("/users/:id", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json(user);
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+
+
+
 
 
 app.put("/users/:id/update-address/:addressId", async (req, res) => {
@@ -599,56 +696,6 @@ app.put("/users/:id", uploadProfile.single("profileImage"), async (req, res) => 
 
 
 
-// const userSchema = new mongoose.Schema({
-//   profileImage: { type: String, default: "" },
-//   firstName: { type: String, required: true },
-//   lastName: { type: String, required: true },
-//   email: { type: String, required: true },
-//   phone: { type: String, required: true },
-//   password: { type: String, required: true },
-//   dob: { type: String, default: "" },
-//   createdAt: { type: Date, default: Date.now },
-//   address: [  // This is the correct field name
-//     {
-//       fullName:String,
-//       phone:Number,
-//       email:String,
-//       street: String,
-//       city: String,
-//       postalCode: Number,
-//       state: String,
-//       country: String,
-//     },
-//   ],
-//   orders: [
-//     {
-//       orderId: String,
-//       productName: String,
-//       price: Number,
-//       status: String,
-//     },
-//   ],
-// });
-
-// const User = mongoose.model("users", userSchema);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 app.get("/users/email/:email", async (req, res) => {
   const user = await User.findOne({ email: req.params.email });
   if (!user) return res.status(404).send("User not found");
@@ -691,62 +738,6 @@ app.get("/users/:id/addresses", async (req, res) => {
   }
 });
 
-
-
-
-
-app.put("/users/:id", async (req, res) => {
-  try {
-    const { firstName, lastName, phone, address } = req.body;
-
-    const updatedUser = await User.findByIdAndUpdate(
-      req.params.id,
-      { firstName, lastName, phone, address },
-      { new: true }
-    );
-
-    if (!updatedUser) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    res.json(updatedUser);
-  } catch (error) {
-    console.error("Error updating user:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-});
-
-
-app.put("/users/:id/update", async (req, res) => {
-  try {
-      const { firstName, lastName, phone } = req.body;
-      const updatedUser = await User.findByIdAndUpdate(
-          req.params.id,
-          { firstName, lastName, phone },
-          { new: true }
-      );
-      if (!updatedUser) return res.status(404).json({ message: "User not found" });
-      res.json(updatedUser);
-  } catch (error) {
-      res.status(500).json({ message: "Error updating profile", error });
-  }
-});
-
-
-// app.get("/users/:id", async (req, res) => {
-//   try {
-//     const user = await User.findById(req.params.id);
-
-//     if (!user) {
-//       return res.status(404).json({ message: "User not found" });
-//     }
-
-//     res.json(user);
-//   } catch (error) {
-//     console.error("Error fetching user:", error);
-//     res.status(500).json({ error: "Internal Server Error" });
-//   }
-// });
 
 
 
