@@ -149,8 +149,8 @@ app.post("/create-payment-link", async (req, res) => {
       link_auto_reminders: true,
       link_expiry_time: new Date(Date.now() + 3600 * 1000).toISOString(),
       link_meta: {
-        // return_url: `http://127.0.0.1:5501/Frontend/redirect.html?orderId=${orderId}&linkId=${linkId}&userId=${userId}`,
-        return_url: `https://indraq.tech/redirect.html?orderId=${orderId}&linkId=${linkId}&userId=${userId}`,
+        return_url: `http://127.0.0.1:5501/Frontend/redirect.html?orderId=${orderId}&linkId=${linkId}&userId=${userId}`,
+        // return_url: `https://indraq.tech/redirect.html?orderId=${orderId}&linkId=${linkId}&userId=${userId}`,
 
       },
     };
@@ -1006,7 +1006,6 @@ const productSchema = new mongoose.Schema({
 
 const Product = mongoose.model('products', productSchema);
 
-
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -1130,26 +1129,142 @@ app.put('/products/:id/status', async (req, res) => {
 
 
 
-
-
-
-
-
-app.delete("/delete-order/:orderId", async (req, res) => {
+// Order Schema (similar to previous example)
+const orderSchema = new mongoose.Schema({
+  orderId: { type: String, unique: true },
+  userName: String,
+  address: String,
+  productName: String,
+  productImage: String,
+  price: Number,
+  quantity: Number,
+  status: {
+    type: String,
+    enum: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Canceled'],
+    default: 'Pending'
+  },
+  createdAt: { type: Date, default: Date.now }
+});
+const Order = mongoose.model('Order', orderSchema);
+// GET Orders with Filtering
+app.get('/orders', async (req, res) => {
   try {
-    const { orderId } = req.params;
-    const deletedOrder = await User.findOneAndDelete({ orderId });
-
-    if (!deletedOrder) {
-      return res.status(404).json({ success: false, message: "Order not found" });
+    const { name, priceRange, size, color, quantity, category } = req.query;
+    console.log('Filters:', { name, priceRange, size, color, category });
+    const filter = {};
+    if (name) filter.userName = { $regex: name, $options: 'i' };
+    if (priceRange) {
+      const [min, max] = priceRange.split('-');
+      filter.price = { $gte: min, $lte: max };
     }
-
-    res.json({ success: true, message: "Order deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting order:", error);
-    res.status(500).json({ success: false, message: "Server error" });
+    if (size) filter.size = size;
+    if (color) filter.color = color;
+    if (category) filter.category = category;
+    console.log('Filter:', filter);  // Check filter values
+    const orders = await Order.find(filter);
+    res.json(orders);
+  } catch (err) {
+    console.error('Error fetching orders:', err);
+    res.status(500).json({ message: err.message });
   }
 });
+// Create Order
+app.post('/orders', upload.single('image'), async (req, res) => {
+  try {
+    console.log("Received file:", req.file); // Debugging
+    console.log("Received body:", req.body); // Debugging
+    if (!req.file) {
+      return res.status(400).json({ error: "Order image upload failed" });
+    }
+    const lastOrder = await Order.findOne().sort({ createdAt: -1 });
+    let lastCount = 0;
+    if (lastOrder && lastOrder.orderId) {
+      const countStr = lastOrder.orderId.substring(6, 9);
+      lastCount = parseInt(countStr, 10) || 0;
+    }
+    const newCount = lastCount + 1;
+    const newCountStr = newCount.toString().padStart(3, '0');
+    const now = new Date();
+    const dateTimeStr = `${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}${now.getSeconds().toString().padStart(2, '0')}`;
+    const newOrderId = `Anant${newCountStr}${dateTimeStr}`;
+    const imagePath = `/uploads/Products/${req.file.originalname}`;
+    const { userName, address, productName, price, size, quantity } = req.body;
+    if (!userName || !address || !productName || !price || !size || !quantity) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+    const newOrder = new Order({
+      orderId: newOrderId,
+      userName,
+      address,
+      productName,
+      productImage: imagePath,
+      price,
+      size,
+      quantity
+    });
+    await newOrder.save();
+    res.status(201).json(newOrder);
+  } catch (err) {
+    console.error("Error creating order:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
+// Update Order Status
+app.patch('/orders/:id/status', async (req, res) => {
+  try {
+    const { status } = req.body;
+    // Validate that the status is one of the allowed values
+    const allowedStatuses = ['Pending', 'Completed', 'Shipped', 'Canceled', 'Processing'];
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({ message: 'Invalid status' });
+    }
+    const order = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true });
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    res.json(order);
+  } catch (error) {
+    console.error('Error updating order status:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+// Update Order Details
+app.put('/orders/:id', async (req, res) => {
+  try {
+    const { address, discount, productImage } = req.body;
+    // Validate the fields before updating
+    const updateFields = {};
+    if (address) updateFields.address = address;
+    if (discount) updateFields.discount = discount;
+    if (productImage) updateFields.productImage = productImage;
+    const order = await Order.findByIdAndUpdate(req.params.id, updateFields, { new: true });
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    res.json(order);
+  } catch (err) {
+    console.error('Error updating order details:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+// Delete Order
+app.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deletedOrder = await Order.findByIdAndDelete(id);
+    if (!deletedOrder) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    res.json({ message: 'Order deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+
+
+
 
 
 
