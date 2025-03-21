@@ -19,30 +19,30 @@ const https = require("https");
 
 const app = express();
 
-const allowedOrigins = ['https://api.indraq.tech', 'https://indraq.tech', 'https://api.testindraq.com', 'https://testindraq.com'];
-// :white_tick: CORS Middleware
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // Allow requests with no origin (e.g., mobile apps, curl)
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true, // REQUIRED for cookies/auth headers
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS","PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization"]
-  })
-);
+// const allowedOrigins = ['https://api.indraq.tech', 'https://indraq.tech', 'https://api.testindraq.com', 'https://testindraq.com'];
+// // :white_tick: CORS Middleware
+// app.use(
+//   cors({
+//     origin: function (origin, callback) {
+//       // Allow requests with no origin (e.g., mobile apps, curl)
+//       if (!origin) return callback(null, true);
+//       if (allowedOrigins.includes(origin)) {
+//         callback(null, true);
+//       } else {
+//         callback(new Error("Not allowed by CORS"));
+//       }
+//     },
+//     credentials: true, // REQUIRED for cookies/auth headers
+//     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS","PATCH"],
+//     allowedHeaders: ["Content-Type", "Authorization"]
+//   })
+// );
 
-// app.use(cors({
-//   origin: '*',  // Update this to match your Go Live URL if different
-//   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-//   allowedHeaders: ['Content-Type', 'Authorization']
-// }))
+app.use(cors({
+  origin: '*',  // Update this to match your Go Live URL if different
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}))
 app.use(express.json());
 
 const frontendPath = path.join(__dirname, "..", "Frontend"); // Adjust if needed
