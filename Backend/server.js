@@ -157,8 +157,8 @@ app.post("/create-payment-link", async (req, res) => {
       link_auto_reminders: true,
       link_expiry_time: new Date(Date.now() + 3600 * 1000).toISOString(),
       link_meta: {
-        // return_url: `http://127.0.0.1:5501/Frontend/redirect.html?orderId=${orderId}&linkId=${linkId}&userId=${userId}`,
-        return_url: `https://indraq.tech/redirect.html?orderId=${orderId}&linkId=${linkId}&userId=${userId}`,
+        return_url: `http://127.0.0.1:5501/Frontend/redirect.html?orderId=${orderId}&linkId=${linkId}&userId=${userId}`,
+        // return_url: `https://indraq.tech/redirect.html?orderId=${orderId}&linkId=${linkId}&userId=${userId}`,
       },
     };
 
@@ -412,6 +412,41 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model("users", userSchema);
 
 
+// User Routes
+app.get("/users", async (req, res) => {
+  try {
+    const users = await User.find({}); // Fetch all users
+    if (!users || users.length === 0) {
+      return res.status(404).json({ message: "No users found" });
+    }
+    res.json(users);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+
+app.get("/users/:id", async (req, res) => {
+  try {
+    const userId = req.params.id;
+    console.log("User ID:", userId);  // Log the received ID
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: "Invalid user ID format" });
+    }
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json(user);
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+
+
 app.put("/users/:id", async (req, res) => {
   try {
     const { firstName, lastName, phone, address } = req.body;
@@ -450,20 +485,20 @@ app.put("/users/:id/update", async (req, res) => {
 });
 
 
-app.get("/users/:id", async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id);
+// app.get("/users/:id", async (req, res) => {
+//   try {
+//     const user = await User.findById(req.params.id);
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found" });
+//     }
 
-    res.json(user);
-  } catch (error) {
-    console.error("Error fetching user:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-});
+//     res.json(user);
+//   } catch (error) {
+//     console.error("Error fetching user:", error);
+//     res.status(500).json({ error: "Internal Server Error" });
+//   }
+// });
 
 
 
@@ -745,16 +780,16 @@ app.get("/users/:id/addresses", async (req, res) => {
 
 
 
-app.get('/getUser', async (req, res) => {
-  const { email } = req.query;
-  try {
-    const user = await User.findOne({ email }).select("-password"); // Exclude password
-    if (!user) return res.status(404).json({ message: "User not found" });
-    res.json(user);
-  } catch (error) {
-    res.status(500).json({ message: "Server error" });
-  }
-});
+// app.get('/getUser', async (req, res) => {
+//   const { email } = req.query;
+//   try {
+//     const user = await User.findOne({ email }).select("-password"); // Exclude password
+//     if (!user) return res.status(404).json({ message: "User not found" });
+//     res.json(user);
+//   } catch (error) {
+//     res.status(500).json({ message: "Server error" });
+//   }
+// });
 
 
 
