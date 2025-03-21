@@ -149,8 +149,8 @@ app.post("/create-payment-link", async (req, res) => {
       link_auto_reminders: true,
       link_expiry_time: new Date(Date.now() + 3600 * 1000).toISOString(),
       link_meta: {
-        return_url: `http://127.0.0.1:5501/Frontend/redirect.html?orderId=${orderId}&linkId=${linkId}&userId=${userId}`,
-        // return_url: `https://indraq.tech/redirect.html?orderId=${orderId}&linkId=${linkId}&userId=${userId}`,
+        // return_url: `http://127.0.0.1:5501/Frontend/redirect.html?orderId=${orderId}&linkId=${linkId}&userId=${userId}`,
+        return_url: `https://indraq.tech/redirect.html?orderId=${orderId}&linkId=${linkId}&userId=${userId}`,
 
       },
     };
