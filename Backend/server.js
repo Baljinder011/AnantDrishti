@@ -153,15 +153,32 @@ app.post("/create-payment-link", async (req, res) => {
       shippingMethod,
       deliveryAddress // Added delivery address
     } = req.body;
+
     if (!userId || !customer_name || !customer_email || !customer_phone || !amount || !deliveryAddress) {
       return res.status(400).json({ error: "Missing required fields" });
     }
+
     customer_phone = String(customer_phone);
-    // Generate order ID
-    const orderId = "ORD001";
+
+    // Fetch the user's last order to determine the next orderId
+    const user = await User.findById(userId);
+    let newOrderId = "ORD001";
+
+    if (user && user.orders.length > 0) {
+      // Extract the last orderId and increment it
+      const lastOrder = user.orders[user.orders.length - 1];
+      const lastOrderId = lastOrder.orderId;
+
+      const match = lastOrderId.match(/ORD(\d+)/);
+      if (match) {
+        const orderNumber = parseInt(match[1], 10) + 1;
+        newOrderId = `ORD${String(orderNumber).padStart(3, "0")}`;
+      }
+    }
+
     const linkId = `CF_${crypto.randomBytes(8).toString("hex")}`;
     const payload = {
-      order_id: orderId,
+      order_id: newOrderId,
       link_id: linkId,
       customer_details: { customer_name, customer_email, customer_phone },
       link_amount: amount,
@@ -171,11 +188,12 @@ app.post("/create-payment-link", async (req, res) => {
       link_auto_reminders: true,
       link_expiry_time: new Date(Date.now() + 3600 * 1000).toISOString(),
       link_meta: {
-        return_url: `http://127.0.0.1:5501/Frontend/redirect.html?orderId=${orderId}&linkId=${linkId}&userId=${userId}`
-        // If using production, uncomment the following line and comment the above:
-        // return_url: `https://indraq.tech/redirect.html?orderId=${orderId}&linkId=${linkId}&userId=${userId}`,
+        // return_url: `http://127.0.0.1:5501/Frontend/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${userId}`
+        return_url: `https://indraq.tech/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${userId}`
+
       },
     };
+
     const response = await axios.post("https://sandbox.cashfree.com/pg/links", payload, {
       headers: {
         "x-api-version": "2022-09-01",
@@ -183,9 +201,10 @@ app.post("/create-payment-link", async (req, res) => {
         "x-client-secret": SECRET_KEY,
       },
     });
+
     // Save Order to MongoDB with delivery address
     const newOrder = {
-      orderId,
+      orderId: newOrderId,
       linkId,
       orderDetails: [],
       price: amount,
@@ -204,15 +223,19 @@ app.post("/create-payment-link", async (req, res) => {
       status: "pending",
       createdAt: new Date(),
     };
+
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       { $push: { orders: newOrder } },
       { new: true }
     );
+
     if (!updatedUser) {
       return res.status(404).json({ error: "User not found" });
     }
-    res.json({ success: true, userId, orderId, linkId, linkUrl: response.data.link_url });
+
+    res.json({ success: true, userId, orderId: newOrderId, linkId, linkUrl: response.data.link_url });
+
   } catch (error) {
     console.error("Cashfree Error:", error.response?.data || error.message);
     res.status(500).json({ error: "Failed to create payment link" });
