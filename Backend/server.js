@@ -106,7 +106,7 @@ const SECRET_KEY = process.env.CASHFREE_SECRET_KEY || "YOUR_SECRET_KEY";
 const generateOrderId = async () => {
   const lastOrder = await User.aggregate([
     { $unwind: "$orders" },
-    { $project: { numericOrderId: { $toInt: { $substr: ["$orders.orderId", 3, -1] } } } },
+    { $project: { numericOrderId: { $toInt: { $substr: ["$orders.orderId", 3,] } } } },
     { $sort: { numericOrderId: -1 } },
     { $limit: 1 }
   ]);
@@ -212,7 +212,7 @@ app.post("/create-payment-link", async (req, res) => {
 
 
 
-// ✅ Check Payment Status & Update Order
+// Check Payment Status & Update Order
 app.get("/check-payment-status", async (req, res) => {
   try {
     const { userId, orderId, linkId } = req.query;
@@ -252,12 +252,12 @@ app.get("/check-payment-status", async (req, res) => {
     let paid = false;
 
     if (linkStatus === "PAID") {
-      orderStatus = "Ho gya";
+      orderStatus = "successful";
       paymentStatus = "PAID";
       paid = true;
     } else if (linkStatus === "EXPIRED" || linkStatus === "CANCELLED") {
       orderStatus = "failed";
-      paymentStatus = "failed";  // ✅ Explicitly setting failed status
+      paymentStatus = linkStatus.toLowerCase();
     }
 
     // ✅ Update the order inside the user's `orders` array
@@ -273,6 +273,8 @@ app.get("/check-payment-status", async (req, res) => {
         },
       }
     );
+    ;
+
 
     res.json({ success: orderStatus === "successful", status: orderStatus });
   } catch (error) {
@@ -280,7 +282,6 @@ app.get("/check-payment-status", async (req, res) => {
     res.status(500).json({ error: "Failed to check payment status" });
   }
 });
-
 
 
 
