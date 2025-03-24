@@ -45,7 +45,7 @@
 
         // ✅ Function to check payment status and update order
 
-        
+
         // async function checkPaymentStatus() {
         //     try {
         //         const response = await fetch(`${CONFIG.API_URL}/check-payment-status?orderId=${orderId}&linkId=${linkId}&userId=${userId}`);
@@ -80,7 +80,7 @@
                 }
 
                 // ✅ Redirect based on payment status (including userId in URL)
-                const redirectPage = data.status === "successful" ? "/success.html" : "Frontend/failure.html";
+                const redirectPage = data.status === "successful" ? "/success.html" : "/failure.html";
                 window.location.href = `/${redirectPage}?userId=${userId}`;
             } catch (error) {
                 console.error("Error checking payment status:", error);
