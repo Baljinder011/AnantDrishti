@@ -212,7 +212,7 @@ app.post("/create-payment-link", async (req, res) => {
 
 
 
-// Check Payment Status & Update Order
+// ✅ Check Payment Status & Update Order
 app.get("/check-payment-status", async (req, res) => {
   try {
     const { userId, orderId, linkId } = req.query;
@@ -252,12 +252,12 @@ app.get("/check-payment-status", async (req, res) => {
     let paid = false;
 
     if (linkStatus === "PAID") {
-      orderStatus = "successful";
+      orderStatus = "Ho gya";
       paymentStatus = "PAID";
       paid = true;
     } else if (linkStatus === "EXPIRED" || linkStatus === "CANCELLED") {
       orderStatus = "failed";
-      paymentStatus = linkStatus.toLowerCase();
+      paymentStatus = "failed";  // ✅ Explicitly setting failed status
     }
 
     // ✅ Update the order inside the user's `orders` array
@@ -273,8 +273,6 @@ app.get("/check-payment-status", async (req, res) => {
         },
       }
     );
-    ;
-
 
     res.json({ success: orderStatus === "successful", status: orderStatus });
   } catch (error) {
@@ -282,6 +280,7 @@ app.get("/check-payment-status", async (req, res) => {
     res.status(500).json({ error: "Failed to check payment status" });
   }
 });
+
 
 
 

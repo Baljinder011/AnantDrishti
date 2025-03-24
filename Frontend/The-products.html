@@ -5,23 +5,149 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product Details</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="index.css">
     <link rel="stylesheet" href="The-products.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+    <style>
+        /* Product Gallery Styles */
+        .product-gallery {
+            display: flex;
+            flex-direction: row;
+            margin-bottom: 2rem;
+        }
+
+        .thumbnails {
+            display: flex;
+            flex-direction: column;
+            margin-right: 1rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .thumbnail-item {
+            width: 70px;
+            height: 70px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            transition: all 0.2s;
+            opacity: 0.7;
+        }
+
+        .thumbnail-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .thumbnail-item.active {
+            border: 2px solid #6c5ce7;
+            opacity: 1;
+        }
+
+        .main-image {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .main-image img {
+            width: 100%;
+            height: auto;
+            border: 1px solid #eee;
+            transition: opacity 0.3s;
+        }
+
+        .main-image img.fade {
+            opacity: 0.7;
+        }
+
+        .image-navigation {
+            position: absolute;
+            top: 50%;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            transform: translateY(-50%);
+        }
+
+        .nav-btn {
+            background-color: rgba(255, 255, 255, 0.8);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .nav-btn:hover {
+            background-color: rgba(255, 255, 255, 1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Make gallery responsive */
+        @media (max-width: 768px) {
+            .product-gallery {
+                flex-direction: column-reverse;
+            }
+            
+            .thumbnails {
+                flex-direction: row;
+                overflow-x: auto;
+                overflow-y: hidden;
+                margin-right: 0;
+                margin-top: 1rem;
+                max-height: unset;
+            }
+            
+            .thumbnail-item {
+                margin-right: 10px;
+                margin-bottom: 0;
+            }
+        }
+    </style>
 </head>
 <body>
     <div id="nav-placeholder"></div>
-    <!-- <script>
-    $(function () {
-        $("#nav-placeholder").load("nav.html"); // Ensure counter updates after loading nav
-    });
-    </script> -->
+    
     <div class="container mt-5">
         <h1 class="text-center mb-4">Product Details</h1>
         <div id="product-details" class="row flex-wrap">
-            <div class="col-md-6 product-image">
-                <img id="product-image" src="" alt="" class="img-fluid">
+            <div class="col-md-6">
+                <!-- Product Gallery -->
+                <div class="product-gallery">
+                    <div class="thumbnails" id="product-thumbnails">
+                        <!-- Thumbnails will be added dynamically -->
+                    </div>
+                    <div class="main-image">
+                        <img id="main-product-image" src="" alt="">
+                        <div class="image-navigation">
+                            <button class="nav-btn prev-image" aria-label="Previous image">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <button class="nav-btn next-image" aria-label="Next image">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Image zoom modal -->
+                <div class="modal fade" id="image-zoom-modal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-xl">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body text-center">
+                                <img id="zoomed-image" src="" alt="" class="img-fluid">
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="col-md-6 product-info">
                 <h2 id="product-name"></h2>
@@ -44,14 +170,23 @@
                         <option value="XL">XL</option>
                     </select>
                 </div>
+                <div class="form-group mt-3">
+                    <label for="quantity">Quantity:</label>
+                    <div class="input-group" style="max-width: 150px;">
+                        <button class="btn btn-outline-secondary" type="button" id="decrease-quantity">-</button>
+                        <input type="number" id="quantity" class="form-control text-center" value="1" min="1">
+                        <button class="btn btn-outline-secondary" type="button" id="increase-quantity">+</button>
+                    </div>
+                </div>
                 <div class="product-buttons mt-3 cart-btn">
                     <button aria-label="Add to cart" id="add-to-cart">Add to Cart</button>
-                    <button aria-label="Add to favorites">
+                    <button aria-label="Add to favorites" id="add-to-favorites">
                         <i class="fa-regular fa-heart"></i> Favorite
                     </button>
                 </div>
             </div>
         </div>
+        
         <div class="delivery-info mt-5">
             <h5>Delivery Information</h5>
             <table class="table table-bordered table-striped">
@@ -126,154 +261,339 @@
             <p>All Rights Reserved by © 2021 Sonssel.</p>
         </div>
         <div class="my-footer">
-<h4 class="useful">Useful Links</h4>
-<p>About Us</p>
-<p>Products</p>
-<p>Services</p>
-<p>Terms & Condition</p>
-<p>Privacy Policy</p>
+            <h4 class="useful">Useful Links</h4>
+            <p>About Us</p>
+            <p>Products</p>
+            <p>Services</p>
+            <p>Terms & Condition</p>
+            <p>Privacy Policy</p>
         </div>
         <div class="my-footer">
-<h4 class="useful">Contact us</h4>
-<div class="the-icons">
-    <div class="my-icons">
-<i class="fa-solid fa-location-dot"></i>
-</div>
-<div class="my-icons">
-Registered Office: Nilam Nagar<br>
-Building. No. 6, E-801, Mulund
-</div>
- <br><br>
-</div>
- <div class="the-icons">
- <div class="my-icons">
-    <br>
-  <i class="fa-solid fa-location-dot"></i>
-</div>
-<div class="my-icons">
- <br>
-    Corporate office: Ecstacy Business Park,<br>      Citi of Joy. Below West-East Flyover,
-</div>
-</div>
-<div class="the-icons">
-    <div class="my-icons">
-       <br>
-       <i class="fa-solid fa-phone"></i>     918169461298
-       </div>
-</div>
-<div class="the-icons">
-    <div class="my-icons">
-       <br>
-       <i class="fa-solid fa-envelope-open"></i>     918169461298
-       </div>
-</div>
-</div>
-        <div class="my-footer">
-<h4 class="useful">Enquire Now</h4><br>
-<input type="text" placeholder="Full Name"><br>
-<input type="text" placeholder="Contact Number"><br>
-<input type="text" placeholder="Email"><br><br>
-<a href="./contact.html">  <button>Contact Us</button></a>
+            <h4 class="useful">Contact us</h4>
+            <div class="the-icons">
+                <div class="my-icons">
+                    <i class="fa-solid fa-location-dot"></i>
+                </div>
+                <div class="my-icons">
+                    Registered Office: Nilam Nagar<br>
+                    Building. No. 6, E-801, Mulund
+                </div>
+                <br><br>
+            </div>
+            <div class="the-icons">
+                <div class="my-icons">
+                    <br>
+                    <i class="fa-solid fa-location-dot"></i>
+                </div>
+                <div class="my-icons">
+                    <br>
+                    Corporate office: Ecstacy Business Park,<br>      Citi of Joy. Below West-East Flyover,
+                </div>
+            </div>
+            <div class="the-icons">
+                <div class="my-icons">
+                    <br>
+                    <i class="fa-solid fa-phone"></i>     918169461298
+                </div>
+            </div>
+            <div class="the-icons">
+                <div class="my-icons">
+                    <br>
+                    <i class="fa-solid fa-envelope-open"></i>     918169461298
+                </div>
+            </div>
         </div>
-</div>
+        <div class="my-footer">
+            <h4 class="useful">Enquire Now</h4><br>
+            <input type="text" placeholder="Full Name"><br>
+            <input type="text" placeholder="Contact Number"><br>
+            <input type="text" placeholder="Email"><br><br>
+            <a href="./contact.html">  <button>Contact Us</button></a>
+        </div>
+    </div>
 
-
-
-<script>
- $(function () {
-    $("#nav-placeholder").load("nav.html", function () {
-        updateCartCounter(); // Ensure counter updates after loading nav
-    });
-});
-document.addEventListener('DOMContentLoaded', () => {
-    const params = new URLSearchParams(window.location.search);
-    const product = Object.fromEntries(params.entries("id"));
-    document.getElementById('product-name').innerText = product.name;
-    document.getElementById('product-description').innerText = product.description;
-    document.getElementById('product-price').innerText = product.price;
-    document.getElementById('product-image').src = product.image;
-    document.getElementById('add-to-cart').addEventListener('click', () => {
-        addToCart(product.id);
-    });
-    updateCartCounter(); // Ensure counter updates when the page loads
-});
-function addToCart(productId) {
-    const productImage = document.getElementById('product-image').src;
-    const productName = document.getElementById('product-name').innerText;
-    const productPrice = parseFloat(document.getElementById('product-price').innerText.replace('Rs.', '').trim());
-    const productColor = document.getElementById('color').value;
-    const productSize = document.getElementById('size').value;
-    // Get the selected quantity, ensure it's at least 1
-    const quantityInput = document.getElementById('quantity');
-    const productQuantity = quantityInput ? Math.max(1, parseInt(quantityInput.value)) : 1;
-    const cart = JSON.parse(localStorage.getItem('cart')) || [];
-    // Check if the same product (same ID, color, and size) is already in the cart
-    const existingProduct = cart.find(item =>
-        item.id === productId &&
-        item.color === productColor &&
-        item.size === productSize
-    );
-    if (existingProduct) {
-        existingProduct.quantity += productQuantity; // Increase by selected quantity
-    } else {
-        cart.push({
-            id: productId,
-            name: productName,
-            price: productPrice,
-            color: productColor,
-            size: productSize,
-            quantity: productQuantity,
-            image: productImage
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(function() {
+            $("#nav-placeholder").load("nav.html", function() {
+                updateCartCounter();
+            });
         });
-    }
-    localStorage.setItem('cart', JSON.stringify(cart));
-    updateCartCounter(); // Update cart count in UI
-}
-function updateCartCounter() {
-    let totalCount = getTotalCartCount();
-    const cartCounter = document.getElementById('cart-counter');
-    if (cartCounter) {
-        cartCounter.innerText = totalCount;
-    }
-}
-function getTotalCartCount() {
-    let cart = JSON.parse(localStorage.getItem('cart')) || [];
-    return cart.reduce((sum, item) => sum + item.quantity, 0);
-}
-    function addToWishlist(productId) {
-        const productImage = document.getElementById('product-image').src;
-        const productName = document.getElementById('product-name').innerText;
-        const productPrice = parseFloat(document.getElementById('product-price').innerText.replace('Rs.', '').trim());
-        const productColor = document.getElementById('color').value;
-        const productSize = document.getElementById('size').value;
-        const wishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
-        const existingProduct = wishlist.find(item =>
-            item.id === productId &&
-            item.color === productColor &&
-            item.size === productSize
-        );
-        if (!existingProduct) {
-            wishlist.push({
-                id: productId,
-                name: productName,
-                price: productPrice,
-                color: productColor,
-                size: productSize,
-                image: productImage
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Get product data from URL parameters
+            const params = new URLSearchParams(window.location.search);
+            const product = Object.fromEntries(params.entries());
+            
+            // Set product details
+            document.getElementById('product-name').innerText = product.name;
+            document.getElementById('product-description').innerText = product.description;
+            document.getElementById('product-price').innerText = product.price;
+            
+            // Setup product gallery
+            setupProductGallery(product);
+            
+            // Setup quantity controls
+            setupQuantityControls();
+            
+            // Add event listeners for buttons
+            document.getElementById('add-to-cart').addEventListener('click', () => {
+                addToCart(product.id);
+            });
+            
+            document.getElementById('add-to-favorites').addEventListener('click', () => {
+                addToWishlist(product.id);
+            });
+            
+            // Setup image zoom functionality
+            setupImageZoom();
+            
+            updateCartCounter();
+        });
+        
+        function setupProductGallery(product) {
+            // For a real application, you would fetch these image paths from your database
+            // Get product ID or use another unique identifier
+            const productId = product.id || 'default';
+            
+            // Create an array of demo images
+            // In a real app, you would use actual paths from your database
+            fetchProductImages(productId, function(productImages) {
+                // Set the main image
+                const mainImage = document.getElementById('main-product-image');
+                mainImage.src = productImages[0] || product.image; // Fallback to product.image if no images
+                mainImage.alt = product.name;
+                
+                // Create thumbnails
+                const thumbnailsContainer = document.getElementById('product-thumbnails');
+                thumbnailsContainer.innerHTML = ''; // Clear existing thumbnails
+                
+                // Add each image as a thumbnail
+                productImages.forEach((imgSrc, index) => {
+                    const thumbnailItem = document.createElement('div');
+                    thumbnailItem.className = `thumbnail-item ${index === 0 ? 'active' : ''}`;
+                    thumbnailItem.dataset.index = index;
+                    
+                    const img = document.createElement('img');
+                    img.src = imgSrc;
+                    img.alt = `${product.name} view ${index + 1}`;
+                    
+                    // Handle image loading errors
+                    img.onerror = function() {
+                        if (index === 0) {
+                            // For main image, use a placeholder
+                            this.src = 'images/placeholder.jpg';
+                        } else {
+                            // For additional images, hide the thumbnail
+                            thumbnailItem.style.display = 'none';
+                        }
+                    };
+                    
+                    thumbnailItem.appendChild(img);
+                    thumbnailsContainer.appendChild(thumbnailItem);
+                    
+                    // Add click event
+                    thumbnailItem.addEventListener('click', () => {
+                        changeMainImage(index, productImages);
+                    });
+                });
+                
+                // Setup navigation buttons
+                setupImageNavigation(productImages);
             });
         }
-        localStorage.setItem('wishlist', JSON.stringify(wishlist));
-    }
-    document.querySelector('.product-buttons button[aria-label="Add to favorites"]').addEventListener('click', () => {
-        const productId = new URLSearchParams(window.location.search).get('id');
-        addToWishlist(productId);
-    });
-</script>
+        
+        function fetchProductImages(productId, callback) {
+            // In a real application, this would be an API call to get images for the product
+            // For this example, we'll use the product image and create multiple variants
+            
+            // Get the base product image from the URL parameters
+            const params = new URLSearchParams(window.location.search);
+            const baseImage = params.get('image') || 'images/placeholder.jpg';
+            
+            // Create array with multiple images
+            // In a real app, replace these with actual product gallery images
+            const images = [
+                baseImage,
+                // Additional images - in a real app, you would load actual gallery images
+                baseImage.replace('.jpg', '-2.jpg'),
+                baseImage.replace('.jpg', '-3.jpg'),
+                baseImage.replace('.jpg', '-4.jpg'),
+                baseImage.replace('.jpg', '-5.jpg')
+            ];
+            
+            // Return the images
+            callback(images);
+        }
+        
+        function changeMainImage(index, images) {
+            // Update main image
+            const mainImage = document.getElementById('main-product-image');
+            mainImage.src = images[index];
+            
+            // Add fade effect
+            mainImage.classList.add('fade');
+            setTimeout(() => {
+                mainImage.classList.remove('fade');
+            }, 300);
+            
+            // Update active thumbnail
+            const thumbnails = document.querySelectorAll('.thumbnail-item');
+            thumbnails.forEach(thumb => {
+                thumb.classList.remove('active');
+                if (parseInt(thumb.dataset.index) === index) {
+                    thumb.classList.add('active');
+                }
+            });
+        }
+        
+        function setupImageNavigation(images) {
+            let currentIndex = 0;
+            
+            // Get only visible thumbnails
+            const visibleThumbnails = Array.from(document.querySelectorAll('.thumbnail-item'))
+                .filter(item => item.style.display !== 'none');
+            const totalImages = visibleThumbnails.length;
+            
+            // Previous button
+            document.querySelector('.prev-image').addEventListener('click', () => {
+                currentIndex = (currentIndex - 1 + totalImages) % totalImages;
+                const newIndex = parseInt(visibleThumbnails[currentIndex].dataset.index);
+                changeMainImage(newIndex, images);
+            });
+            
+            // Next button
+            document.querySelector('.next-image').addEventListener('click', () => {
+                currentIndex = (currentIndex + 1) % totalImages;
+                const newIndex = parseInt(visibleThumbnails[currentIndex].dataset.index);
+                changeMainImage(newIndex, images);
+            });
+        }
+        
+        function setupImageZoom() {
+            const mainImage = document.getElementById('main-product-image');
+            const zoomModal = document.getElementById('image-zoom-modal');
+            
+            // If modal doesn't exist or Bootstrap isn't loaded, exit
+            if (!zoomModal || typeof bootstrap === 'undefined') return;
+            
+            const zoomedImage = document.getElementById('zoomed-image');
+            const modal = new bootstrap.Modal(zoomModal);
+            
+            mainImage.style.cursor = 'zoom-in';
+            mainImage.addEventListener('click', () => {
+                // Set the zoomed image src to the current main image
+                zoomedImage.src = mainImage.src;
+                // Show the modal
+                modal.show();
+            });
+        }
+        
+        function setupQuantityControls() {
+            const quantityInput = document.getElementById('quantity');
+            
+            document.getElementById('decrease-quantity').addEventListener('click', () => {
+                const currentValue = parseInt(quantityInput.value);
+                if (currentValue > 1) {
+                    quantityInput.value = currentValue - 1;
+                }
+            });
+            
+            document.getElementById('increase-quantity').addEventListener('click', () => {
+                const currentValue = parseInt(quantityInput.value);
+                quantityInput.value = currentValue + 1;
+            });
+            
+            // Ensure input value is always at least 1
+            quantityInput.addEventListener('change', () => {
+                if (quantityInput.value < 1) {
+                    quantityInput.value = 1;
+                }
+            });
+        }
+        
+        function addToCart(productId) {
+            const productImage = document.getElementById('main-product-image').src;
+            const productName = document.getElementById('product-name').innerText;
+            const productPrice = parseFloat(document.getElementById('product-price').innerText.replace('Rs.', '').trim());
+            const productColor = document.getElementById('color').value;
+            const productSize = document.getElementById('size').value;
+            const productQuantity = parseInt(document.getElementById('quantity').value);
+            
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            
+            // Check if the same product is already in the cart
+            const existingProduct = cart.find(item =>
+                item.id === productId &&
+                item.color === productColor &&
+                item.size === productSize
+            );
+            
+            if (existingProduct) {
+                existingProduct.quantity += productQuantity;
+            } else {
+                cart.push({
+                    id: productId,
+                    name: productName,
+                    price: productPrice,
+                    color: productColor,
+                    size: productSize,
+                    quantity: productQuantity,
+                    image: productImage
+                });
+            }
+            
+            localStorage.setItem('cart', JSON.stringify(cart));
+            updateCartCounter();
+            
+     
+        }
+        
+        function addToWishlist(productId) {
+            const productImage = document.getElementById('main-product-image').src;
+            const productName = document.getElementById('product-name').innerText;
+            const productPrice = parseFloat(document.getElementById('product-price').innerText.replace('Rs.', '').trim());
+            const productColor = document.getElementById('color').value;
+            const productSize = document.getElementById('size').value;
+            
+            const wishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
+            
+            const existingProduct = wishlist.find(item =>
+                item.id === productId &&
+                item.color === productColor &&
+                item.size === productSize
+            );
+            
+            if (!existingProduct) {
+                wishlist.push({
+                    id: productId,
+                    name: productName,
+                    price: productPrice,
+                    color: productColor,
+                    size: productSize,
+                    image: productImage
+                });
+                
+                localStorage.setItem('wishlist', JSON.stringify(wishlist));
+                alert('Product added to favorites!');
+            } else {
+                alert('This product is already in your favorites!');
+            }
+        }
+        
+        function updateCartCounter() {
+            let totalCount = getTotalCartCount();
+            const cartCounter = document.getElementById('cart-counter');
+            if (cartCounter) {
+                cartCounter.innerText = totalCount;
+            }
+        }
+        
+        function getTotalCartCount() {
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            return cart.reduce((sum, item) => sum + item.quantity, 0);
+        }
+    </script>
 </body>
 </html>
-
-
-
-
-
-
