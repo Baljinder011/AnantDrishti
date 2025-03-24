@@ -141,42 +141,25 @@ const generateOrderId = async () => {
   console.log("Generated orderId:", newOrderId);
   return newOrderId;
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
 // Create Payment Link & Save Order with linkId
 app.post("/create-payment-link", async (req, res) => {
   try {
-    let { 
-      userId, 
-      customer_name, 
-      customer_email, 
-      customer_phone, 
+    let {
+      userId,
+      customer_name,
+      customer_email,
+      customer_phone,
       amount,
       shippingMethod,
       deliveryAddress // Added delivery address
     } = req.body;
-
     if (!userId || !customer_name || !customer_email || !customer_phone || !amount || !deliveryAddress) {
       return res.status(400).json({ error: "Missing required fields" });
     }
-
     customer_phone = String(customer_phone);
-
-    // ✅ Generate order ID
+    // Generate order ID
     const orderId = await generateOrderId();
     const linkId = `CF_${crypto.randomBytes(8).toString("hex")}`;
-
     const payload = {
       order_id: orderId,
       link_id: linkId,
@@ -188,11 +171,11 @@ app.post("/create-payment-link", async (req, res) => {
       link_auto_reminders: true,
       link_expiry_time: new Date(Date.now() + 3600 * 1000).toISOString(),
       link_meta: {
-        // return_url: `http://127.0.0.1:5501/Frontend/redirect.html?orderId=${orderId}&linkId=${linkId}&userId=${userId}`,
-        return_url: `https://indraq.tech/redirect.html?orderId=${orderId}&linkId=${linkId}&userId=${userId}`,
+        return_url: `http://127.0.0.1:5501/Frontend/redirect.html?orderId=${orderId}&linkId=${linkId}&userId=${userId}`
+        // If using production, uncomment the following line and comment the above:
+        // return_url: `https://indraq.tech/redirect.html?orderId=${orderId}&linkId=${linkId}&userId=${userId}`,
       },
     };
-
     const response = await axios.post("https://sandbox.cashfree.com/pg/links", payload, {
       headers: {
         "x-api-version": "2022-09-01",
@@ -200,8 +183,7 @@ app.post("/create-payment-link", async (req, res) => {
         "x-client-secret": SECRET_KEY,
       },
     });
-
-    // ✅ Save Order to MongoDB with delivery address
+    // Save Order to MongoDB with delivery address
     const newOrder = {
       orderId,
       linkId,
@@ -218,28 +200,34 @@ app.post("/create-payment-link", async (req, res) => {
         state: deliveryAddress.state,
         country: deliveryAddress.country,
       },
-      // Add the delivery address
       paymentDetails: { status: "pending" },
       status: "pending",
       createdAt: new Date(),
     };
-
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       { $push: { orders: newOrder } },
       { new: true }
     );
-
     if (!updatedUser) {
       return res.status(404).json({ error: "User not found" });
     }
-
     res.json({ success: true, userId, orderId, linkId, linkUrl: response.data.link_url });
   } catch (error) {
     console.error("Cashfree Error:", error.response?.data || error.message);
     res.status(500).json({ error: "Failed to create payment link" });
   }
 });
+
+
+
+
+
+
+
+
+
+
 
 
 
