@@ -394,27 +394,38 @@ if (storedUserProfile) {
 
             // Address Details
             if (order.deliveryAddress) {
-    const addressDiv = document.createElement("div");
-    addressDiv.className = "order-address";
-    addressDiv.innerHTML = `
-        <h4>Shipping Address</h4>
-                <p><strong>Name:</strong> ${order.deliveryAddress.fullName}</p>
-        <p><strong>Email:</strong> ${order.deliveryAddress.email}</p>
-        <p><strong>Phone:</strong> ${order.deliveryAddress.phone}</p>
-        <p><strong>Street:</strong> ${order.deliveryAddress.street}</p>
-        <p><strong>City:</strong> ${order.deliveryAddress.city}</p>
-        <p><strong>State:</strong> ${order.deliveryAddress.state}</p>
-        <p><strong>Postal Code:</strong> ${order.deliveryAddress.postalCode}</p>
-        <p><strong>Country:</strong> ${order.deliveryAddress.country}</p>
-    `;
-    orderWrapper.appendChild(addressDiv);
-} else {
-    orderWrapper.innerHTML += `<p style="color: red;"><strong>No address found for this order.</strong></p>`;
-}
+                const addressDiv = document.createElement("div");
+                addressDiv.className = "order-address";
+                addressDiv.innerHTML = `
+                    <h4>Shipping Address</h4>
+                    <p><strong>Name:</strong> ${order.deliveryAddress.fullName}</p>
+                    <p><strong>Email:</strong> ${order.deliveryAddress.email}</p>
+                    <p><strong>Phone:</strong> ${order.deliveryAddress.phone}</p>
+                    <p><strong>Street:</strong> ${order.deliveryAddress.street}</p>
+                    <p><strong>City:</strong> ${order.deliveryAddress.city}</p>
+                    <p><strong>State:</strong> ${order.deliveryAddress.state}</p>
+                    <p><strong>Postal Code:</strong> ${order.deliveryAddress.postalCode}</p>
+                    <p><strong>Country:</strong> ${order.deliveryAddress.country}</p>
+                `;
+                orderWrapper.appendChild(addressDiv);
+            } else {
+                orderWrapper.innerHTML += `<p style="color: red;"><strong>No address found for this order.</strong></p>`;
+            }
 
+            // Order Status
+            const orderStatusDiv = document.createElement("p");
+            const orderStatus = order.orderaStatus || "Processing";
+            let statusColor = "blue";
+
+            if (orderStatus === "Shipped") statusColor = "orange";
+            else if (orderStatus === "Delivered") statusColor = "green";
+            else if (orderStatus === "Canceled") statusColor = "red";
+
+            orderStatusDiv.innerHTML = `<strong>Order Status:</strong> <span style="color: ${statusColor}; font-weight: bold;">${orderStatus}</span>`;
+            orderWrapper.appendChild(orderStatusDiv);
 
             // Payment Status
-            const paymentStatus = order.paymentStatus || "Pending";
+            const paymentStatus = order.paymentDetails?.status || "Pending";
             const paymentStatusColor = paymentStatus.toLowerCase() === "paid" ? "green" : "red";
             const paymentStatusDiv = document.createElement("p");
             paymentStatusDiv.innerHTML = `<strong>Payment Status:</strong> <span style="color: ${paymentStatusColor}; font-weight: bold;">${paymentStatus}</span>`;
