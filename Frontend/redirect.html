@@ -44,6 +44,29 @@
         }, 1000);
 
         // ✅ Function to check payment status and update order
+
+        
+        // async function checkPaymentStatus() {
+        //     try {
+        //         const response = await fetch(`${CONFIG.API_URL}/check-payment-status?orderId=${orderId}&linkId=${linkId}&userId=${userId}`);
+        //         const data = await response.json();
+
+        //         console.log("Payment Status Response:", data);
+
+        //         if (data.error) {
+        //             document.body.innerHTML = `<h2>Error: ${data.error}</h2>`;
+        //             return;
+        //         }
+
+        //         // ✅ Redirect based on payment status (including userId in URL)
+        //         const redirectPage = data.status === "successful" ? "Frontend/success.html" : "Frontend/failure.html";
+        //         window.location.href = `/${redirectPage}?userId=${userId}`;
+        //     } catch (error) {
+        //         console.error("Error checking payment status:", error);
+        //         document.body.innerHTML = "<h2>Error checking payment status. Please try again.</h2>";
+        //     }
+        // }
+
         async function checkPaymentStatus() {
             try {
                 const response = await fetch(`${CONFIG.API_URL}/check-payment-status?orderId=${orderId}&linkId=${linkId}&userId=${userId}`);
@@ -57,13 +80,14 @@
                 }
 
                 // ✅ Redirect based on payment status (including userId in URL)
-                const redirectPage = data.status === "successful" ? "Frontend/success.html" : "Frontend/failure.html";
+                const redirectPage = data.status === "successful" ? "/success.html" : "Frontend/failure.html";
                 window.location.href = `/${redirectPage}?userId=${userId}`;
             } catch (error) {
                 console.error("Error checking payment status:", error);
                 document.body.innerHTML = "<h2>Error checking payment status. Please try again.</h2>";
             }
         }
+
 
         // ✅ Function to fetch order details (for debugging/logging)
         async function getOrderDetails() {

@@ -188,8 +188,8 @@ app.post("/create-payment-link", async (req, res) => {
       link_auto_reminders: true,
       link_expiry_time: new Date(Date.now() + 3600 * 1000).toISOString(),
       link_meta: {
-        // return_url: `http://127.0.0.1:5501/Frontend/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${userId}`
-        return_url: `https://indraq.tech/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${userId}`
+        return_url: `http://127.0.0.1:5501/Frontend/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${userId}`
+        // return_url: `https://indraq.tech/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${userId}`
 
       },
     };
@@ -1201,19 +1201,32 @@ app.put('/products/:id/status', async (req, res) => {
 
 // Order Schema (similar to previous example)
 const orderSchema = new mongoose.Schema({
-  orderId: { type: String, unique: true },
-  userName: String,
-  address: String,
-  productName: String,
-  productImage: String,
-  price: Number,
-  quantity: Number,
-  status: {
-    type: String,
-    enum: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Canceled'],
-    default: 'Pending'
-  },
-  createdAt: { type: Date, default: Date.now }
+
+      orderId: { type: String, required: true, unique: true }, // Custom Order ID
+      linkId: String,
+      orderDetails: Array,
+      price: { type: Number, required: true, min: 0 },
+      shippingMethod: { type: String, default: "standard" },
+      deliveryAddress: {
+        fullName: String,
+        phone: String,
+        email: String,
+        street: String,
+        city: String,
+        postalCode: String,
+        state: String,
+        country: String
+      },
+      paymentDetails: {
+        method: String,
+        transactionId: String,
+        status: { type: String, default: "pending" },
+        paid: { type: Boolean, default: false },
+        timestamp: Date,
+      },
+      status: { type: String, default: "pending" },
+      createdAt: { type: Date, default: Date.now },
+    
 });
 const Order = mongoose.model('Order', orderSchema);
 // GET Orders with Filtering
@@ -1238,6 +1251,8 @@ app.get('/orders', async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
+
 // Create Order
 app.post('/orders', upload.single('image'), async (req, res) => {
   try {
@@ -1279,6 +1294,8 @@ app.post('/orders', upload.single('image'), async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
+
 // Update Order Status
 app.patch('/orders/:id/status', async (req, res) => {
   try {
