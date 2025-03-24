@@ -102,45 +102,45 @@ const SECRET_KEY = process.env.CASHFREE_SECRET_KEY || "YOUR_SECRET_KEY";
 
 
 
-// Function to generate expiry time (30 minutes from now)
-const generateOrderId = async () => {
-  const lastOrder = await User.aggregate([
-    { $unwind: "$orders" },
-    {
-      $project: {
-        numericOrderId: {
-          $convert: {
-            input: {
-              $cond: [
-                { $gt: [{ $strLenCP: "$orders.orderId" }, 3] },
-                {
-                  $substrCP: [
-                    "$orders.orderId",
-                    3,
-                    { $subtract: [{ $strLenCP: "$orders.orderId" }, 3] }
-                  ]
-                },
-                "0"
-              ]
-            },
-            to: "int",
-            onError: 0,
-            onNull: 0
-          }
-        }
-      }
-    },
-    { $sort: { numericOrderId: -1 } },
-    { $limit: 1 }
-  ]);
-  let newOrderId = "ORD001";
-  if (lastOrder.length > 0) {
-    const lastOrderId = lastOrder[0].numericOrderId;
-    newOrderId = `ORD${(lastOrderId + 1).toString().padStart(3, "0")}`;
-  }
-  console.log("Generated orderId:", newOrderId);
-  return newOrderId;
-};
+// // Function to generate expiry time (30 minutes from now)
+// const generateOrderId = async () => {
+//   const lastOrder = await User.aggregate([
+//     { $unwind: "$orders" },
+//     {
+//       $project: {
+//         numericOrderId: {
+//           $convert: {
+//             input: {
+//               $cond: [
+//                 { $gt: [{ $strLenCP: "$orders.orderId" }, 3] },
+//                 {
+//                   $substrCP: [
+//                     "$orders.orderId",
+//                     3,
+//                     { $subtract: [{ $strLenCP: "$orders.orderId" }, 3] }
+//                   ]
+//                 },
+//                 "0"
+//               ]
+//             },
+//             to: "int",
+//             onError: 0,
+//             onNull: 0
+//           }
+//         }
+//       }
+//     },
+//     { $sort: { numericOrderId: -1 } },
+//     { $limit: 1 }
+//   ]);
+//   let newOrderId = "ORD001";
+//   if (lastOrder.length > 0) {
+//     const lastOrderId = lastOrder[0].numericOrderId;
+//     newOrderId = `ORD${(lastOrderId + 1).toString().padStart(3, "0")}`;
+//   }
+//   console.log("Generated orderId:", newOrderId);
+//   return newOrderId;
+// };
 // Create Payment Link & Save Order with linkId
 app.post("/create-payment-link", async (req, res) => {
   try {
@@ -158,7 +158,7 @@ app.post("/create-payment-link", async (req, res) => {
     }
     customer_phone = String(customer_phone);
     // Generate order ID
-    const orderId = await generateOrderId();
+    const orderId = "ORD001";
     const linkId = `CF_${crypto.randomBytes(8).toString("hex")}`;
     const payload = {
       order_id: orderId,
