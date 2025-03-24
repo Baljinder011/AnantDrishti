@@ -80,7 +80,7 @@
                 }
 
                 // ✅ Redirect based on payment status (including userId in URL)
-                const redirectPage = data.status === "successful" ? "https://indraq.tech/success.html" : "https://indraq.tech/failure.html";
+                const redirectPage = data.status === "successful" ? "/success.html" : "/failure.html";
                 window.location.href = `/${redirectPage}?userId=${userId}`;
             } catch (error) {
                 console.error("Error checking payment status:", error);
