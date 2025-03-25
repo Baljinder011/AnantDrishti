@@ -62,22 +62,22 @@ const PORT = process.env.PORT || 4000
 
 
 
-// const options = {
-//   key: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/privkey.pem"),
-//   cert: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/fullchain.pem"),
-// };
+const options = {
+  key: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/privkey.pem"),
+  cert: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/fullchain.pem"),
+};
 
 
 
 // Enforce HTTPS middleware
 
 
-// app.use((req, res, next) => {
-//   if (req.protocol !== "https") {
-//     return res.redirect("https://" + req.headers.host + req.url);
-//   }
-//   next();
-// });
+app.use((req, res, next) => {
+  if (req.protocol !== "https") {
+    return res.redirect("https://" + req.headers.host + req.url);
+  }
+  next();
+});
 
 
 
