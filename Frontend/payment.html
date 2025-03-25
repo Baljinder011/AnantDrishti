@@ -112,8 +112,6 @@
 
     <script>
 
-
-
 document.getElementById("payButton").addEventListener("click", async function () {
     const userId = localStorage.getItem("_id"); // Get user ID from local storage
     if (!userId) {
@@ -127,7 +125,7 @@ document.getElementById("payButton").addEventListener("click", async function ()
         return;
     }
 
-    const customerName = selectedAddress.fullName; 
+    const customerName = selectedAddress.fullName;
     const customerEmail = selectedAddress.email;
     const customerPhone = selectedAddress.phone;
     const amount = parseFloat(document.getElementById("total-price").innerText.trim());
@@ -156,69 +154,38 @@ document.getElementById("payButton").addEventListener("click", async function ()
     const shippingMethod = shippingMethodElement.value;
 
     try {
-        // Step 1: Create Payment Link (Pass `userId`, address, and shipping method)
-        const paymentResponse = await fetch(`${CONFIG.API_URL}/create-payment-link`, {
+        // ✅ Correct API endpoint with userId in URL
+        const orderResponse = await fetch(`${CONFIG.API_URL}/users/${userId}/orders`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                userId,  // ✅ Sending userId
                 customer_name: customerName,
                 customer_email: customerEmail,
                 customer_phone: customerPhone,
                 amount,
                 shippingMethod,
-                deliveryAddress: selectedAddress // ✅ Send the entire selected address object
+                deliveryAddress: selectedAddress,
+                orderDetails, // Send cart items
             })
         });
 
-        if (!paymentResponse.ok) {
-            throw new Error("Failed to create payment link");
+        if (!orderResponse.ok) {
+            throw new Error("Failed to create order and payment link");
         }
 
-        const paymentResult = await paymentResponse.json();
+        const orderResult = await orderResponse.json();
 
-        if (!paymentResult.success || !paymentResult.linkUrl || !paymentResult.orderId) {
-            alert("Payment Link creation failed!");
+        if (!orderResult.success || !orderResult.linkUrl || !orderResult.orderId) {
+            alert("Order creation and payment failed!");
             return;
         }
 
-        // Step 2: Save Order in User Schema (Pass `userId`, `orderId`, `linkId`)
-        const orderData = {
-            orderId: paymentResult.orderId,
-            linkId: paymentResult.linkId,  
-            userId,
-            orderDetails,
-            price: amount,
-            shippingMethod,
-            deliveryAddress: selectedAddress, // ✅ Include the delivery address
-            paymentDetails: {
-                method: "cashfree",
-                transactionId: "",
-                status: "pending",
-                paid: false
-            },
-            status: "pending"
-        };
+        // Store Order ID & Link ID in Local Storage
+        localStorage.setItem("orderId", orderResult.orderId);
+        localStorage.setItem("linkId", orderResult.linkId);
 
-        const saveOrderResponse = await fetch(`${CONFIG.API_URL}/users/${userId}/orders`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(orderData)
-        });
-
-        const saveOrderResult = await saveOrderResponse.json();
-
-        if (!saveOrderResult.success) {
-            alert("Failed to save order: " + saveOrderResult.message);
-            return;
-        }
-
-        // Step 3: Store Order ID & Link ID in Local Storage
-        localStorage.setItem("orderId", paymentResult.orderId);
-        localStorage.setItem("linkId", paymentResult.linkId);
-
-        // Step 4: Redirect to Payment Page
-        window.location.href = paymentResult.linkUrl;
+        // Redirect to Payment Page
+        window.location.href = orderResult.linkUrl;
     } catch (error) {
         console.error("Error:", error);
         alert("Error in payment process: " + error.message);

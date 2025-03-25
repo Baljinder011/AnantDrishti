@@ -68,18 +68,18 @@
         }
 
         // ✅ Function to fetch order details (for debugging/logging)
-        async function getOrderDetails() {
-            try {
-                const response = await fetch(`${CONFIG.API_URL}/order?orderId=${orderId}&userId=${userId}`);
-                const data = await response.json();
-                console.log("Order Details:", data);
-            } catch (error) {
-                console.error("Error fetching order:", error);
-            }
-        }
+        // async function getOrderDetails() {
+        //     try {
+        //         const response = await fetch(`${CONFIG.API_URL}/order?orderId=${orderId}&userId=${userId}`);
+        //         const data = await response.json();
+        //         console.log("Order Details:", data);
+        //     } catch (error) {
+        //         console.error("Error fetching order:", error);
+        //     }
+        // }
 
-        // ✅ Fetch order details
-        getOrderDetails();
+        // // ✅ Fetch order details
+        // getOrderDetails();
     </script>
 </body>
 </html>

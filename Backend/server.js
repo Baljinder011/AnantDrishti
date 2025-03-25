@@ -62,22 +62,22 @@ const PORT = process.env.PORT || 4000
 
 
 
-const options = {
-  key: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/privkey.pem"),
-  cert: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/fullchain.pem"),
-};
+// const options = {
+//   key: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/privkey.pem"),
+//   cert: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/fullchain.pem"),
+// };
 
 
 
 // Enforce HTTPS middleware
 
 
-app.use((req, res, next) => {
-  if (req.protocol !== "https") {
-    return res.redirect("https://" + req.headers.host + req.url);
-  }
-  next();
-});
+// app.use((req, res, next) => {
+//   if (req.protocol !== "https") {
+//     return res.redirect("https://" + req.headers.host + req.url);
+//   }
+//   next();
+// });
 
 
 
@@ -99,51 +99,6 @@ mongoose.connect(uri)
 // Cashfree API Credentials
 const APP_ID = process.env.CASHFREE_APP_ID || "YOUR_APP_ID";
 const SECRET_KEY = process.env.CASHFREE_SECRET_KEY || "YOUR_SECRET_KEY";
-
-
-
-// // Function to generate expiry time (30 minutes from now)
-// const generateOrderId = async () => {
-//   const lastOrder = await User.aggregate([
-//     { $unwind: "$orders" },
-//     {
-//       $project: {
-//         numericOrderId: {
-//           $convert: {
-//             input: {
-//               $cond: [
-//                 { $gt: [{ $strLenCP: "$orders.orderId" }, 3] },
-//                 {
-//                   $substrCP: [
-//                     "$orders.orderId",
-//                     3,
-//                     { $subtract: [{ $strLenCP: "$orders.orderId" }, 3] }
-//                   ]
-//                 },
-//                 "0"
-//               ]
-//             },
-//             to: "int",
-//             onError: 0,
-//             onNull: 0
-//           }
-//         }
-//       }
-//     },
-//     { $sort: { numericOrderId: -1 } },
-//     { $limit: 1 }
-//   ]);
-//   let newOrderId = "ORD001";
-//   if (lastOrder.length > 0) {
-//     const lastOrderId = lastOrder[0].numericOrderId;
-//     newOrderId = `ORD${(lastOrderId + 1).toString().padStart(3, "0")}`;
-//   }
-//   console.log("Generated orderId:", newOrderId);
-//   return newOrderId;
-// };
-// Create Payment Link & Save Order with linkId
-
-
 
 
 
@@ -170,6 +125,13 @@ const userSchema = new mongoose.Schema({
       state: { type: String, required: true },
       country: { type: String, required: true },
     },
+  ],
+  loginSessions: [
+    {
+      date: String,
+      time: String,
+      location: String
+    }
   ],
 
   orders: [
@@ -205,42 +167,31 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model("users", userSchema);
 
 
-
-app.post("/create-payment-link", async (req, res) => {
+app.post("/users/:id/orders", async (req, res) => {
   try {
-    let {
-      userId,
-      customer_name,
-      customer_email,
-      customer_phone,
-      amount,
-      shippingMethod,
-      deliveryAddress // Added delivery address
-    } = req.body;
+    const { id } = req.params;
+    let { customer_name, customer_email, customer_phone, amount, shippingMethod, deliveryAddress, orderDetails } = req.body;
 
-    if (!userId || !customer_name || !customer_email || !customer_phone || !amount || !deliveryAddress) {
+    if (!id || !customer_name || !customer_email || !customer_phone || !amount || !deliveryAddress) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
     customer_phone = String(customer_phone);
 
-    // Fetch the user's last order to determine the next orderId
-    const user = await User.findById(userId);
+    // Generate orderId
+    const lastOrder = await Order.findOne().sort({ createdAt: -1 });
     let newOrderId = "ORD001";
-
-    if (user && user.orders.length > 0) {
-      // Extract the last orderId and increment it
-      const lastOrder = user.orders[user.orders.length - 1];
-      const lastOrderId = lastOrder.orderId;
-
-      const match = lastOrderId.match(/ORD(\d+)/);
+    if (lastOrder) {
+      const match = lastOrder.orderId.match(/ORD(\d+)/);
       if (match) {
-        const orderNumber = parseInt(match[1], 10) + 1;
-        newOrderId = `ORD${String(orderNumber).padStart(3, "0")}`;
+        newOrderId = `ORD${String(parseInt(match[1], 10) + 1).padStart(3, "0")}`;
       }
     }
 
+    // Generate payment link ID
     const linkId = `CF_${crypto.randomBytes(8).toString("hex")}`;
+    
+    // Cashfree payment link payload
     const payload = {
       order_id: newOrderId,
       link_id: linkId,
@@ -252,12 +203,12 @@ app.post("/create-payment-link", async (req, res) => {
       link_auto_reminders: true,
       link_expiry_time: new Date(Date.now() + 3600 * 1000).toISOString(),
       link_meta: {
-        // return_url: `http://127.0.0.1:5501/Frontend/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${userId}`
-        return_url: `https://indraq.tech/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${userId}`
-
+        // return_url: `http://127.0.0.1:5501/Frontend/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${id}`
+         return_url: `https://indraq.tech/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${userId}`
       },
     };
 
+    // Call Cashfree API to generate payment link
     const response = await axios.post("https://sandbox.cashfree.com/pg/links", payload, {
       headers: {
         "x-api-version": "2022-09-01",
@@ -266,31 +217,31 @@ app.post("/create-payment-link", async (req, res) => {
       },
     });
 
-    // Save Order to MongoDB with delivery address
+    if (!response.data || !response.data.link_url) {
+      return res.status(500).json({ error: "Failed to generate payment link" });
+    }
+
+    // Create new order object
     const newOrder = {
       orderId: newOrderId,
+      userId: id,
       linkId,
-      orderDetails: [],
+      orderDetails,
       price: amount,
       shippingMethod: shippingMethod || "standard",
-      deliveryAddress: {
-        fullName: deliveryAddress.fullName,
-        phone: deliveryAddress.phone,
-        email: deliveryAddress.email,
-        street: deliveryAddress.street,
-        city: deliveryAddress.city,
-        postalCode: deliveryAddress.postalCode,
-        state: deliveryAddress.state,
-        country: deliveryAddress.country,
-      },
-      paymentDetails: { status: "pending" },
+      deliveryAddress,
+      paymentDetails: { status: "pending", transactionId: "", paid: false },
       status: "pending",
       createdAt: new Date(),
     };
 
+    // Save order to `orders` collection
+    const savedOrder = await Order.create(newOrder);
+
+    // Save order reference in user's orders array
     const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      { $push: { orders: newOrder } },
+      id,
+      { $push: { orders: savedOrder } },
       { new: true }
     );
 
@@ -298,14 +249,273 @@ app.post("/create-payment-link", async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    res.json({ success: true, userId, orderId: newOrderId, linkId, linkUrl: response.data.link_url });
+    res.json({
+      success: true,
+      userId: id,
+      orderId: newOrderId,
+      linkId,
+      linkUrl: response.data.link_url,
+      message: "Order created successfully, waiting for payment"
+    });
 
   } catch (error) {
-    console.error("Cashfree Error:", error.response?.data || error.message);
-    res.status(500).json({ error: "Failed to create payment link" });
+    console.error("Error:", error.response?.data || error.message);
+    res.status(500).json({ error: "Error processing order", details: error.message });
   }
 });
 
+
+
+
+
+
+
+
+//main api and final
+
+
+// app.post("/users/:id/orders", async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     let { customer_name, customer_email, customer_phone, amount, shippingMethod, deliveryAddress, orderDetails } = req.body;
+
+//     if (!id || !customer_name || !customer_email || !customer_phone || !amount || !deliveryAddress) {
+//       return res.status(400).json({ error: "Missing required fields" });
+//     }
+
+//     customer_phone = String(customer_phone);
+
+//     // Fetch user & determine next orderId
+//     const user = await User.findById(id);
+//     let newOrderId = "ORD001";
+
+//     if (user && user.orders.length > 0) {
+//       const lastOrder = user.orders[user.orders.length - 1];
+//       const match = lastOrder.orderId.match(/ORD(\d+)/);
+//       if (match) {
+//         newOrderId = `ORD${String(parseInt(match[1], 10) + 1).padStart(3, "0")}`;
+//       }
+//     }
+
+//     // Generate a unique link ID
+//     const linkId = `CF_${crypto.randomBytes(8).toString("hex")}`;
+    
+//     // Prepare Cashfree payment link request
+//     const payload = {
+//       order_id: newOrderId,
+//       link_id: linkId,
+//       customer_details: { customer_name, customer_email, customer_phone },
+//       link_amount: amount,
+//       link_currency: "INR",
+//       link_purpose: "E-commerce Purchase",
+//       link_notify: { send_email: true, send_sms: true },
+//       link_auto_reminders: true,
+//       link_expiry_time: new Date(Date.now() + 3600 * 1000).toISOString(),
+//       link_meta: {
+//         return_url: `http://127.0.0.1:5501/Frontend/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${id}`
+//       },
+//     };
+
+//     // Call Cashfree API to generate payment link
+//     const response = await axios.post("https://sandbox.cashfree.com/pg/links", payload, {
+//       headers: {
+//         "x-api-version": "2022-09-01",
+//         "x-client-id": APP_ID,
+//         "x-client-secret": SECRET_KEY,
+//       },
+//     });
+
+//     if (!response.data || !response.data.link_url) {
+//       return res.status(500).json({ error: "Failed to generate payment link" });
+//     }
+
+//     // Store order with pending payment status
+//     const newOrder = {
+//       orderId: newOrderId,
+//       linkId,
+//       orderDetails,
+//       price: amount,
+//       shippingMethod: shippingMethod || "standard",
+//       deliveryAddress: {
+//         fullName: deliveryAddress.fullName,
+//         phone: deliveryAddress.phone,
+//         email: deliveryAddress.email,
+//         street: deliveryAddress.street,
+//         city: deliveryAddress.city,
+//         postalCode: deliveryAddress.postalCode,
+//         state: deliveryAddress.state,
+//         country: deliveryAddress.country,
+//       },
+//       paymentDetails: { status: "pending", transactionId: "", paid: false },
+//       status: "pending",
+//       createdAt: new Date(),
+//     };
+
+//     const updatedUser = await User.findByIdAndUpdate(
+//       id,
+//       { $push: { orders: newOrder } },
+//       { new: true }
+//     );
+
+//     if (!updatedUser) {
+//       return res.status(404).json({ error: "User not found" });
+//     }
+
+//     res.json({
+//       success: true,
+//       userId: id,
+//       orderId: newOrderId,
+//       linkId,
+//       linkUrl: response.data.link_url,
+//       message: "Order created successfully, waiting for payment"
+//     });
+
+//   } catch (error) {
+//     console.error("Error:", error.response?.data || error.message);
+//     res.status(500).json({ error: "Error processing order", details: error.message });
+//   }
+// });
+
+
+
+// app.post("/create-payment-link", async (req, res) => {
+//   try {
+//     let {
+//       userId,
+//       customer_name,
+//       customer_email,
+//       customer_phone,
+//       amount,
+//       shippingMethod,
+//       deliveryAddress // Added delivery address
+//     } = req.body;
+
+//     if (!userId || !customer_name || !customer_email || !customer_phone || !amount || !deliveryAddress) {
+//       return res.status(400).json({ error: "Missing required fields" });
+//     }
+
+//     customer_phone = String(customer_phone);
+
+//     // Fetch the user's last order to determine the next orderId
+//     const user = await User.findById(userId);
+//     let newOrderId = "ORD001";
+
+//     if (user && user.orders.length > 0) {
+//       // Extract the last orderId and increment it
+//       const lastOrder = user.orders[user.orders.length - 1];
+//       const lastOrderId = lastOrder.orderId;
+
+//       const match = lastOrderId.match(/ORD(\d+)/);
+//       if (match) {
+//         const orderNumber = parseInt(match[1], 10) + 1;
+//         newOrderId = `ORD${String(orderNumber).padStart(3, "0")}`;
+//       }
+//     }
+
+//     const linkId = `CF_${crypto.randomBytes(8).toString("hex")}`;
+//     const payload = {
+//       order_id: newOrderId,
+//       link_id: linkId,
+//       customer_details: { customer_name, customer_email, customer_phone },
+//       link_amount: amount,
+//       link_currency: "INR",
+//       link_purpose: "E-commerce Purchase",
+//       link_notify: { send_email: true, send_sms: true },
+//       link_auto_reminders: true,
+//       link_expiry_time: new Date(Date.now() + 3600 * 1000).toISOString(),
+//       link_meta: {
+//         return_url: `http://127.0.0.1:5501/Frontend/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${userId}`
+//         // return_url: `https://indraq.tech/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${userId}`
+
+//       },
+//     };
+
+//     const response = await axios.post("https://sandbox.cashfree.com/pg/links", payload, {
+//       headers: {
+//         "x-api-version": "2022-09-01",
+//         "x-client-id": APP_ID,
+//         "x-client-secret": SECRET_KEY,
+//       },
+//     });
+
+//     // Save Order to MongoDB with delivery address
+//     const newOrder = {
+//       orderId: newOrderId,
+//       linkId,
+//       orderDetails: [],
+//       price: amount,
+//       shippingMethod: shippingMethod || "standard",
+//       deliveryAddress: {
+//         fullName: deliveryAddress.fullName,
+//         phone: deliveryAddress.phone,
+//         email: deliveryAddress.email,
+//         street: deliveryAddress.street,
+//         city: deliveryAddress.city,
+//         postalCode: deliveryAddress.postalCode,
+//         state: deliveryAddress.state,
+//         country: deliveryAddress.country,
+//       },
+//       paymentDetails: { status: "pending" },
+//       status: "pending",
+//       createdAt: new Date(),
+//     };
+
+//     const updatedUser = await User.findByIdAndUpdate(
+//       userId,
+//       { $push: { orders: newOrder } },
+//       { new: true }
+//     );
+
+//     if (!updatedUser) {
+//       return res.status(404).json({ error: "User not found" });
+//     }
+
+//     res.json({ success: true, userId, orderId: newOrderId, linkId, linkUrl: response.data.link_url });
+
+//   } catch (error) {
+//     console.error("Cashfree Error:", error.response?.data || error.message);
+//     res.status(500).json({ error: "Failed to create payment link" });
+//   }
+// });
+
+
+
+// app.post("/users/:id/orders", async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const newOrder = req.body;
+
+//     // ❌ Remove `_id` if it exists (MongoDB will generate it automatically)
+//     if (newOrder._id) delete newOrder._id;
+
+//     console.log("Received User ID:", id);
+//     console.log("Processed Order:", JSON.stringify(newOrder, null, 2));
+
+//     // Ensure delivery address is present
+//     if (!newOrder.deliveryAddress) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Missing delivery address information"
+//       });
+//     }
+
+//     const updatedUser = await User.findByIdAndUpdate(
+//       id,
+//       { $push: { orders: newOrder } },
+//       { new: true }
+//     );
+
+//     if (!updatedUser) {
+//       return res.status(404).json({ success: false, message: "User not found" });
+//     }
+
+//     console.log("Order saved successfully for user:", id);
+//     res.status(200).json({ success: true, message: "Order saved", order: newOrder });
+//   } catch (error) {
+//     console.error("Error saving order:", error);
+//     res.status(500).json({ success: false, message: "Error saving order", error: error.message });
+//   }
+// });
 
 
 
@@ -397,44 +607,6 @@ app.get("/failure.html", (req, res) => res.sendFile(path.join(frontendPath, "fai
 
 
 
-app.post("/users/:id/orders", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const newOrder = req.body;
-
-    // ❌ Remove `_id` if it exists (MongoDB will generate it automatically)
-    if (newOrder._id) delete newOrder._id;
-
-    console.log("Received User ID:", id);
-    console.log("Processed Order:", JSON.stringify(newOrder, null, 2));
-
-    // Ensure delivery address is present
-    if (!newOrder.deliveryAddress) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Missing delivery address information" 
-      });
-    }
-
-    const updatedUser = await User.findByIdAndUpdate(
-      id,
-      { $push: { orders: newOrder } },
-      { new: true }
-    );
-
-    if (!updatedUser) {
-      return res.status(404).json({ success: false, message: "User not found" });
-    }
-
-    console.log("Order saved successfully for user:", id);
-    res.status(200).json({ success: true, message: "Order saved", order: newOrder });
-  } catch (error) {
-    console.error("Error saving order:", error);
-    res.status(500).json({ success: false, message: "Error saving order", error: error.message });
-  }
-});
-
-
 
 app.get("/users/:id/orders", async (req, res) => {
   const { id } = req.params;
@@ -516,16 +688,16 @@ app.put("/users/:id", async (req, res) => {
 
 app.put("/users/:id/update", async (req, res) => {
   try {
-      const { firstName, lastName, phone } = req.body;
-      const updatedUser = await User.findByIdAndUpdate(
-          req.params.id,
-          { firstName, lastName, phone },
-          { new: true }
-      );
-      if (!updatedUser) return res.status(404).json({ message: "User not found" });
-      res.json(updatedUser);
+    const { firstName, lastName, phone } = req.body;
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      { firstName, lastName, phone },
+      { new: true }
+    );
+    if (!updatedUser) return res.status(404).json({ message: "User not found" });
+    res.json(updatedUser);
   } catch (error) {
-      res.status(500).json({ message: "Error updating profile", error });
+    res.status(500).json({ message: "Error updating profile", error });
   }
 });
 
@@ -554,7 +726,7 @@ app.put("/users/:id/update-address/:addressId", async (req, res) => {
   try {
     const userId = req.params.id;
     const addressId = req.params.addressId;
-    
+
     // Log the request data for debugging
     console.log("Update Address Request:", {
       userId,
@@ -564,9 +736,9 @@ app.put("/users/:id/update-address/:addressId", async (req, res) => {
 
     // Check if all required fields are present
     const { fullName, phone, email, street, city, postalCode, state, country } = req.body;
-    
+
     if (!fullName || !phone || !email || !street || !city || !postalCode || !state || !country) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         message: "Missing required address fields",
         requiredFields: ["fullName", "phone", "email", "street", "city", "postalCode", "state", "country"]
       });
@@ -574,9 +746,9 @@ app.put("/users/:id/update-address/:addressId", async (req, res) => {
 
     // Use findOneAndUpdate with the positional $ operator
     const result = await User.findOneAndUpdate(
-      { 
-        _id: userId, 
-        "address._id": addressId 
+      {
+        _id: userId,
+        "address._id": addressId
       },
       {
         $set: {
@@ -590,15 +762,15 @@ app.put("/users/:id/update-address/:addressId", async (req, res) => {
       return res.status(404).json({ message: "User or address not found" });
     }
 
-    res.json({ 
-      message: "Address updated successfully!", 
-      addresses: result.address 
+    res.json({
+      message: "Address updated successfully!",
+      addresses: result.address
     });
   } catch (error) {
     console.error("Error updating address:", error);
-    res.status(500).json({ 
-      message: "Error updating address", 
-      error: error.message 
+    res.status(500).json({
+      message: "Error updating address",
+      error: error.message
     });
   }
 });
@@ -608,7 +780,7 @@ app.put("/users/:id/remove-address/:addressId", async (req, res) => {
   try {
     const userId = req.params.id;
     const addressId = req.params.addressId;
-    
+
     // Log the request data for debugging
     console.log("Remove Address Request:", {
       userId,
@@ -632,20 +804,20 @@ app.put("/users/:id/remove-address/:addressId", async (req, res) => {
 
     // Check if the address was actually removed
     const addressWasRemoved = result.address.every(addr => addr._id.toString() !== addressId);
-    
+
     if (!addressWasRemoved) {
       return res.status(404).json({ message: "Address not found or could not be removed" });
     }
 
-    res.json({ 
-      message: "Address removed successfully!", 
-      addresses: result.address 
+    res.json({
+      message: "Address removed successfully!",
+      addresses: result.address
     });
   } catch (error) {
     console.error("Error removing address:", error);
-    res.status(500).json({ 
-      message: "Error removing address", 
-      error: error.message 
+    res.status(500).json({
+      message: "Error removing address",
+      error: error.message
     });
   }
 });
@@ -1202,10 +1374,9 @@ app.put('/products/:id/status', async (req, res) => {
 
 
 
-// Order Schema (similar to previous example)
 const orderSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "users", required: true },
   orderId: { type: String, required: true, unique: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "users", required: true },
   linkId: String,
   orderDetails: Array,
   price: { type: Number, required: true, min: 0 },
@@ -1228,166 +1399,30 @@ const orderSchema = new mongoose.Schema({
     timestamp: Date,
   },
   status: { type: String, default: "pending" },
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
 });
 
 const Order = mongoose.model("orders", orderSchema);
 
-app.post("/create-payment-link", async (req, res) => {
+
+
+
+app.get("/orders", async (req, res) => {
   try {
-    let {
-      userId,
-      customer_name,
-      customer_email,
-      customer_phone,
-      amount,
-      shippingMethod,
-      deliveryAddress
-    } = req.body;
+    const orders = await Order.find().populate("userId", "firstName lastName email phone");
 
-    if (!userId || !customer_name || !customer_email || !customer_phone || !amount || !deliveryAddress) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
-
-    customer_phone = String(customer_phone);
-
-    // Fetch last order to determine new orderId
-    const lastOrder = await Order.findOne().sort({ createdAt: -1 }); 
-    let newOrderId = "ORD001";
-
-    if (lastOrder) {
-      const match = lastOrder.orderId.match(/ORD(\d+)/);
-      if (match) {
-        const orderNumber = parseInt(match[1], 10) + 1;
-        newOrderId = `ORD${String(orderNumber).padStart(3, "0")}`;
-      }
-    }
-
-    const linkId = `CF_${crypto.randomBytes(8).toString("hex")}`;
-    const payload = {
-      order_id: newOrderId,
-      link_id: linkId,
-      customer_details: { customer_name, customer_email, customer_phone },
-      link_amount: amount,
-      link_currency: "INR",
-      link_purpose: "E-commerce Purchase",
-      link_notify: { send_email: true, send_sms: true },
-      link_auto_reminders: true,
-      link_expiry_time: new Date(Date.now() + 3600 * 1000).toISOString(),
-      link_meta: {
-        // return_url: `http://127.0.0.1:5501/Frontend/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${userId}`
-        return_url: `https://indraq.tech/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${userId}`
-
-      },
-    };
-
-    const response = await axios.post("https://sandbox.cashfree.com/pg/links", payload, {
-      headers: {
-        "x-api-version": "2022-09-01",
-        "x-client-id": APP_ID,
-        "x-client-secret": SECRET_KEY,
-      },
+    res.json({
+      success: true,
+      orders
     });
-
-    // Save order in users collection
-    const newOrder = {
-      orderId: newOrderId,
-      linkId,
-      orderDetails: [],
-      price: amount,
-      shippingMethod: shippingMethod || "standard",
-      deliveryAddress,
-      paymentDetails: { status: "pending" },
-      status: "pending",
-      createdAt: new Date(),
-    };
-
-    await User.findByIdAndUpdate(userId, { $push: { orders: newOrder } });
-
-    // Save order in orders collection
-    const order = new Order({ userId, ...newOrder });
-    await order.save();
-
-    res.json({ success: true, userId, orderId: newOrderId, linkId, linkUrl: response.data.link_url });
-
   } catch (error) {
-    console.error("Cashfree Error:", error.response?.data || error.message);
-    res.status(500).json({ error: "Failed to create payment link" });
+    console.error("Error fetching orders:", error);
+    res.status(500).json({ error: "Error fetching orders", details: error.message });
   }
 });
 
 
 
-app.post("/users/:id/orders", async (req, res) => {
-  try {
-    const { id } = req.params; // This is the userId
-    const newOrder = req.body;
-
-    if (newOrder._id) delete newOrder._id; // Remove MongoDB _id if present
-
-    console.log("Received User ID:", id);
-    console.log("Processed Order:", JSON.stringify(newOrder, null, 2));
-
-    // Ensure delivery address is present
-    if (!newOrder.deliveryAddress) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Missing delivery address information" 
-      });
-    }
-
-    // ✅ Update User's orders array
-    const updatedUser = await User.findByIdAndUpdate(
-      id,
-      { $push: { orders: newOrder } },
-      { new: true }
-    );
-
-    if (!updatedUser) {
-      return res.status(404).json({ success: false, message: "User not found" });
-    }
-
-    // ✅ Save Order in Orders Collection
-    const order = new Order({ userId: id, ...newOrder });
-    await order.save();
-
-    console.log("Order saved successfully for user:", id);
-    res.status(200).json({ success: true, message: "Order saved", order: newOrder });
-
-  } catch (error) {
-    console.error("Error saving order:", error);
-    res.status(500).json({ success: false, message: "Error saving order", error: error.message });
-  }
-});
-
-
-
-
-
-
-
-// GET Orders with Filtering
-app.get('/orders', async (req, res) => {
-  try {
-    const { name, priceRange, size, color, quantity, category } = req.query;
-    console.log('Filters:', { name, priceRange, size, color, category });
-    const filter = {};
-    if (name) filter.userName = { $regex: name, $options: 'i' };
-    if (priceRange) {
-      const [min, max] = priceRange.split('-');
-      filter.price = { $gte: min, $lte: max };
-    }
-    if (size) filter.size = size;
-    if (color) filter.color = color;
-    if (category) filter.category = category;
-    console.log('Filter:', filter);  // Check filter values
-    const orders = await Order.find(filter);
-    res.json(orders);
-  } catch (err) {
-    console.error('Error fetching orders:', err);
-    res.status(500).json({ message: err.message });
-  }
-});
 
 
 
@@ -1442,71 +1477,6 @@ app.delete('/:id', async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-
-
-
-
-
-
-
-
-
-
-
-// app.post("/update-profile", async (req, res) => {
-//   const { email, firstName, lastName, phone, dob, gender } = req.body;
-
-//   try {
-//     // Find user by email
-//     const user = await User.findOne({ email });
-
-//     if (!user) {
-//       return res.status(404).json({ message: "User not found" });
-//     }
-
-//     // Update user details
-//     user.firstName = firstName;
-//     user.lastName = lastName;
-//     user.phone = phone;
-//     user.dob = dob;
-//     user.gender = gender
-//     // user.address = address; // Replace existing address array
-
-//     // Save updated user
-//     await user.save();
-
-//     res.status(200).json({ message: "Profile updated successfully", user });
-//   } catch (error) {
-//     console.error("Error updating profile:", error);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// });
-
-
-
-
-// // API Route to Update Profile Image
-// app.post("/upload-profile-image", uploadProfile.single("profileImage"), async (req, res) => {
-//   try {
-//     const { email } = req.body; // Get email from request
-//     if (!req.file) return res.status(400).json({ message: "No file uploaded" });
-
-//     // Find user and update profile image
-//     const updatedUser = await User.findOneAndUpdate(
-//       { email },
-//       { profileImage: `/uploads/Userprofile/${req.file.filename}` }, // Corrected image path
-//       { new: true }
-//     );
-
-//     if (!updatedUser) return res.status(404).json({ message: "User not found" });
-
-//     res.status(200).json({ message: "Profile image updated", user: updatedUser });
-//   } catch (error) {
-//     console.error("Error uploading image:", error);
-//     res.status(500).json({ message: "Server error", error: error.message });
-//   }
-// });
-
 
 
 
