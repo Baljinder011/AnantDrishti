@@ -113,8 +113,8 @@
     <script>
 
 document.getElementById("payButton").addEventListener("click", async function () {
-    const _id = localStorage.getItem("_id"); // Get user ID from local storage
-    if (!_id) {
+    const userId = localStorage.getItem("_id"); // Get user ID from local storage
+    if (!userId) {
         alert("User not logged in. Please log in to continue.");
         return;
     }
@@ -154,8 +154,8 @@ document.getElementById("payButton").addEventListener("click", async function ()
     const shippingMethod = shippingMethodElement.value;
 
     try {
-        // ✅ Correct API endpoint with _id in URL
-        const orderResponse = await fetch(`${CONFIG.API_URL}/users/${_id}/orders`, {
+        // ✅ Correct API endpoint with userId in URL
+        const orderResponse = await fetch(`${CONFIG.API_URL}/users/${userId}/orders`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({

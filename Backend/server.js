@@ -1404,21 +1404,44 @@ const orderSchema = new mongoose.Schema({
 const Order = mongoose.model("orders", orderSchema);
 
 
-
-
 app.get("/orders", async (req, res) => {
   try {
-    const orders = await Order.find().populate("userId", "firstName lastName email phone");
+    const page = parseInt(req.query.page) || 1;
+    const limit = 10;
+    const skip = (page - 1) * limit;
 
-    res.json({
-      success: true,
-      orders
+    const orders = await Order.find()
+      .populate("userId", "firstName lastName email phone")
+      .skip(skip)
+      .limit(limit);
+
+    const totalOrders = await Order.countDocuments();
+
+    res.json({ 
+      success: true, 
+      orders,
+      totalPages: Math.ceil(totalOrders / limit),
+      currentPage: page
     });
   } catch (error) {
-    console.error("Error fetching orders:", error);
     res.status(500).json({ error: "Error fetching orders", details: error.message });
   }
 });
+
+
+// app.get("/orders", async (req, res) => {
+//   try {
+//     const orders = await Order.find().populate("userId", "firstName lastName email phone");
+
+//     res.json({
+//       success: true,
+//       orders
+//     });
+//   } catch (error) {
+//     console.error("Error fetching orders:", error);
+//     res.status(500).json({ error: "Error fetching orders", details: error.message });
+//   }
+// });
 
 
 
