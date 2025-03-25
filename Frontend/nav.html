@@ -45,9 +45,24 @@
         </div>
 <div class="searchInput">
         <input type="text" id="searchInput" placeholder="Search for products..." />
-        <i class="fa-solid fa-magnifying-glass the-search"></i>
+        <!-- <i class="fa-solid fa-magnifying-glass the-search"></i> -->
+             <i class="fa-solid fa-magnifying-glass the-search" id="searchIcon"></i>
+
         <ul id="suggestionBox" class="list-group"></ul>
 </div>
+    <!-- Magnifying glass icon -->
+
+    <!-- Popup Search Box -->
+    <div id="searchPopup" class="popup">
+        <div class="popup-content">
+            <span class="close-btn" id="closeBtn1">&times;</span>
+            <input type="text" id="searchInput" placeholder="Search for products..." />
+            <ul id="suggestionBox" class="list-group"></ul>
+
+            <button id="searchButton">Search</button>
+        </div>
+    </div>
+
 
         <div class="nav-open">
             <button class="navbar-toggler" id="navbar-toggler">☰</button>
@@ -383,10 +398,6 @@ function updateUIBasedOnLoginStatus() {
 updateUIBasedOnLoginStatus();
 
 
-
-
-
-
 function updateSearchIconStyle() {
     const searchIcon = document.querySelector('.the-search');
 
@@ -399,10 +410,53 @@ function updateSearchIconStyle() {
 
 // Call this function after checking login status
 updateSearchIconStyle();
-
-
-
     </script>
+
+
+<script>
+    // Get references to the elements
+    const searchIcon = document.getElementById('searchIcon');
+    const searchPopup = document.getElementById('searchPopup');
+    const closeBtn1 = document.getElementById('closeBtn1');
+    const searchInput = document.getElementById('searchInput');
+    const searchButton = document.getElementById('searchButton');
+
+    // Function to handle search icon click (only for screens below 500px)
+    function handleSearchClick() {
+        if (window.innerWidth < 500) { // Check screen width
+            searchPopup.style.display = 'flex';
+        }
+    }
+
+    // Attach event listener to search icon
+    searchIcon.addEventListener('click', handleSearchClick);
+
+    // Hide the popup when the close button is clicked
+    closeBtn1.addEventListener('click', () => {
+        searchPopup.style.display = 'none';
+    });
+
+    // Hide the popup when clicking outside of it
+    window.addEventListener('click', (event) => {
+        if (event.target === searchPopup) {
+            searchPopup.style.display = 'none';
+        }
+    });
+
+    // Handle the search button click
+    searchButton.addEventListener('click', () => {
+        const query = searchInput.value.trim();
+        if (query) {
+            alert(`You searched for: ${query}`);
+            searchPopup.style.display = 'none'; // Close the popup after search
+        } else {
+            alert('Please enter a search term.');
+        }
+    });
+</script>
+
+
+
     <script src="function.js"></script>
     <script src="config.js"></script>
 

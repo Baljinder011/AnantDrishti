@@ -1,134 +1,316 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shopping Cart</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="index.css">
-    <link rel="stylesheet" href="cart.css">
+    <title>Home Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./index.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.css">
+    <script src="config.js"></script>
+<link rel="stylesheet" href="cart.css">
     <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
 </head>
+
+
 <body>
+    <div id="nav-placeholder">
 
-    <div id="nav-placeholder"></div>
-
-    <script>
-        $(function(){
-          $("#nav-placeholder").load("nav.html" , function () {
-            updateCartCounter(); // Ensure counter updates after loading nav
-          });
-        });
-    </script>
-
-    <div class="container mt-5">
-        <h2 class="text-center mb-4">Shopping Cart</h2>
-        <div class="cart-items row g-4">
-            <!-- Cart items will be dynamically inserted here -->
-        </div>
-        <div class="text-end mt-4 buy-bttn">
-            <h4>Total Price: Rs.<span id="total-price">0</span></h4>
-            <button>
-                <a href="./products.html">Continue Shopping</a>
-            </button>
-            <button id="buy-now-btn">Buy Now</button>
-        </div>
     </div>
 
     <script>
-        function isLoggedIn() {
-            return localStorage.getItem('isLoggedIn') === 'true';
-        }
-
-        function handleBuyNowClick() {
-            if (isLoggedIn()) {
-                window.location.href = './address.html';
-            } else {
-                window.location.href = './loginRegister.html';
-            }
-        }
-
-        document.getElementById('buy-now-btn').addEventListener('click', handleBuyNowClick);
-
-        function displayCartItems() {
-            const cart = JSON.parse(localStorage.getItem('cart')) || [];
-            const cartItemsContainer = document.querySelector('.cart-items');
-            const buyNowBtn = document.getElementById('buy-now-btn');
-            cartItemsContainer.innerHTML = '';
-            let totalPrice = 0;
-
-            if (cart.length === 0) {
-                cartItemsContainer.innerHTML = '<p class="text-center">Your cart is empty.</p>';
-                document.getElementById('total-price').textContent = '0';
-                buyNowBtn.style.display = 'none';
-            } else {
-                buyNowBtn.style.display = 'inline-block';
-                cart.forEach(item => {
-                    const { id, name, price, color, size, quantity, image } = item;
-                    totalPrice += price * quantity;
-                    cartItemsContainer.innerHTML += `
-                        <div class="col-md-6 cart-item d-flex align-items-center p-3 bg-light rounded shadow-sm">
-                            <img src="${image}" alt="${name}" class="img-fluid" style="width: 100px; height: 100px; object-fit: cover;">
-                            <div class="ms-3">
-                                <p>${name} - Color: ${color} - Size: ${size}</p>
-                                <p>Rs.${price}</p>
-                                <p>Qty: ${quantity}</p>
-                                <button onclick="removeFromCart('${id}', '${color}', '${size}')"><i class="fa-solid fa-xmark"></i></button>
-                            </div>
-                        </div>
-                    `;
-                });
-                document.getElementById('total-price').textContent = totalPrice;
-            }
-        }
-
-        function updateCartCounter() {
-            let totalCount = getTotalCartCount();
-            const cartCounter = document.getElementById('cart-counter');
-            if (cartCounter) {
-                cartCounter.innerText = totalCount;
-            }
-        }
-
-        function getTotalCartCount() {
-            let cart = JSON.parse(localStorage.getItem('cart')) || [];
-            return cart.reduce((sum, item) => sum + item.quantity, 0);
-        }
-
-        function removeFromCart(productId, productColor, productSize) {
-            let cart = JSON.parse(localStorage.getItem('cart')) || [];
-            const productIndex = cart.findIndex(item =>
-                item.id === productId &&
-                item.color === productColor &&
-                item.size === productSize
-            );
-
-            if (productIndex > -1) {
-                const product = cart[productIndex];
-
-                if (product.quantity > 1) {
-                    product.quantity -= 1;
-                } else {
-                    cart.splice(productIndex, 1);
-                }
-
-                localStorage.setItem('cart', JSON.stringify(cart));
-                localStorage.setItem('cartCounter', getTotalCartCount());
-                displayCartItems();
-                updateCartCounter();
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            updateCartCounter();
+        $(function () {
+            $("#nav-placeholder").load("nav.html", function () {
+                updateCartCounter(); // Ensure counter updates after loading nav
+            });
         });
-
-        displayCartItems();
     </script>
-    <!-- ✅ WhatsApp Floating Button -->
+    <div class="container cart-container">
+        <div class="row">
+            <div class="col-lg-8">
+                <h2 class="mb-4">
+                    <i class="fas fa-shopping-cart me-2 text-primary"></i>Your Shopping Cart
+                </h2>
+                
+                <div class="cart-items row g-4">
+                    <!-- Cart items will be dynamically inserted here -->
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="order-summary">
+                    <h4 class="mb-4">Order Summary</h4>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Subtotal:</span>
+                        <span>Rs. <span id="subtotal-price">0</span></span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>GST (18%):</span>
+                        <span>Rs. <span id="gst-amount">0</span></span>
+                    </div>
+                    
+                 
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Discount:</span>
+                        <span>- Rs. <span id="discount-amount">0</span></span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between fw-bold">
+                        <span>Total:</span>
+                        <span>Rs. <span id="total-price">0</span></span>
+                    </div>
+                </div>
+
+                <div class="discount-section mt-3">
+                    <div class="input-group">
+                        <input type="text" id="discount-code" class="form-control" placeholder="Enter discount code">
+                        <button class="btn btn-outline-secondary" type="button" id="apply-discount-btn">Apply</button>
+                    </div>
+                    <div id="discount-message" class="mt-2 text-center"></div>
+                </div>
+
+                <div class="cart-actions mt-3">
+                    <a href="address.html">
+                    <button id="buy-now-btn" class="btn btn-primary w-100 mb-2">
+                        Proceed to Checkout
+                        <i class="fas fa-arrow-right ms-2"></i>
+                    </button>
+                </a>
+                    <a href="products.html" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-arrow-left me-2"></i>Continue Shopping
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- WhatsApp Floating Button -->
     <a href="https://wa.me/919876543210" class="whatsapp-float" target="_blank">
         <i class="fab fa-whatsapp"></i>
     </a>
 
+    <script>
+        class CartManager {
+            constructor() {
+                this.cartItemsContainer = document.querySelector('.cart-items');
+                this.subtotalElement = document.getElementById('subtotal-price');
+                this.shippingElement = document.getElementById('shipping-price');
+                this.discountAmountElement = document.getElementById('discount-amount');
+                this.totalPriceElement = document.getElementById('total-price');
+                this.buyNowBtn = document.getElementById('buy-now-btn');
+    
+                this.SHIPPING_COST = 100; // Updated Shipping Cost to Rs. 100
+                this.WISHLIST_KEY = 'wishlist';
+                this.CART_KEY = 'cart';
+            }
+    
+            displayCartItems() {
+                const cart = JSON.parse(localStorage.getItem(this.CART_KEY)) || [];
+                this.cartItemsContainer.innerHTML = '';
+                let subtotal = 0;
+    
+                if (cart.length === 0) {
+                    this.showEmptyCart();
+                    return;
+                }
+    
+                this.buyNowBtn.style.display = 'inline-block';
+    
+                cart.forEach((item, index) => {
+                    const { name, price, color, size, quantity, image } = item;
+                    const itemTotal = price * quantity;
+                    subtotal += itemTotal;
+    
+                    this.cartItemsContainer.innerHTML += this.createCartItemHTML(item, index, itemTotal);
+                });
+    
+                this.updateOrderSummary(subtotal);
+                this.addEventListeners();
+            }
+    
+            updateOrderSummary(subtotal) {
+    const discountText = this.discountAmountElement?.textContent.trim() || "0";
+    const discountAmount = parseFloat(discountText) || 0; 
+
+    const gstAmount = subtotal * 0.18; // 18% GST Calculation
+    const shippingCost = subtotal > 1000 ? 0 : this.SHIPPING_COST; // Free shipping above 1000
+    const total = subtotal + gstAmount + shippingCost - discountAmount;
+
+    console.log("Subtotal:", subtotal);
+    console.log("Shipping Cost:", shippingCost);
+    console.log("GST Amount:", gstAmount);
+    console.log("Discount Amount:", discountAmount);
+    console.log("Total Price:", total);
+
+    this.subtotalElement.textContent = subtotal.toFixed(2);
+    document.getElementById('gst-amount').textContent = gstAmount.toFixed(2);
+    
+    // Only update shipping if the element exists
+    if (this.shippingElement) {
+        this.shippingElement.textContent = shippingCost.toFixed(2);
+    }
+
+    this.totalPriceElement.textContent = total.toFixed(2);
+}
+
+            showEmptyCart() {
+                this.cartItemsContainer.innerHTML = `
+                    <div class="col-12 empty-cart-section">
+                        <lottie-player 
+                            src="https://lottie.host/3a3a83ff-7a22-4e9d-9143-3059f4d37c96/E1qU3iRfxi.json" 
+                            background="transparent" 
+                            speed="1" 
+                            style="width: 300px; height: 300px;" 
+                            loop 
+                            autoplay>
+                        </lottie-player>
+                        <h3 class="mt-3">Your Cart is Empty</h3>
+                        <p class="text-muted">Looks like you haven't added any items to your cart yet.</p>
+                        <a href="./products.html" class="btn btn-primary mt-3">
+                            Start Shopping
+                        </a>
+                    </div>
+                `;
+                this.updateOrderSummary(0);
+                this.buyNowBtn.style.display = 'none';
+            }
+    
+            createCartItemHTML(item, index, itemTotal) {
+                const { name, price, color, size, quantity, image } = item;
+                return `
+                    <div class="col-12 cart-item d-flex align-items-center p-3 rounded shadow-sm position-relative fade-in">
+                        <img src="${image}" alt="${name}" class="img-fluid rounded" style="width: 120px; height: 120px; object-fit: cover;">
+                        <div class="ms-3 flex-grow-1">
+                            <h5 class="mb-2">${name}</h5>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="product-details">
+                                    <p class="mb-1 text-muted">Color: ${color} | Size: ${size}</p>
+                                    <p class="mb-1">Price: Rs.${price}</p>
+                                </div>
+                                
+                                <div class="d-flex flex-column align-items-end">
+                                    <div class="cart-item-actions d-flex flex-row">
+                                        <button class="btn btn-sm wishlist-btn add-to-wishlist mb-2" 
+                                                data-index="${index}" 
+                                                title="Add to Wishlist">
+                                            <i class="fas fa-heart"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger remove-item mb-2" 
+                                                data-index="${index}" 
+                                                title="Remove Item">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                    <div class="quantity-control d-flex align-items-center mb-2">
+                                        <button class="btn btn-sm btn-outline-secondary quantity-decrease" 
+                                                data-index="${index}">-</button>
+                                        <span class="mx-2 quantity">${quantity}</span>
+                                        <button class="btn btn-sm btn-outline-secondary quantity-increase" 
+                                                data-index="${index}">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="mt-2 text-end fw-bold">Item Total: Rs.${itemTotal.toFixed(2)}</p>
+                        </div>
+                    </div>
+                `;
+            }
+    
+            updateQuantity(index, change) {
+                let cart = JSON.parse(localStorage.getItem(this.CART_KEY)) || [];
+    
+                if (cart[index]) {
+                    cart[index].quantity = Math.max(1, cart[index].quantity + change);
+    
+                    if (cart[index].quantity === 0) {
+                        cart.splice(index, 1);
+                    }
+    
+                    localStorage.setItem(this.CART_KEY, JSON.stringify(cart));
+                    this.displayCartItems();
+                    this.updateCartCounter();
+                }
+            }
+    
+            addToWishlist(index) {
+                const cart = JSON.parse(localStorage.getItem(this.CART_KEY)) || [];
+                const wishlist = JSON.parse(localStorage.getItem(this.WISHLIST_KEY)) || [];
+    
+                if (cart[index]) {
+                    const isAlreadyInWishlist = wishlist.some(item => item.id === cart[index].id);
+    
+                    if (!isAlreadyInWishlist) {
+                        wishlist.push(cart[index]);
+                        localStorage.setItem(this.WISHLIST_KEY, JSON.stringify(wishlist));
+                        this.showNotification('Item added to wishlist!', 'success');
+                    } else {
+                        this.showNotification('Item is already in your wishlist!', 'warning');
+                    }
+                }
+            }
+    
+            addEventListeners() {
+                document.querySelectorAll('.quantity-increase').forEach(btn => {
+                    btn.addEventListener('click', e => {
+                        const index = e.target.getAttribute('data-index');
+                        this.updateQuantity(parseInt(index), 1);
+                    });
+                });
+    
+                document.querySelectorAll('.quantity-decrease').forEach(btn => {
+                    btn.addEventListener('click', e => {
+                        const index = e.target.getAttribute('data-index');
+                        this.updateQuantity(parseInt(index), -1);
+                    });
+                });
+    
+                document.querySelectorAll('.remove-item').forEach(btn => {
+                    btn.addEventListener('click', e => {
+                        const index = e.target.closest('.remove-item').getAttribute('data-index');
+                        let cart = JSON.parse(localStorage.getItem(this.CART_KEY)) || [];
+                        cart.splice(index, 1);
+                        localStorage.setItem(this.CART_KEY, JSON.stringify(cart));
+                        this.displayCartItems();
+                        this.updateCartCounter();
+                        this.showNotification('Item removed from cart', 'danger');
+                    });
+                });
+    
+                document.querySelectorAll('.add-to-wishlist').forEach(btn => {
+                    btn.addEventListener('click', e => {
+                        const index = e.target.closest('.add-to-wishlist').getAttribute('data-index');
+                        this.addToWishlist(parseInt(index));
+                    });
+                });
+            }
+    
+            initializeCart() {
+                this.displayCartItems();
+                this.updateCartCounter();
+    
+                document.getElementById('apply-discount-btn').addEventListener('click', () => this.applyDiscount());
+    
+                const script = document.createElement('script');
+                script.src = 'https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js';
+                document.head.appendChild(script);
+            }
+        }
+    
+        document.addEventListener('DOMContentLoaded', () => {
+            const cartManager = new CartManager();
+            cartManager.initializeCart();
+        });
+
+        
+    </script>
+    
+
+    <!-- WhatsApp Floating Button -->
+    <a href="https://wa.me/919876543210" class="whatsapp-float" target="_blank">
+        <i class="fab fa-whatsapp"></i>
+    </a>
 </body>
 </html>

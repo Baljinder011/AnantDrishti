@@ -1,67 +1,209 @@
-/* cart.css */
+:root {
+  --primary-color: rgba(175, 82, 222, 1);
+  --secondary-color: #2ecc71;
+  --danger-color: #e74c3c;
+  --background-color: #f4f6f9;
+  --text-color: #2c3e50;
+  --card-bg: #ffffff;
+  --border-radius: 12px;
+  --box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
+
+* {
+  transition: all 0.3s ease;
+}
 
 body {
-  font-family: Arial, sans-serif;
-  background-color: #ffffff;
-  color: #333;
+  background-color: var(--background-color);
+  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--text-color);
+  line-height: 1.6;
 }
 
-body button{
-  background-color: rgba(175, 82, 222, 1);
-  padding: 8px;
-  border-radius: 5px;
+.cart-container {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+}
+
+.cart-wrapper {
+  background-color: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  overflow: hidden;
+}
+
+.cart-header {
+  background-color: var(--primary-color);
   color: white;
-  border: none;
-  transition: 0.5s;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-body a{
-  text-decoration: none;
-  color:white
+.cart-header h2 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-body button:hover{
-  background-color: rgb(100, 32, 134);
-
-  transform: translateY(14);
+.cart-items {
+  max-height: 600px;
+  overflow-y: auto;
 }
 
-.container-1 {
-  max-width: 900px;
-  margin: 0 auto;
+.cart-item {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+  position: relative;
+  padding: 1rem;
 }
 
+.cart-item:last-child {
+  border-bottom: none;
+}
 
-.cart-item img {
+.cart-item:hover {
+  background-color: #f1f3f5;
+  transform: translateX(10px);
+}
+
+.cart-item-image {
   width: 100px;
   height: 100px;
   object-fit: cover;
   border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
+.quantity-control {
+  display: flex;
+  align-items: center;
+  background-color: #f1f3f5;
+  border-radius: 20px;
+  overflow: hidden;
+}
 
-.cart-btn button{
-  background-color: rgba(175, 82, 222, 1);
-  padding: 8px;
-  border-radius: 5px;
-  color: white;
+.quantity-control button {
+  background: none;
   border: none;
-  transition: 0.5s;
+  padding: 5px 10px;
+  cursor: pointer;
 }
 
-
-.cart-btn button:hover{
-  background-color: rgb(99, 24, 137);
-  transform: translate(10);
+.quantity-control button:hover {
+  background-color: rgba(0,0,0,0.05);
 }
 
-.cart-btn a{
-  color:white
+.order-summary {
+  background-color: #f8f9fa;
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  position: sticky;
+  top: 20px;
 }
 
+.order-summary .summary-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  padding: 5px 0;
+  border-bottom: 1px solid #e9ecef;
+}
 
+.order-summary .summary-item:last-child {
+  border-bottom: none;
+  font-weight: bold;
+}
 
+.discount-section {
+  background-color: #e9ecef;
+  border-radius: 10px;
+  padding: 15px;
+  margin-top: 20px;
+}
 
-.buy-bttn{
-padding-bottom: 50px;
+.cart-actions .btn {
+  border-radius: 25px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.empty-cart-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  text-align: center;
+}
+
+.notification {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+@media (max-width: 768px) {
+  .cart-container {
+      padding: 0.5rem;
+  }
+
+  .cart-item {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start !important;
+      text-align: start;
+  }
+
+  .cart-item-image {
+      width: 100%;
+      max-width: 200px;
+      margin-bottom: 15px;
+      align-self: flex-start;
+  }
+
+  /* Ensure all text elements align left */
+  .cart-item .product-details,
+  .cart-item .d-flex.justify-content-between,
+  .cart-item .mt-2 {
+      text-align: start;
+      width: 100%;
+  }
+
+  /* Center align the quantity control */
+  .cart-item .d-flex.flex-column.align-items-end {
+      align-items: flex-start !important;
+      width: 100%;
+      margin-top: 10px;
+  }
+
+  /* Adjust text layout for better mobile view */
+  .cart-item h5, 
+  .cart-item p {
+      margin-left: 0;
+      text-align: start;
+  }
+
+  /* Ensure full-width layout for actions */
+  .cart-item .cart-item-actions {
+      width: 100%;
+      justify-content: flex-start;
+      gap: 10px;
+  }
+
+  /* Adjust quantity control to full width */
+  .cart-item .quantity-control {
+      width: 100%;
+      justify-content: flex-start;
+  }
 }

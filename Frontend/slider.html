@@ -24,25 +24,27 @@
 
         .swiper {
             width: 100%;
+            overflow: hidden;
             padding-bottom: 80px;
-            overflow: visible;
+
         }
 
         .swiper-slide {
-            text-align: start;
-            background: #fff;
-            display: flex;
-            flex-direction: column;
-            align-items: start;
-            justify-content: flex-start;
-            padding: 0;
-            border-radius: 12px;
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            overflow: hidden;
-            width: 100%;
-            max-width: 360px;
-        }
+    text-align: start;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    justify-content: flex-start;
+    padding: 0;
+    border-radius: 12px;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    overflow: hidden;
+    width: 100%;
+    max-width: 360px;
+}
+
 
         .swiper-slide:hover {
             transform: translateY(-5px);
@@ -107,51 +109,67 @@
         }
 
         /* Navigation Buttons */
-        .swiper-button-next,
-        .swiper-button-prev {
-            position: static;
-            color: white;
-            background-color: rgba(166, 76, 205, 0.8);
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: 0.3s;
-            margin: 0;
-        }
+       /* Navigation Buttons */
+.swiper-button-next,
+.swiper-button-prev {
+    position: static;
+    color: white;
+    background-color: rgba(166, 76, 205, 0.8);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.3s;
+    margin: 0;
+}
 
-        .swiper-button-next:after,
-        .swiper-button-prev:after {
-            font-size: 18px;
-            font-weight: bold;
-        }
+.swiper-button-next:after,
+.swiper-button-prev:after {
+    font-size: 18px;
+    font-weight: bold;
+}
 
-        .swiper-button-next:hover,
-        .swiper-button-prev:hover {
-            background-color: rgba(142, 53, 184, 1);
-            transform: scale(1.1);
-        }
+.swiper-button-next:hover,
+.swiper-button-prev:hover {
+    background-color: rgba(142, 53, 184, 1);
+    transform: scale(1.1);
+}
 
-        /* Pagination */
-        .swiper-pagination {
-            position: static;
-            width: auto;
-        }
+/* Pagination */
+.swiper-pagination {
+    position: static;
+    width: auto;
+}
 
-        .swiper-pagination-bullet {
-            width: 10px;
-            height: 10px;
-            background-color: #ccc;
-            opacity: 1;
-            margin: 0 5px;
-        }
+.swiper-pagination-bullet {
+    width: 10px;
+    height: 10px;
+    background-color: #ccc;
+    opacity: 1;
+    margin: 0 5px;
+}
 
+.swiper-pagination-bullet-active {
+    background-color: #a64ccd;
+    transform: scale(1.2);
+}
         .swiper-pagination-bullet-active {
             background-color: #a64ccd;
             transform: scale(1.2);
         }
+        @media (max-width: 768px) {
+    .swiper-slide {
+        max-width: 90%; /* Ensures slides fit better on small screens */
+    }
+}
+
+@media (max-width: 480px) {
+    .swiper-slide {
+        max-width: 100%; /* Full width for very small screens */
+    }
+}
     </style>
 </head>
 
@@ -227,51 +245,38 @@
     <!-- Swiper JS -->
     <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
     <script>
-        var swiper = new Swiper(".mySwiper", {
-            slidesPerView: 1,
-            spaceBetween: 30,
-            loop: true,
-            loopAdditionalSlides: 3,
-            speed: 800,
-            grabCursor: true,
-            effect: "slide",
-            centeredSlides: false,
-            autoplay: {
-                delay: 3000,
-                disableOnInteraction: false,
-                pauseOnMouseEnter: true,
-            },
-            pagination: {
-                el: ".swiper-pagination",
-                clickable: true,
-                dynamicBullets: true,
-            },
-            navigation: {
-                nextEl: ".swiper-button-next",
-                prevEl: ".swiper-button-prev",
-            },
-            breakpoints: {
-                540: {
-                    slidesPerView: 2,
-                    spaceBetween: 20
-                },
-                768: {
-                    slidesPerView: 3,
-                    spaceBetween: 25
-                },
-                1024: {
-                    slidesPerView: 4,
-                    spaceBetween: 30
-                }
-            },
-            on: {
-                init: function () {
-                    setTimeout(() => {
-                        this.update();
-                    }, 100);
-                }
-            }
-        });
+       var swiper = new Swiper(".mySwiper", {
+    slidesPerView: 1, // Default for small screens
+    spaceBetween: 10,
+    loop: true,
+    speed: 800,
+    grabCursor: true,
+    autoplay: {
+        delay: 3000,
+        disableOnInteraction: false,
+        pauseOnMouseEnter: true,
+    },
+    pagination: {
+        el: ".swiper-pagination",
+        clickable: true,
+        dynamicBullets: true,
+    },
+    navigation: {
+        nextEl: ".swiper-button-next",
+        prevEl: ".swiper-button-prev",
+    },
+    breakpoints: {
+        360: { slidesPerView: 1, spaceBetween: 10 },  // Very small screens
+        480: { slidesPerView: 1, spaceBetween: 15 },  // Small phones
+        640: { slidesPerView: 2, spaceBetween: 20 },  // Phones
+        768: { slidesPerView: 2, spaceBetween: 25 },  // Tablets
+        1024: { slidesPerView: 3, spaceBetween: 30 }, // Small laptops
+        1280: { slidesPerView: 4, spaceBetween: 35 }, // Desktops
+        1440: { slidesPerView: 5, spaceBetween: 40 }  // Large screens
+    }
+});
+
+
     </script>
 </body>
 

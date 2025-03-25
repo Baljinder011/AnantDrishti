@@ -142,113 +142,169 @@ const SECRET_KEY = process.env.CASHFREE_SECRET_KEY || "YOUR_SECRET_KEY";
 //   return newOrderId;
 // };
 // Create Payment Link & Save Order with linkId
-app.post("/create-payment-link", async (req, res) => {
-  try {
-    let {
-      userId,
-      customer_name,
-      customer_email,
-      customer_phone,
-      amount,
-      shippingMethod,
-      deliveryAddress // Added delivery address
-    } = req.body;
 
-    if (!userId || !customer_name || !customer_email || !customer_phone || !amount || !deliveryAddress) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
 
-    customer_phone = String(customer_phone);
 
-    // Fetch the user's last order to determine the next orderId
-    const user = await User.findById(userId);
-    let newOrderId = "ORD001";
 
-    if (user && user.orders.length > 0) {
-      // Extract the last orderId and increment it
-      const lastOrder = user.orders[user.orders.length - 1];
-      const lastOrderId = lastOrder.orderId;
 
-      const match = lastOrderId.match(/ORD(\d+)/);
-      if (match) {
-        const orderNumber = parseInt(match[1], 10) + 1;
-        newOrderId = `ORD${String(orderNumber).padStart(3, "0")}`;
-      }
-    }
+//User Schema
 
-    const linkId = `CF_${crypto.randomBytes(8).toString("hex")}`;
-    const payload = {
-      order_id: newOrderId,
-      link_id: linkId,
-      customer_details: { customer_name, customer_email, customer_phone },
-      link_amount: amount,
-      link_currency: "INR",
-      link_purpose: "E-commerce Purchase",
-      link_notify: { send_email: true, send_sms: true },
-      link_auto_reminders: true,
-      link_expiry_time: new Date(Date.now() + 3600 * 1000).toISOString(),
-      link_meta: {
-        // return_url: `http://127.0.0.1:5501/Frontend/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${userId}`
-        return_url: `https://indraq.tech/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${userId}`
+const userSchema = new mongoose.Schema({
+  profileImage: { type: String, default: "" },
+  firstName: { type: String, required: true },
+  lastName: { type: String, required: true },
+  email: { type: String, required: true, unique: true, index: true },
+  phone: { type: String, required: true },
+  password: { type: String, required: true },
+  dob: { type: String, default: "" },
+  createdAt: { type: Date, default: Date.now },
 
-      },
-    };
+  address: [
+    {
+      fullName: { type: String, required: true },
+      phone: { type: String, required: true },
+      email: { type: String, required: true },
+      street: { type: String, required: true },
+      city: { type: String, required: true },
+      postalCode: { type: String, required: true },
+      state: { type: String, required: true },
+      country: { type: String, required: true },
+    },
+  ],
 
-    const response = await axios.post("https://sandbox.cashfree.com/pg/links", payload, {
-      headers: {
-        "x-api-version": "2022-09-01",
-        "x-client-id": APP_ID,
-        "x-client-secret": SECRET_KEY,
-      },
-    });
-
-    // Save Order to MongoDB with delivery address
-    const newOrder = {
-      orderId: newOrderId,
-      linkId,
-      orderDetails: [],
-      price: amount,
-      shippingMethod: shippingMethod || "standard",
+  orders: [
+    {
+      orderId: { type: String, required: true, unique: true }, // Custom Order ID
+      linkId: String,
+      orderDetails: Array,
+      price: { type: Number, required: true, min: 0 },
+      shippingMethod: { type: String, default: "standard" },
       deliveryAddress: {
-        fullName: deliveryAddress.fullName,
-        phone: deliveryAddress.phone,
-        email: deliveryAddress.email,
-        street: deliveryAddress.street,
-        city: deliveryAddress.city,
-        postalCode: deliveryAddress.postalCode,
-        state: deliveryAddress.state,
-        country: deliveryAddress.country,
+        fullName: String,
+        phone: String,
+        email: String,
+        street: String,
+        city: String,
+        postalCode: String,
+        state: String,
+        country: String
       },
-      paymentDetails: { status: "pending" },
-      status: "pending",
-      createdAt: new Date(),
-    };
-
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      { $push: { orders: newOrder } },
-      { new: true }
-    );
-
-    if (!updatedUser) {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    res.json({ success: true, userId, orderId: newOrderId, linkId, linkUrl: response.data.link_url });
-
-  } catch (error) {
-    console.error("Cashfree Error:", error.response?.data || error.message);
-    res.status(500).json({ error: "Failed to create payment link" });
-  }
+      paymentDetails: {
+        method: String,
+        transactionId: String,
+        status: { type: String, default: "pending" },
+        paid: { type: Boolean, default: false },
+        timestamp: Date,
+      },
+      status: { type: String, default: "pending" },
+      createdAt: { type: Date, default: Date.now },
+    },
+  ],
 });
 
+const User = mongoose.model("users", userSchema);
 
 
 
+// app.post("/create-payment-link", async (req, res) => {
+//   try {
+//     let {
+//       userId,
+//       customer_name,
+//       customer_email,
+//       customer_phone,
+//       amount,
+//       shippingMethod,
+//       deliveryAddress // Added delivery address
+//     } = req.body;
 
+//     if (!userId || !customer_name || !customer_email || !customer_phone || !amount || !deliveryAddress) {
+//       return res.status(400).json({ error: "Missing required fields" });
+//     }
 
+//     customer_phone = String(customer_phone);
 
+//     // Fetch the user's last order to determine the next orderId
+//     const user = await User.findById(userId);
+//     let newOrderId = "ORD001";
 
+//     if (user && user.orders.length > 0) {
+//       // Extract the last orderId and increment it
+//       const lastOrder = user.orders[user.orders.length - 1];
+//       const lastOrderId = lastOrder.orderId;
+
+//       const match = lastOrderId.match(/ORD(\d+)/);
+//       if (match) {
+//         const orderNumber = parseInt(match[1], 10) + 1;
+//         newOrderId = `ORD${String(orderNumber).padStart(3, "0")}`;
+//       }
+//     }
+
+//     const linkId = `CF_${crypto.randomBytes(8).toString("hex")}`;
+//     const payload = {
+//       order_id: newOrderId,
+//       link_id: linkId,
+//       customer_details: { customer_name, customer_email, customer_phone },
+//       link_amount: amount,
+//       link_currency: "INR",
+//       link_purpose: "E-commerce Purchase",
+//       link_notify: { send_email: true, send_sms: true },
+//       link_auto_reminders: true,
+//       link_expiry_time: new Date(Date.now() + 3600 * 1000).toISOString(),
+//       link_meta: {
+//         return_url: `http://127.0.0.1:5501/Frontend/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${userId}`
+//         // return_url: `https://indraq.tech/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${userId}`
+
+//       },
+//     };
+
+//     const response = await axios.post("https://sandbox.cashfree.com/pg/links", payload, {
+//       headers: {
+//         "x-api-version": "2022-09-01",
+//         "x-client-id": APP_ID,
+//         "x-client-secret": SECRET_KEY,
+//       },
+//     });
+
+//     // Save Order to MongoDB with delivery address
+//     const newOrder = {
+//       orderId: newOrderId,
+//       linkId,
+//       orderDetails: [],
+//       price: amount,
+//       shippingMethod: shippingMethod || "standard",
+//       deliveryAddress: {
+//         fullName: deliveryAddress.fullName,
+//         phone: deliveryAddress.phone,
+//         email: deliveryAddress.email,
+//         street: deliveryAddress.street,
+//         city: deliveryAddress.city,
+//         postalCode: deliveryAddress.postalCode,
+//         state: deliveryAddress.state,
+//         country: deliveryAddress.country,
+//       },
+//       paymentDetails: { status: "pending" },
+//       status: "pending",
+//       createdAt: new Date(),
+//     };
+
+//     const updatedUser = await User.findByIdAndUpdate(
+//       userId,
+//       { $push: { orders: newOrder } },
+//       { new: true }
+//     );
+
+//     if (!updatedUser) {
+//       return res.status(404).json({ error: "User not found" });
+//     }
+
+//     res.json({ success: true, userId, orderId: newOrderId, linkId, linkUrl: response.data.link_url });
+
+//   } catch (error) {
+//     console.error("Cashfree Error:", error.response?.data || error.message);
+//     res.status(500).json({ error: "Failed to create payment link" });
+//   }
+// });
 
 
 
@@ -398,60 +454,7 @@ app.get("/users/:id/orders", async (req, res) => {
 
 
 
-const userSchema = new mongoose.Schema({
-  profileImage: { type: String, default: "" },
-  firstName: { type: String, required: true },
-  lastName: { type: String, required: true },
-  email: { type: String, required: true, unique: true, index: true },
-  phone: { type: String, required: true },
-  password: { type: String, required: true },
-  dob: { type: String, default: "" },
-  createdAt: { type: Date, default: Date.now },
 
-  address: [
-    {
-      fullName: { type: String, required: true },
-      phone: { type: String, required: true },
-      email: { type: String, required: true },
-      street: { type: String, required: true },
-      city: { type: String, required: true },
-      postalCode: { type: String, required: true },
-      state: { type: String, required: true },
-      country: { type: String, required: true },
-    },
-  ],
-
-  orders: [
-    {
-      orderId: { type: String, required: true, unique: true }, // Custom Order ID
-      linkId: String,
-      orderDetails: Array,
-      price: { type: Number, required: true, min: 0 },
-      shippingMethod: { type: String, default: "standard" },
-      deliveryAddress: {
-        fullName: String,
-        phone: String,
-        email: String,
-        street: String,
-        city: String,
-        postalCode: String,
-        state: String,
-        country: String
-      },
-      paymentDetails: {
-        method: String,
-        transactionId: String,
-        status: { type: String, default: "pending" },
-        paid: { type: Boolean, default: false },
-        timestamp: Date,
-      },
-      status: { type: String, default: "pending" },
-      createdAt: { type: Date, default: Date.now },
-    },
-  ],
-});
-
-const User = mongoose.model("users", userSchema);
 
 
 // User Routes
@@ -1201,34 +1204,168 @@ app.put('/products/:id/status', async (req, res) => {
 
 // Order Schema (similar to previous example)
 const orderSchema = new mongoose.Schema({
-
-      orderId: { type: String, required: true, unique: true }, // Custom Order ID
-      linkId: String,
-      orderDetails: Array,
-      price: { type: Number, required: true, min: 0 },
-      shippingMethod: { type: String, default: "standard" },
-      deliveryAddress: {
-        fullName: String,
-        phone: String,
-        email: String,
-        street: String,
-        city: String,
-        postalCode: String,
-        state: String,
-        country: String
-      },
-      paymentDetails: {
-        method: String,
-        transactionId: String,
-        status: { type: String, default: "pending" },
-        paid: { type: Boolean, default: false },
-        timestamp: Date,
-      },
-      status: { type: String, default: "pending" },
-      createdAt: { type: Date, default: Date.now },
-    
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "users", required: true },
+  orderId: { type: String, required: true, unique: true },
+  linkId: String,
+  orderDetails: Array,
+  price: { type: Number, required: true, min: 0 },
+  shippingMethod: { type: String, default: "standard" },
+  deliveryAddress: {
+    fullName: String,
+    phone: String,
+    email: String,
+    street: String,
+    city: String,
+    postalCode: String,
+    state: String,
+    country: String
+  },
+  paymentDetails: {
+    method: String,
+    transactionId: String,
+    status: { type: String, default: "pending" },
+    paid: { type: Boolean, default: false },
+    timestamp: Date,
+  },
+  status: { type: String, default: "pending" },
+  createdAt: { type: Date, default: Date.now }
 });
-const Order = mongoose.model('Order', orderSchema);
+
+const Order = mongoose.model("orders", orderSchema);
+
+app.post("/create-payment-link", async (req, res) => {
+  try {
+    let {
+      userId,
+      customer_name,
+      customer_email,
+      customer_phone,
+      amount,
+      shippingMethod,
+      deliveryAddress
+    } = req.body;
+
+    if (!userId || !customer_name || !customer_email || !customer_phone || !amount || !deliveryAddress) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    customer_phone = String(customer_phone);
+
+    // Fetch last order to determine new orderId
+    const lastOrder = await Order.findOne().sort({ createdAt: -1 }); 
+    let newOrderId = "ORD001";
+
+    if (lastOrder) {
+      const match = lastOrder.orderId.match(/ORD(\d+)/);
+      if (match) {
+        const orderNumber = parseInt(match[1], 10) + 1;
+        newOrderId = `ORD${String(orderNumber).padStart(3, "0")}`;
+      }
+    }
+
+    const linkId = `CF_${crypto.randomBytes(8).toString("hex")}`;
+    const payload = {
+      order_id: newOrderId,
+      link_id: linkId,
+      customer_details: { customer_name, customer_email, customer_phone },
+      link_amount: amount,
+      link_currency: "INR",
+      link_purpose: "E-commerce Purchase",
+      link_notify: { send_email: true, send_sms: true },
+      link_auto_reminders: true,
+      link_expiry_time: new Date(Date.now() + 3600 * 1000).toISOString(),
+      link_meta: {
+        // return_url: `http://127.0.0.1:5501/Frontend/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${userId}`
+        return_url: `https://indraq.tech/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${userId}`
+
+      },
+    };
+
+    const response = await axios.post("https://sandbox.cashfree.com/pg/links", payload, {
+      headers: {
+        "x-api-version": "2022-09-01",
+        "x-client-id": APP_ID,
+        "x-client-secret": SECRET_KEY,
+      },
+    });
+
+    // Save order in users collection
+    const newOrder = {
+      orderId: newOrderId,
+      linkId,
+      orderDetails: [],
+      price: amount,
+      shippingMethod: shippingMethod || "standard",
+      deliveryAddress,
+      paymentDetails: { status: "pending" },
+      status: "pending",
+      createdAt: new Date(),
+    };
+
+    await User.findByIdAndUpdate(userId, { $push: { orders: newOrder } });
+
+    // Save order in orders collection
+    const order = new Order({ userId, ...newOrder });
+    await order.save();
+
+    res.json({ success: true, userId, orderId: newOrderId, linkId, linkUrl: response.data.link_url });
+
+  } catch (error) {
+    console.error("Cashfree Error:", error.response?.data || error.message);
+    res.status(500).json({ error: "Failed to create payment link" });
+  }
+});
+
+
+
+app.post("/users/:id/orders", async (req, res) => {
+  try {
+    const { id } = req.params; // This is the userId
+    const newOrder = req.body;
+
+    if (newOrder._id) delete newOrder._id; // Remove MongoDB _id if present
+
+    console.log("Received User ID:", id);
+    console.log("Processed Order:", JSON.stringify(newOrder, null, 2));
+
+    // Ensure delivery address is present
+    if (!newOrder.deliveryAddress) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Missing delivery address information" 
+      });
+    }
+
+    // ✅ Update User's orders array
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      { $push: { orders: newOrder } },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // ✅ Save Order in Orders Collection
+    const order = new Order({ userId: id, ...newOrder });
+    await order.save();
+
+    console.log("Order saved successfully for user:", id);
+    res.status(200).json({ success: true, message: "Order saved", order: newOrder });
+
+  } catch (error) {
+    console.error("Error saving order:", error);
+    res.status(500).json({ success: false, message: "Error saving order", error: error.message });
+  }
+});
+
+
+
+
+
+
+
 // GET Orders with Filtering
 app.get('/orders', async (req, res) => {
   try {
@@ -1252,48 +1389,6 @@ app.get('/orders', async (req, res) => {
   }
 });
 
-
-// Create Order
-app.post('/orders', upload.single('image'), async (req, res) => {
-  try {
-    console.log("Received file:", req.file); // Debugging
-    console.log("Received body:", req.body); // Debugging
-    if (!req.file) {
-      return res.status(400).json({ error: "Order image upload failed" });
-    }
-    const lastOrder = await Order.findOne().sort({ createdAt: -1 });
-    let lastCount = 0;
-    if (lastOrder && lastOrder.orderId) {
-      const countStr = lastOrder.orderId.substring(6, 9);
-      lastCount = parseInt(countStr, 10) || 0;
-    }
-    const newCount = lastCount + 1;
-    const newCountStr = newCount.toString().padStart(3, '0');
-    const now = new Date();
-    const dateTimeStr = `${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}${now.getSeconds().toString().padStart(2, '0')}`;
-    const newOrderId = `Anant${newCountStr}${dateTimeStr}`;
-    const imagePath = `/uploads/Products/${req.file.originalname}`;
-    const { userName, address, productName, price, size, quantity } = req.body;
-    if (!userName || !address || !productName || !price || !size || !quantity) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
-    const newOrder = new Order({
-      orderId: newOrderId,
-      userName,
-      address,
-      productName,
-      productImage: imagePath,
-      price,
-      size,
-      quantity
-    });
-    await newOrder.save();
-    res.status(201).json(newOrder);
-  } catch (err) {
-    console.error("Error creating order:", err);
-    res.status(500).json({ message: err.message });
-  }
-});
 
 
 // Update Order Status
