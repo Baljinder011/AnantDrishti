@@ -3,70 +3,314 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payment Successful</title>
-    <link rel="stylesheet" href="styles.css"> <!-- Add your CSS file -->
+    <title>Order Success</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 50px;
-            background-color: #f8f9fa;
+            background-color: #f4f6f9;
+            font-family: 'Arial', sans-serif;
         }
+
         .success-container {
-            background: white;
+            max-width: 800px;
+            margin: 50px auto;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            display: inline-block;
-            max-width: 500px;
-            margin: auto;
+            animation: fadeIn 1s ease-out;
         }
-        .success-image {
-            width: 120px;
-            height: auto;
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-20px); }
+            60% { transform: translateY(-10px); }
+        }
+
+        .success-icon {
+            color: #28a745;
+            font-size: 80px;
+            text-align: center;
             margin-bottom: 20px;
+            animation: bounce 1.5s ease;
         }
-        .btn {
-            display: inline-block;
-            padding: 10px 20px;
-            background: #28a745;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
+
+        .order-details {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
             margin-top: 20px;
         }
-        .btn:hover {
-            background: #218838;
+
+        .order-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .order-item img {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            margin-right: 20px;
+            border-radius: 10px;
+        }
+
+        .tracking-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            position: relative;
+        }
+
+        .tracking-step {
+            text-align: center;
+            position: relative;
+            flex: 1;
+        }
+
+        .tracking-step::before {
+            content: '';
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: #e9ecef;
+            z-index: 1;
+        }
+
+        .tracking-step.active::before {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .tracking-step.active i {
+            color: #28a745;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
-    <script>
-        // Automatically redirect to Orders section after 5 seconds
-        setTimeout(() => {
-            window.location.href = "profile.html"; // Redirect to profile page
-        }, 5000);
-    </script>
 </head>
 <body>
-
-    <div class="success-container">
-        <img src="https://cdn-icons-png.flaticon.com/512/148/148767.png" alt="Success" class="success-image"> 
-        <h2>Payment Successful!</h2>
-        <p>Thank you for your purchase. Your payment has been processed successfully.</p>
-        <p>You will be redirected to your orders in <span id="countdown">5</span> seconds...</p>
-        <a href="profile.html" class="btn">See Orders Now</a>
+    <div id="success-container">
+        <!-- Content will be dynamically inserted here -->
     </div>
 
+    <script src="config.js"></script>
     <script>
-        // Countdown Timer for Redirect
-        let count = 5;
-        const countdownElement = document.getElementById("countdown");
+        document.addEventListener('DOMContentLoaded', function() {
+            const successContainer = document.getElementById('success-container');
+            
+            // Show loading state
+            successContainer.innerHTML = `
+                <div class="loading">
+                    <div class="loader"></div>
+                </div>
+            `;
 
-        const countdownInterval = setInterval(() => {
-            count--;
-            countdownElement.innerText = count;
-            if (count === 0) clearInterval(countdownInterval);
-        }, 1000);
+            // Fetch order details
+            async function fetchOrderDetails() {
+                try {
+                    const _id = localStorage.getItem("_id");
+                    if (!_id) {
+                        throw new Error("User ID not found!");
+                    }
+
+                    const response = await fetch(`${CONFIG.API_URL}/users/${_id}/orders`);
+                    if (!response.ok) {
+                        throw new Error("Failed to fetch orders");
+                    }
+
+                    const data = await response.json();
+                    // Get the most recent order
+                    const latestOrder = data.orders[0];
+                    renderSuccessPage(latestOrder);
+                } catch (error) {
+                    console.error("Error fetching order details:", error);
+                    renderErrorPage(error.message);
+                }
+            }
+
+            function getOrderStatus(status) {
+                const statusMap = {
+                   'Processing': { 
+    icon: 'fa-spinner', 
+    color: 'text-success fs-5' // Green color and increased font size
+},
+
+                    'Shipped': { 
+                        icon: 'fa-truck', 
+                        color: 'text-info' 
+                    },
+                    'Delivered': { 
+                        icon: 'fa-check-circle', 
+                        color: 'text-success' 
+                    },
+                    'Cancelled': { 
+                        icon: 'fa-times-circle', 
+                        color: 'text-danger' 
+                    }
+                };
+
+                return statusMap[status] || statusMap['Processing'];
+            }
+
+            function renderSuccessPage(orderDetails) {
+                const orderStatus = getOrderStatus(orderDetails.orderaStatus);
+                
+                // Calculate total order value
+                const totalValue = orderDetails.orderDetails.reduce((total, item) => 
+                    total + (item.price * item.quantity), 0);
+
+                // Determine tracking steps
+                const trackingSteps = [
+                    { name: 'Order Placed', active: true },
+                    { 
+                        name: 'Processing', 
+                        active: ['Processing', 'Shipped', 'Delivered'].includes(orderDetails.orderaStatus) 
+                    },
+                    { 
+                        name: 'Shipped', 
+                        active: ['Shipped', 'Delivered'].includes(orderDetails.orderaStatus) 
+                    },
+                    { 
+                        name: 'Delivered', 
+                        active: orderDetails.orderaStatus === 'Delivered' 
+                    }
+                ];
+
+                successContainer.innerHTML = `
+                    <div class="success-container">
+                        <div class="success-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        
+                        <div class="text-center">
+                            <h1 class="mb-3">Order Confirmed!</h1>
+                            <p class="lead text-muted">
+                                Thank you for your purchase. Your order has been successfully placed.
+                            </p>
+                        </div>
+
+                        <div class="tracking-steps mt-4">
+                            ${trackingSteps.map((step, index) => `
+                                <div class="tracking-step ${step.active ? 'active' : ''}">
+                                    <i class="fas ${step.active ? 'fa-check-circle text-success' : 'fa-circle text-muted'}"></i>
+                                    <div class="mt-2">${step.name}</div>
+                                </div>
+                                ${index < trackingSteps.length - 1 ? '<div class="tracking-line"></div>' : ''}
+                            `).join('')}
+                        </div>
+
+                        <div class="order-details mt-4">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h3>Order Information</h3><br>
+                                    <p><strong>Order ID:</strong> ${orderDetails.orderId}</p>
+                                    <p><strong>Order Date:</strong> ${new Date(orderDetails.date).toLocaleString()}</p>
+                                    <p>
+                                        <strong>Status:</strong> 
+                                        <span class="badge ${orderStatus.color}">
+                                            <i class="fas ${orderStatus.icon} me-1"></i>
+                                            ${orderDetails.status}
+                                        </span>
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h3>Shipping Details</h3><br>
+                                    <p><strong>Name:</strong> ${orderDetails.deliveryAddress.fullName}</p>
+                                    <p><strong>Address:</strong> 
+                                        ${orderDetails.deliveryAddress.street}, 
+                                        ${orderDetails.deliveryAddress.city}, 
+                                        ${orderDetails.deliveryAddress.state} 
+                                        ${orderDetails.deliveryAddress.postalCode}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="mt-4">
+                                <h4>Order Items</h4>
+                                ${orderDetails.orderDetails.map(item => `
+                                    <div class="order-item">
+                                        <img src="${item.image}" alt="${item.name}">
+                                        <div>
+                                            <h5>${item.name}</h5>
+                                            <p class="text-muted">
+                                                ₹${item.price} | Qty: ${item.quantity} | 
+                                                ${item.color}, ${item.size}
+                                            </p>
+                                            <p class="fw-bold">
+                                                Subtotal: ₹${item.price * item.quantity}
+                                            </p>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+
+                            <div class="mt-4 text-end">
+                                <h4>Total Order Value: ₹${totalValue}</h4>
+                            </div>
+                        </div>
+
+                        <div class="text-center mt-4">
+                            <a href="/shop" class="btn btn-success btn-lg">
+                                <i class="fas fa-shopping-cart me-2"></i>
+                                Continue Shopping
+                            </a>
+                        </div>
+                    </div>
+                `;
+            }
+
+            function renderErrorPage(errorMessage) {
+                successContainer.innerHTML = `
+                    <div class="success-container text-center">
+                        <div class="success-icon text-danger">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <h1 class="mb-3">Order Retrieval Failed</h1>
+                        <p class="lead text-muted">${errorMessage}</p>
+                        <a href="/shop" class="btn btn-primary mt-3">
+                            <i class="fas fa-home me-2"></i>
+                            Back to Shop
+                        </a>
+                    </div>
+                `;
+            }
+
+            // Fetch and render order details
+            fetchOrderDetails();
+        });
     </script>
-
 </body>
 </html>
