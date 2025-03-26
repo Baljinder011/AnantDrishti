@@ -11,8 +11,8 @@ const axios = require("axios");
 const fs = require("fs");
 const dotenv = require("dotenv")
 dotenv.config();
-const nodemailer=require("nodemailer")
-const {Server} = require("socket.io")
+const nodemailer = require("nodemailer")
+const { Server } = require("socket.io")
 const http = require("http")
 const https = require("https");
 
@@ -115,51 +115,51 @@ mongoose.connect(uri)
 
 
 
-  // // :white_tick: Initialize WebSocket Server
-  const io = new Server(server, {
-    cors: {
-      origin: "https://testindraq.com",
-      methods: ["GET", "POST"],
-      allowedHeaders: ["Content-Type", "Authorization"],
-      credentials: true,
-    },
-    transports: ["websocket", "polling"],
+// // :white_tick: Initialize WebSocket Server
+const io = new Server(server, {
+  cors: {
+    origin: "https://testindraq.com",
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  },
+  transports: ["websocket", "polling"],
+});
+// :white_tick: Handle WebSocket Connections
+let connectedAdmins = [];
+io.on("connection", (socket) => {
+  console.log(":white_tick: Admin connected for notifications:", socket.id);
+  connectedAdmins.push(socket);
+  socket.on("disconnect", () => {
+    console.log(":x: Admin disconnected:", socket.id);
+    connectedAdmins = connectedAdmins.filter((admin) => admin.id !== socket.id);
   });
-  // :white_tick: Handle WebSocket Connections
-  let connectedAdmins = [];
-  io.on("connection", (socket) => {
-    console.log(":white_tick: Admin connected for notifications:", socket.id);
-    connectedAdmins.push(socket);
-    socket.on("disconnect", () => {
-      console.log(":x: Admin disconnected:", socket.id);
-      connectedAdmins = connectedAdmins.filter((admin) => admin.id !== socket.id);
+});
+// :white_tick: Email Transporter Setup (Fixed)
+const transporter = nodemailer.createTransport({
+  service: "gmail", // :white_tick: Correct service name
+  auth: {
+    user: process.env.EMAIL_USER, // :white_tick: Your email from .env
+    pass: process.env.EMAIL_PASS, // :white_tick: App password (Not normal password)
+  },
+});
+// :white_tick: Function to Send Email (Improved)
+async function sendMail(to, subject, text, html) {
+  try {
+    const info = await transporter.sendMail({
+      from: `"AnantDrishti" <${process.env.EMAIL_USER}>`,
+      to,
+      subject,
+      text,
+      html,
     });
-  });
-  // :white_tick: Email Transporter Setup (Fixed)
-  const transporter = nodemailer.createTransport({
-    service: "gmail", // :white_tick: Correct service name
-    auth: {
-      user: process.env.EMAIL_USER, // :white_tick: Your email from .env
-      pass: process.env.EMAIL_PASS, // :white_tick: App password (Not normal password)
-    },
-  });
-  // :white_tick: Function to Send Email (Improved)
-  async function sendMail(to, subject, text, html) {
-    try {
-      const info = await transporter.sendMail({
-        from: `"AnantDrishti" <${process.env.EMAIL_USER}>`,
-        to,
-        subject,
-        text,
-        html,
-      });
-      console.log(":e-mail: Email sent successfully:", info.messageId);
-      return { success: true, message: "Email sent successfully" };
-    } catch (error) {
-      console.error(":x: Error sending email:", error);
-      return { success: false, message: "Failed to send email", error: error.message };
-    }
+    console.log(":e-mail: Email sent successfully:", info.messageId);
+    return { success: true, message: "Email sent successfully" };
+  } catch (error) {
+    console.error(":x: Error sending email:", error);
+    return { success: false, message: "Failed to send email", error: error.message };
   }
+}
 
 
 
@@ -219,7 +219,7 @@ const userSchema = new mongoose.Schema({
       orderDetails: Array,
       price: { type: Number, required: true, min: 0 },
       shippingMethod: { type: String, default: "standard" },
-      shippingPrice: { type: Number, default: 0 }, 
+      shippingPrice: { type: Number, default: 0 },
       deliveryAddress: {
         fullName: String,
         phone: String,
@@ -237,7 +237,7 @@ const userSchema = new mongoose.Schema({
         paid: { type: Boolean, default: false },
         timestamp: Date,
       },
-      deliveryStatus :{ type: String, default: "processing" },
+      deliveryStatus: { type: String, default: "processing" },
       createdAt: { type: Date, default: Date.now },
     },
   ],
@@ -254,7 +254,7 @@ const orderSchema = new mongoose.Schema({
   orderDetails: Array,
   price: { type: Number, required: true, min: 0 },
   shippingMethod: { type: String, default: "standard" },
-  shippingPrice:{type:Number, default : 0},
+  shippingPrice: { type: Number, default: 0 },
   deliveryAddress: {
     fullName: String,
     phone: String,
@@ -272,7 +272,7 @@ const orderSchema = new mongoose.Schema({
     paid: { type: Boolean, default: false },
     timestamp: Date,
   },
-  deliveryStatus :{ type: String, default: "processing" },
+  deliveryStatus: { type: String, default: "processing" },
   createdAt: { type: Date, default: Date.now },
 });
 
@@ -287,15 +287,16 @@ const Order = mongoose.model("orders", orderSchema);
 app.post("/users/:id/orders", async (req, res) => {
   try {
     const { id } = req.params;
-    let { 
-      customer_name, 
-      customer_email, 
-      customer_phone, 
-      amount, 
-      shippingMethod, 
+    let {
+      customer_name,
+      customer_email,
+      customer_phone,
+      amount,
+      shippingMethod,
       shippingCharge,  // Explicitly receive this
-      deliveryAddress, 
-      orderDetails 
+      deliveryAddress,
+      deliveryStatus,
+      orderDetails
     } = req.body;
 
     // Explicitly define shipping prices
@@ -304,11 +305,11 @@ app.post("/users/:id/orders", async (req, res) => {
       express: 300,
       default: 0  // Added a default price
     };
-    
-    const shippingPrice = shippingMethod && shippingPrices[shippingMethod] 
+
+    const shippingPrice = shippingMethod && shippingPrices[shippingMethod]
       ? shippingPrices[shippingMethod]
       : (shippingCharge || shippingPrices.default);
-    
+
     console.log("Shipping Method:", shippingMethod);
     console.log("Shipping Prices:", shippingPrices);
     console.log("Calculated Shipping Price:", shippingPrice);
@@ -337,7 +338,7 @@ app.post("/users/:id/orders", async (req, res) => {
 
     // Generate payment link ID
     const linkId = `CF_${crypto.randomBytes(8).toString("hex")}`;
-    
+
     // Cashfree payment link payload
     const payload = {
       order_id: newOrderId,
@@ -351,7 +352,7 @@ app.post("/users/:id/orders", async (req, res) => {
       link_expiry_time: new Date(Date.now() + 3600 * 1000).toISOString(),
       link_meta: {
         // return_url: `http://127.0.0.1:5501/Frontend/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${id}`
-         return_url: `https://indraq.tech/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${id}`
+        return_url: `https://indraq.tech/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${id}`
       },
     };
 
@@ -379,7 +380,7 @@ app.post("/users/:id/orders", async (req, res) => {
       shippingPrice: shippingPrice, // EXPLICITLY set shipping price
       deliveryAddress,
       paymentDetails: { status: "pending", transactionId: "", paid: false },
-      status: "pending",
+      deliveryStatus: "processing",
       createdAt: new Date(),
     };
 
@@ -398,27 +399,27 @@ app.post("/users/:id/orders", async (req, res) => {
     }
 
 
-      // :white_tick: Populate User Details for Notification
-      const populatedOrder = await Order.findById(savedOrder._id).populate("userId", "firstName lastName email");
-      // :bell: **Send Real-Time WebSocket Notification**
-      io.emit("newOrder", populatedOrder);
-      console.log(":package: New Order Notification Sent:", populatedOrder);
-      // :white_tick: Send Response
+    // :white_tick: Populate User Details for Notification
+    const populatedOrder = await Order.findById(savedOrder._id).populate("userId", "firstName lastName email");
+    // :bell: **Send Real-Time WebSocket Notification**
+    io.emit("newOrder", populatedOrder);
+    console.log(":package: New Order Notification Sent:", populatedOrder);
+    // :white_tick: Send Response
 
 
-      res.json({
-        success: true,
-        userId: id,
-        orderId: newOrderId,
-        linkId,
-        linkUrl: response.data.link_url,
-        message: "Order created successfully, waiting for payment",
-      });
-    } catch (error) {
-      console.error(":x: Error:", error.response?.data || error.message);
-      res.status(500).json({ error: "Error processing order", details: error.message });
-    }
-  });
+    res.json({
+      success: true,
+      userId: id,
+      orderId: newOrderId,
+      linkId,
+      linkUrl: response.data.link_url,
+      message: "Order created successfully, waiting for payment",
+    });
+  } catch (error) {
+    console.error(":x: Error:", error.response?.data || error.message);
+    res.status(500).json({ error: "Error processing order", details: error.message });
+  }
+});
 
 
 
@@ -615,56 +616,56 @@ app.put("/users/:id", async (req, res) => {
 // // :white_tick: Update Personal Details
 app.put("/:id/personal", async (req, res) => {
   try {
-      const { firstName, lastName, email, phone } = req.body;
-      const updatedUser = await User.findByIdAndUpdate(
-          req.params.id,
-          { firstName, lastName, email, phone },
-          { new: true }
-      );
-      if (!updatedUser) return res.status(404).json({ error: "User not found" });
-      res.json(updatedUser);
+    const { firstName, lastName, email, phone } = req.body;
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      { firstName, lastName, email, phone },
+      { new: true }
+    );
+    if (!updatedUser) return res.status(404).json({ error: "User not found" });
+    res.json(updatedUser);
   } catch (error) {
-      console.error("Update error:", error);
-      res.status(500).json({ error: "Failed to update personal details." });
+    console.error("Update error:", error);
+    res.status(500).json({ error: "Failed to update personal details." });
   }
 });
 // // :white_tick: Update Address
 app.put("/:id/address", async (req, res) => {
   try {
-      const { fullName, phone, email, street, city, postalCode, state, country } = req.body;
-      const user = await User.findById(req.params.id);
-      if (!user) return res.status(404).json({ error: "User not found" });
-      user.address[0] = { fullName, phone, email, street, city, postalCode, state, country };
-      await user.save();
-      res.json(user);
+    const { fullName, phone, email, street, city, postalCode, state, country } = req.body;
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    user.address[0] = { fullName, phone, email, street, city, postalCode, state, country };
+    await user.save();
+    res.json(user);
   } catch (error) {
-      res.status(500).json({ error: "Failed to update address." });
+    res.status(500).json({ error: "Failed to update address." });
   }
 });
 // // :white_tick: Update Login Sessions
 app.put("/:id/loginSessions", async (req, res) => {
   try {
-      const { index, date, time, location } = req.body;
-      const user = await User.findById(req.params.id);
-      if (!user || !user.loginSessions[index]) return res.status(404).json({ error: "Login session not found" });
-      user.loginSessions[index] = { date, time, location };
-      await user.save();
-      res.json(user);
+    const { index, date, time, location } = req.body;
+    const user = await User.findById(req.params.id);
+    if (!user || !user.loginSessions[index]) return res.status(404).json({ error: "Login session not found" });
+    user.loginSessions[index] = { date, time, location };
+    await user.save();
+    res.json(user);
   } catch (error) {
-      res.status(500).json({ error: "Failed to update login session." });
+    res.status(500).json({ error: "Failed to update login session." });
   }
 });
 // // :white_tick: Update Orders
 app.put("/:id/orders", async (req, res) => {
   try {
-      const { index, orderId, price, status } = req.body;
-      const user = await User.findById(req.params.id);
-      if (!user || !user.orders[index]) return res.status(404).json({ error: "Order not found" });
-      user.orders[index] = { ...user.orders[index], orderId, price, status };
-      await user.save();
-      res.json(user);
+    const { index, orderId, price, status } = req.body;
+    const user = await User.findById(req.params.id);
+    if (!user || !user.orders[index]) return res.status(404).json({ error: "Order not found" });
+    user.orders[index] = { ...user.orders[index], orderId, price, status };
+    await user.save();
+    res.json(user);
   } catch (error) {
-      res.status(500).json({ error: "Failed to update order." });
+    res.status(500).json({ error: "Failed to update order." });
   }
 });
 
@@ -1293,7 +1294,7 @@ app.patch('/orders/:id/status', async (req, res) => {
     }
     const order = await Order.findByIdAndUpdate(
       req.params.id,
-      { status: status },
+      { deliveryStatus: status },
       {
         new: true,
         runValidators: true
@@ -1333,19 +1334,19 @@ app.patch('/orders/:id/status', async (req, res) => {
 
 app.get("/users/:id/order-status", async (req, res) => {
   try {
-      const { userId } = req.params;
+    const { userId } = req.params;
 
-      // Fetch only orderId and deliveryStatus for the user's orders
-      const orders = await Order.find({ userId }, "orderId deliveryStatus");
+    // Fetch only orderId and deliveryStatus for the user's orders
+    const orders = await Order.find({ userId }, "orderId deliveryStatus");
 
-      if (!orders.length) {
-          return res.status(404).json({ message: "No orders found for this user." });
-      }
+    if (!orders.length) {
+      return res.status(404).json({ message: "No orders found for this user." });
+    }
 
-      res.json({ orders });
+    res.json({ orders });
   } catch (error) {
-      console.error("Error fetching order statuses:", error);
-      res.status(500).json({ message: "Internal server error" });
+    console.error("Error fetching order statuses:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
