@@ -1332,23 +1332,24 @@ app.patch('/orders/:id/status', async (req, res) => {
 
 
 
-app.get("/users/:id/order-status", async (req, res) => {
+app.get("/users/:id/orders", async (req, res) => {
   try {
-    const { userId } = req.params;
+      const { id } = req.params;
 
-    // Fetch only orderId and deliveryStatus for the user's orders
-    const orders = await Order.find({ userId }, "orderId deliveryStatus");
+      // Fetch user's orders from the orders collection
+      const orders = await Order.find({ userId: id });
 
-    if (!orders.length) {
-      return res.status(404).json({ message: "No orders found for this user." });
-    }
+      if (!orders.length) {
+          return res.status(404).json({ message: "No orders found for this user." });
+      }
 
-    res.json({ orders });
+      res.json({ orders });
   } catch (error) {
-    console.error("Error fetching order statuses:", error);
-    res.status(500).json({ message: "Internal server error" });
+      console.error("Error fetching orders:", error);
+      res.status(500).json({ message: "Internal server error" });
   }
 });
+
 
 
 // Update Order Details

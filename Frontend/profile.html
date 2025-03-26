@@ -619,12 +619,12 @@ function showOrders() {
 
 
 // Fetch only order status periodically
-async function fetchOrderStatus() {
+    async function fetchOrderStatus() {
     const _id = localStorage.getItem("_id");
     if (!_id) return;
 
     try {
-        const response = await fetch(`${CONFIG.API_URL}/users/${_id}/order-status`);
+        const response = await fetch(`${CONFIG.API_URL}/users/${_id}/orders`);
         if (!response.ok) {
             console.error("Failed to fetch order status");
             return;
@@ -650,7 +650,7 @@ async function fetchOrderStatus() {
     } catch (error) {
         console.error("Error updating order statuses:", error);
     }
-}
+    }
 
 
 // Helper function to show error messages
