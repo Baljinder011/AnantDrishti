@@ -12,6 +12,8 @@ const nodemailer = require("nodemailer");
 const fs = require("fs");
 const dotenv = require("dotenv")
 dotenv.config();
+const nodemailer=require("nodemailer")
+const {Server} = require("socket.io")
 
 const https = require("https");
 
@@ -95,10 +97,73 @@ mongoose.connect(uri)
 
 
 
+
+
+
+
+  // // :white_tick: Initialize WebSocket Server
+  const io = new Server(server, {
+    cors: {
+      origin: "https://testindraq.com",
+      methods: ["GET", "POST"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+      credentials: true,
+    },
+    transports: ["websocket", "polling"],
+  });
+  // :white_tick: Handle WebSocket Connections
+  let connectedAdmins = [];
+  io.on("connection", (socket) => {
+    console.log(":white_tick: Admin connected for notifications:", socket.id);
+    connectedAdmins.push(socket);
+    socket.on("disconnect", () => {
+      console.log(":x: Admin disconnected:", socket.id);
+      connectedAdmins = connectedAdmins.filter((admin) => admin.id !== socket.id);
+    });
+  });
+  // :white_tick: Email Transporter Setup (Fixed)
+  const transporter = nodemailer.createTransport({
+    service: "gmail", // :white_tick: Correct service name
+    auth: {
+      user: process.env.EMAIL_USER, // :white_tick: Your email from .env
+      pass: process.env.EMAIL_PASS, // :white_tick: App password (Not normal password)
+    },
+  });
+  // :white_tick: Function to Send Email (Improved)
+  async function sendMail(to, subject, text, html) {
+    try {
+      const info = await transporter.sendMail({
+        from: `"AnantDrishti" <${process.env.EMAIL_USER}>`,
+        to,
+        subject,
+        text,
+        html,
+      });
+      console.log(":e-mail: Email sent successfully:", info.messageId);
+      return { success: true, message: "Email sent successfully" };
+    } catch (error) {
+      console.error(":x: Error sending email:", error);
+      return { success: false, message: "Failed to send email", error: error.message };
+    }
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // Cashfree API Credentials
 const APP_ID = process.env.CASHFREE_APP_ID || "YOUR_APP_ID";
 const SECRET_KEY = process.env.CASHFREE_SECRET_KEY || "YOUR_SECRET_KEY";
-
 
 
 //User Schema
@@ -628,6 +693,9 @@ app.get("/users/:id/orders", async (req, res) => {
 
 
 
+
+
+
 // User Routes
 app.get("/users", async (req, res) => {
   try {
@@ -1039,6 +1107,25 @@ app.post("/signup", async (req, res) => {
     const newUser = new User({ firstName, lastName, email, password, phone });
     await newUser.save();
 
+
+
+    // :white_tick: Send Welcome Email
+    const emailResponse = await sendMail(
+      email,
+      "Welcome to AnantDrristi",
+      "Hi, thank you for registering on AnantDrristi.",
+      "<p>Hi,</p><p>Thank you for registering on AnantDrristi.</p>"
+    );
+    if (!emailResponse.success) {
+      return res.json({ success: false, message: "User registered, but email failed" });
+    }
+    // :white_tick: Emit real-time notification to connected admins
+    io.emit("newUser", { message: `New user ${firstName} ${lastName} is registered.` })
+    console.log(":bell: Notification Sent:", `New user ${firstName} ${lastName} registered!`);
+
+
+
+
     res.status(201).json({
       message: "User registered successfully",
       user: {
@@ -1404,88 +1491,96 @@ const orderSchema = new mongoose.Schema({
 const Order = mongoose.model("orders", orderSchema);
 
 
+
+
 app.get("/orders", async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = 10;
-    const skip = (page - 1) * limit;
-
-    const orders = await Order.find()
-      .populate("userId", "firstName lastName email phone")
-      .skip(skip)
-      .limit(limit);
-
-    const totalOrders = await Order.countDocuments();
-
-    res.json({ 
-      success: true, 
-      orders,
-      totalPages: Math.ceil(totalOrders / limit),
-      currentPage: page
-    });
+    const orders = await Order.find().populate("userId", "name email");
+    res.json(orders);
   } catch (error) {
-    res.status(500).json({ error: "Error fetching orders", details: error.message });
+    console.error("Error fetching orders:", error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 });
-
-
-// app.get("/orders", async (req, res) => {
-//   try {
-//     const orders = await Order.find().populate("userId", "firstName lastName email phone");
-
-//     res.json({
-//       success: true,
-//       orders
-//     });
-//   } catch (error) {
-//     console.error("Error fetching orders:", error);
-//     res.status(500).json({ error: "Error fetching orders", details: error.message });
-//   }
-// });
-
-
-
-
 
 
 // Update Order Status
 app.patch('/orders/:id/status', async (req, res) => {
   try {
     const { status } = req.body;
+    console.log('Received status update:', {
+      orderId: req.params.id,
+      newStatus: status
+    });
     // Validate that the status is one of the allowed values
     const allowedStatuses = ['Pending', 'Completed', 'Shipped', 'Canceled', 'Processing'];
     if (!allowedStatuses.includes(status)) {
       return res.status(400).json({ message: 'Invalid status' });
     }
-    const order = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true });
+    const order = await Order.findByIdAndUpdate(
+      req.params.id,
+      { status: status },
+      {
+        new: true,
+        runValidators: true
+      }
+    );
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
+    console.log('Updated order:', order);
     res.json(order);
   } catch (error) {
     console.error('Error updating order status:', error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      message: 'Internal server error',
+      error: error.message
+    });
   }
 });
+
+
+
 // Update Order Details
 app.put('/orders/:id', async (req, res) => {
   try {
-    const { address, discount, productImage } = req.body;
-    // Validate the fields before updating
-    const updateFields = {};
-    if (address) updateFields.address = address;
-    if (discount) updateFields.discount = discount;
-    if (productImage) updateFields.productImage = productImage;
-    const order = await Order.findByIdAndUpdate(req.params.id, updateFields, { new: true });
+    const { address } = req.body;
+    console.log('Received order update:', {
+      orderId: req.params.id,
+      address
+    });
+    // Validate the update
+    if (!address) {
+      return res.status(400).json({ message: 'Address is required' });
+    }
+    const order = await Order.findByIdAndUpdate(
+      req.params.id,
+      {
+        deliveryAddress: {
+          ...address,
+          street: address.street // Explicitly update street
+        }
+      },
+      {
+        new: true,
+        runValidators: true
+      }
+    );
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
+    console.log('Updated order:', order);
     res.json(order);
-  } catch (err) {
-    console.error('Error updating order details:', err);
-    res.status(500).json({ message: err.message });
+  } catch (error) {
+    console.error('Error updating order details:', error);
+    res.status(500).json({
+      message: 'Internal server error',
+      error: error.message
+    });
   }
 });
+
+
 // Delete Order
 app.delete('/:id', async (req, res) => {
   try {
@@ -1499,8 +1594,6 @@ app.delete('/:id', async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-
-
 
 
 // Start Server

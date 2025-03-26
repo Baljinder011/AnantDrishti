@@ -185,8 +185,8 @@ document.getElementById("payButton").addEventListener("click", async function ()
             return;
         }
 
-        // Store Order ID & Link ID in Local Storage
-        localStorage.setItem("orderId", orderResult.orderId);
+        // ✅ Move this AFTER receiving the orderId
+        localStorage.setItem("latestOrderId", orderResult.orderId); // ✅ FIXED
         localStorage.setItem("linkId", orderResult.linkId);
 
         // Redirect to Payment Page

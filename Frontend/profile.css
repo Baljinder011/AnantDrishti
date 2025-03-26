@@ -3,7 +3,8 @@
 /* Variables for consistent design with purple primary color */
 :root {
   --primary-color: rgb(175, 82, 222);
-  --primary-hover: rgb(155, 62, 202); /* Slightly darker shade for hover */
+  --primary-hover: rgb(155, 62, 202);
+  /* Slightly darker shade for hover */
   --secondary-color: #f8f9fa;
   --dark-color: #343a40;
   --light-color: #f8f9fa;
@@ -156,7 +157,8 @@ body {
 }
 
 .form-input.editable {
-  background-color: #f9f0ff; /* Light purple tint for editable fields */
+  background-color: #f9f0ff;
+  /* Light purple tint for editable fields */
   border-color: var(--primary-color);
 }
 
@@ -166,7 +168,11 @@ body {
 }
 
 /* Button styles */
-.edit-btn, .save-btn, .remove-btn, .btn ,.back-btn{
+.edit-btn,
+.save-btn,
+.remove-btn,
+.btn,
+.back-btn {
   padding: 10px 20px;
   border: none;
   border-radius: var(--border-radius);
@@ -281,6 +287,7 @@ body {
     transform: scale(0.8);
     opacity: 0;
   }
+
   100% {
     transform: scale(1);
     opacity: 1;
@@ -360,26 +367,26 @@ body {
     flex-direction: column;
     align-items: center;
   }
-  
+
   .section-card {
     width: 100%;
     max-width: 300px;
   }
-  
+
   .detail-container {
     padding: 1.5rem;
   }
-  
+
   .popup-content {
     width: 95%;
     padding: 1.5rem;
   }
-  
+
   .order-item {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .order-item img {
     width: 100%;
     height: auto;
@@ -394,6 +401,7 @@ body {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -465,11 +473,11 @@ body {
   border-radius: 4px;
 }
 
-.custom-checkbox:hover input ~ .checkmark {
+.custom-checkbox:hover input~.checkmark {
   background-color: #ccc;
 }
 
-.custom-checkbox input:checked ~ .checkmark {
+.custom-checkbox input:checked~.checkmark {
   background-color: var(--primary-color);
 }
 
@@ -479,7 +487,7 @@ body {
   display: none;
 }
 
-.custom-checkbox input:checked ~ .checkmark:after {
+.custom-checkbox input:checked~.checkmark:after {
   display: block;
 }
 
@@ -528,4 +536,52 @@ body {
   background: #fff;
   margin-bottom: 20px;
   box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+
+.order-wrapper {
+  border: 1px solid #ddd;
+  padding: 10px;
+  margin: 10px 0;
+  cursor: pointer;
+  transition: 0.3s;
+  background-color: #fff;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.order-wrapper:hover {
+  background-color: #f8f8f8;
+}
+
+.order-image {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+.order-info {
+  flex: 1;
+}
+
+.detail-container {
+  padding: 20px;
+  background: #fff;
+  border-radius: 5px;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+  margin: 20px auto;
+  max-width: 600px;
+}
+.back-btn {
+  display: inline-block;
+  padding: 10px;
+  background: #0073e6;
+  color: white;
+  text-align: center;
+  margin-top: 10px;
+  border-radius: 5px;
+  cursor: pointer;
 }

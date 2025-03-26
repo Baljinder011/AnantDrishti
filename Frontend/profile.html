@@ -113,12 +113,19 @@
     </div>
 </div>
 
-    <!-- Orders Section -->
-    <div class="detail-container" id="ordersDetails">
-        <h2>My Orders</h2>
-        <div id="ordersList">No Order Found</div>
-        <div class="back-btn" onclick="goBack()">Back</div>
-    </div>
+ <!-- Orders Section -->
+ <div class="detail-container" id="ordersDetails">
+    <h2>My Orders</h2>
+    <div id="ordersList">No Order Found</div>
+    <div class="back-btn" onclick="goBack()">Back</div>
+</div>
+
+<!-- Order Details Section (Initially Hidden) -->
+<div class="detail-container" id="orderDetails" style="display: none;">
+    <h2>Order Details</h2>
+    <div id="orderInfo"></div>
+    <div class="back-btn" onclick="showOrders()">Back to Orders</div>
+</div>
 
     <script>
         document.getElementById("profileImageInput").addEventListener("change", function (event) {
@@ -341,114 +348,119 @@ if (storedUserProfile) {
 
         // Fetch and display orders
         async function fetchOrders() {
-    const _id = localStorage.getItem("_id"); 
-    if (!_id) {
-        alert("User ID not found! Please log in again.");
-        return;
-    }
-
-    try {
-        console.log("Fetching orders for user ID:", _id);
-        const response = await fetch(`${CONFIG.API_URL}/users/${_id}/orders`);
-
-        if (!response.ok) {
-            console.error("Failed to fetch orders. Status:", response.status);
-            alert("Failed to fetch orders");
+        const _id = localStorage.getItem("_id"); 
+        if (!_id) {
+            alert("User ID not found! Please log in again.");
             return;
         }
 
-        const data = await response.json();
-        console.log("Orders fetched:", data); 
-
-        const ordersContainer = document.getElementById("ordersList");
-        ordersContainer.innerHTML = ""; 
-
-        if (!data.orders || data.orders.length === 0) {
-            ordersContainer.innerHTML = "<p>No orders found.</p>";
-            return;
-        }
-
-        data.orders.forEach(order => {
-            if (!Array.isArray(order.orderDetails) || order.orderDetails.length === 0) {
+        try {
+            const response = await fetch(`${CONFIG.API_URL}/users/${_id}/orders`);
+            if (!response.ok) {
+                alert("Failed to fetch orders");
                 return;
             }
 
-            // Order Wrapper
-            const orderWrapper = document.createElement("div");
-            orderWrapper.className = "order-wrapper";
+            const data = await response.json();
+            const ordersContainer = document.getElementById("ordersList");
+            ordersContainer.innerHTML = "";
 
-            // Order Header
-            const orderHeader = document.createElement("div");
-            orderHeader.className = "order-header";
-            orderHeader.innerHTML = `
-                <h3>Order ID: ${order.orderId}</h3>
-                <p><strong>Order Date:</strong> ${new Date(order.date || Date.now()).toLocaleString()}</p>
-            `;
-            orderWrapper.appendChild(orderHeader);
-
-            order.orderDetails.forEach(item => {
-                const orderDiv = document.createElement("div");
-                orderDiv.className = "order-item"; 
-                orderDiv.innerHTML = `
-                    <img src="${item.image}" alt="${item.name}" style="width: 100px; height: 100px; object-fit: cover;">
-                    <p><strong>Product:</strong> ${item.name}</p>
-                    <p><strong>Price:</strong> ₹${item.price}</p>
-                    <p><strong>Color:</strong> ${item.color}</p>
-                    <p><strong>Size:</strong> ${item.size}</p>
-                    <p><strong>Quantity:</strong> ${item.quantity}</p>
-                `;
-
-                orderWrapper.appendChild(orderDiv);
-            });
-
-            // Address Details
-            if (order.deliveryAddress) {
-                const addressDiv = document.createElement("div");
-                addressDiv.className = "order-address";
-                addressDiv.innerHTML = `
-                    <h4>Shipping Address</h4>
-                    <p><strong>Name:</strong> ${order.deliveryAddress.fullName}</p>
-                    <p><strong>Email:</strong> ${order.deliveryAddress.email}</p>
-                    <p><strong>Phone:</strong> ${order.deliveryAddress.phone}</p>
-                    <p><strong>Street:</strong> ${order.deliveryAddress.street}</p>
-                    <p><strong>City:</strong> ${order.deliveryAddress.city}</p>
-                    <p><strong>State:</strong> ${order.deliveryAddress.state}</p>
-                    <p><strong>Postal Code:</strong> ${order.deliveryAddress.postalCode}</p>
-                    <p><strong>Country:</strong> ${order.deliveryAddress.country}</p>
-                `;
-                orderWrapper.appendChild(addressDiv);
-            } else {
-                orderWrapper.innerHTML += `<p style="color: red;"><strong>No address found for this order.</strong></p>`;
+            if (!data.orders || data.orders.length === 0) {
+                ordersContainer.innerHTML = "<p>No orders found.</p>";
+                return;
             }
 
-            // Order Status
-            const orderStatusDiv = document.createElement("p");
-            const orderStatus = order.orderaStatus || "Processing";
-            let statusColor = "blue";
+            data.orders.forEach(order => {
+                if (!Array.isArray(order.orderDetails) || order.orderDetails.length === 0) {
+                    return;
+                }
 
-            if (orderStatus === "Shipped") statusColor = "orange";
-            else if (orderStatus === "Delivered") statusColor = "green";
-            else if (orderStatus === "Canceled") statusColor = "red";
+                const orderWrapper = document.createElement("div");
+                orderWrapper.className = "order-wrapper";
+                orderWrapper.onclick = () => showOrderDetails(order);
 
-            orderStatusDiv.innerHTML = `<strong>Order Status:</strong> <span style="color: ${statusColor}; font-weight: bold;">${orderStatus}</span>`;
-            orderWrapper.appendChild(orderStatusDiv);
+                const firstItem = order.orderDetails[0]; // Show first product image
 
-            // Payment Status
-            const paymentStatus = order.paymentDetails?.status || "Pending";
-            const paymentStatusColor = paymentStatus.toLowerCase() === "paid" ? "green" : "red";
-            const paymentStatusDiv = document.createElement("p");
-            paymentStatusDiv.innerHTML = `<strong>Payment Status:</strong> <span style="color: ${paymentStatusColor}; font-weight: bold;">${paymentStatus}</span>`;
-            orderWrapper.appendChild(paymentStatusDiv);
+                orderWrapper.innerHTML = `
+                    <img src="${firstItem.image}" alt="${firstItem.name}" class="order-image">
+                    <div class="order-info">
+                        <h3>Order ID: ${order.orderId}</h3>
+                        <p><strong>Order Date:</strong> ${new Date(order.date || Date.now()).toLocaleString()}</p>
+                        <p><strong>Status:</strong> <span style="color: ${getStatusColor(order.orderaStatus)};">${order.orderaStatus || "Processing"}</span></p>
+                        <p><strong>Payment Status:</strong> <span style="color: ${getPaymentColor(order.paymentDetails?.status)};">${order.paymentDetails?.status || "Pending"}</span></p>
+                    </div>
+                `;
 
-            // Append to main container
-            ordersContainer.appendChild(orderWrapper);
-        });
-    } catch (error) {
-        console.error("Error fetching orders:", error);
-        alert("Error fetching orders!");
+                ordersContainer.appendChild(orderWrapper);
+            });
+        } catch (error) {
+            console.error("Error fetching orders:", error);
+            alert("Error fetching orders!");
+        }
     }
-}
 
+    function showOrderDetails(order) {
+        const orderInfoContainer = document.getElementById("orderInfo");
+        orderInfoContainer.innerHTML = `
+            <h3>Order ID: ${order.orderId}</h3>
+            <p><strong>Order Date:</strong> ${new Date(order.date || Date.now()).toLocaleString()}</p>
+            <p><strong>Status:</strong> <span style="color: ${getStatusColor(order.orderaStatus)};">${order.orderaStatus || "Processing"}</span></p>
+            <p><strong>Payment Status:</strong> <span style="color: ${getPaymentColor(order.paymentDetails?.status)};">${order.paymentDetails?.status || "Pending"}</span></p>
+            <h4>Products:</h4>
+        `;
+
+        order.orderDetails.forEach(item => {
+            orderInfoContainer.innerHTML += `
+                <div class="order-item">
+                    <img src="${item.image}" alt="${item.name}" class="order-image">
+                    <div>
+                        <p><strong>${item.name}</strong></p>
+                        <p>Price: ₹${item.price}</p>
+                        <p>Color: ${item.color}</p>
+                        <p>Size: ${item.size}</p>
+                        <p>Quantity: ${item.quantity}</p>
+                    </div>
+                </div>
+            `;
+        });
+
+        if (order.deliveryAddress) {
+            orderInfoContainer.innerHTML += `
+                <h4>Shipping Address</h4>
+                <p><strong>Name:</strong> ${order.deliveryAddress.fullName}</p>
+                <p><strong>Email:</strong> ${order.deliveryAddress.email}</p>
+                <p><strong>Phone:</strong> ${order.deliveryAddress.phone}</p>
+                <p><strong>Street:</strong> ${order.deliveryAddress.street}</p>
+                <p><strong>City:</strong> ${order.deliveryAddress.city}</p>
+                <p><strong>State:</strong> ${order.deliveryAddress.state}</p>
+                <p><strong>Postal Code:</strong> ${order.deliveryAddress.postalCode}</p>
+                <p><strong>Country:</strong> ${order.deliveryAddress.country}</p>
+            `;
+        } else {
+            orderInfoContainer.innerHTML += `<p style="color: red;"><strong>No address found for this order.</strong></p>`;
+        }
+
+        document.getElementById("ordersDetails").style.display = "none";
+        document.getElementById("orderDetails").style.display = "block";
+    }
+
+    function showOrders() {
+        document.getElementById("ordersDetails").style.display = "block";
+        document.getElementById("orderDetails").style.display = "none";
+    }
+
+    function getStatusColor(status) {
+        switch (status) {
+            case "Shipped": return "orange";
+            case "Delivered": return "green";
+            case "Canceled": return "red";
+            default: return "blue";
+        }
+    }
+
+    function getPaymentColor(status) {
+        return status && status.toLowerCase() === "paid" ? "green" : "red";
+    }
 
 
 
