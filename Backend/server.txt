@@ -1025,3 +1025,632 @@ server.listen(PORT, () => {
 //     res.status(500).json({ success: false, message: "Error saving order", error: error.message });
 //   }
 // });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name>Profile Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./index.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.css">
+    <link rel="stylesheet" href="profile.css">
+    <script src="config.js"></script>
+
+    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+</head>
+
+<body>
+    <div id="nav-placeholder">
+
+    </div>
+
+    <script>
+        $(function () {
+            $("#nav-placeholder").load("nav.html", function () {
+                updateCartCounter(); // Ensure counter updates after loading nav
+            });
+        });
+    </script>
+
+    <div class="container">
+        <div class="section-container" id="mainSections">
+            <div class="section-card" onclick="showDetails('profile')">
+                <div class="section-icon profile-icon">👤</div>
+                <div class="section-title">My Profile</div>
+                <div class="section-subtitle">Edit Your Profile</div>
+            </div>
+            <div class="section-card" onclick="showDetails('orders')">
+                <div class="section-icon orders-icon">📦</div>
+                <div class="section-title">My Orders</div>
+                <div class="section-subtitle">Check Your Orders</div>
+            </div>
+            <div class="section-card" onclick="showDetails('addresses')">
+                <div class="section-icon address-icon">📍</div>
+                <div class="section-title">My Addresses</div>
+                <div class="section-subtitle">Edit Addresses for orders</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Section -->
+    <div class="detail-container" id="profileDetails">
+        <h2>Personal Details</h2>
+
+        <!-- Profile Image Preview -->
+        <img id="profileImagePreview" src="" alt="Profile Image"
+            style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover;">
+
+        <!-- File Upload Input -->
+        <input type="file" id="profileImageInput" accept="image/*" style="display: none;">
+        <button class="edit-btn" onclick="document.getElementById('profileImageInput').click()">Choose Image</button>
+
+        <!-- Upload Button -->
+        <button id="upload-btn" class="save-btn" onclick="uploadProfileImage()" style="display: none;">Upload</button>
+
+        <p><strong>First Name:</strong> <input class="form-input" id="firstName" readonly></p>
+        <p><strong>Last Name:</strong> <input class="form-input" id="lastName" readonly></p>
+        <p><strong>Email:</strong> <input class="form-input" id="email" readonly></p>
+        <p><strong>Phone:</strong> <input class="form-input" id="phone" readonly></p>
+
+        <button class="edit-btn" id="editProfileBtn" onclick="editProfile()">Edit Profile</button>
+        <button class="save-btn" id="saveProfileBtn" onclick="saveProfile()" style="display: none;">Save
+            Profile</button>
+
+        <div class="back-btn" onclick="goBack()">Back</div>
+    </div>
+
+    <!-- Address Section -->
+    <div class="detail-container" id="addressesDetails">
+        <h2>Saved Addresses</h2>
+        <div id="addressesList">Loading...</div>
+        <button class="edit-btn" onclick="openAddressPopup()">Add New Address</button>
+        <!-- <button class="save-btn" onclick="fetchUserAddresses()">Refresh Addresses</button> -->
+        <div class="back-btn" onclick="goBack()">Back</div>
+    </div>
+
+    <!-- Add Address Popup -->
+    <div id="addressPopup" class="popup-overlay" style="display: none;">
+        <div class="popup-content">
+            <h2>Add New Address</h2>
+            <input class="form-input" id="newStreet" placeholder="Street">
+            <input class="form-input" id="newCity" placeholder="City">
+            <input class="form-input" id="newPostalCode" placeholder="Postal Code">
+            <input class="form-input" id="newState" placeholder="State">
+            <input class="form-input" id="newCountry" placeholder="Country">
+            <button type="button" class="btn btn-primary" onclick="saveNewAddress()">Save Address</button>
+            <button class="back-btn" onclick="closeAddressPopup()">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Edit Address Popup -->
+    <div id="editAddressPopup" class="popup-overlay" style="display: none;">
+        <div class="popup-content">
+            <h2>Edit Address</h2>
+            <input type="hidden" id="editAddressId">
+            <input class="form-input" id="editStreet" placeholder="Street">
+            <input class="form-input" id="editCity" placeholder="City">
+            <input class="form-input" id="editPostalCode" placeholder="Postal Code">
+            <input class="form-input" id="editState" placeholder="State">
+            <input class="form-input" id="editCountry" placeholder="Country">
+            <button class="btn btn-primary" onclick="updateAddress()">Update Address</button>
+            <button class="back-btn" onclick="closeEditAddressPopup()">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Orders Section -->
+    <div class="detail-container" id="ordersDetails">
+        <h2>My Orders</h2>
+        <div id="ordersList" class="orders-container">
+            <!-- Orders will be dynamically populated here -->
+        </div>
+        <div class="back-btn" onclick="goBack()">Back</div>
+    </div>
+
+    <!-- Order Details Section -->
+    <div class="detail-container" id="orderDetails" style="display: none;">
+        <div id="orderDetailsHeader">
+            <!-- Order header details will be dynamically populated -->
+        </div>
+        <div id="orderInfo" class="order-items-container">
+            <!-- Order items will be dynamically populated -->
+        </div>
+        <div class="back-btn" onclick="showOrders()">Back to Orders</div>
+    </div>
+
+    <script>
+        document.getElementById("profileImageInput").addEventListener("change", function (event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    document.getElementById("profileImagePreview").src = e.target.result;
+                    document.getElementById("upload-btn").style.display = "inline-block"; // Show upload button
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        async function uploadProfileImage() {
+            const fileInput = document.getElementById("profileImageInput");
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert("Please select an image first.");
+                return;
+            }
+
+            const _id = localStorage.getItem("_id");
+            console.log("User ID from localStorage:", _id);
+
+            const formData = new FormData();
+            formData.append("profileImage", file);
+
+            try {
+                const response = await fetch(`${CONFIG.API_URL}/users/${_id}/upload`, {
+                    method: "POST",
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    alert("Profile image updated!");
+                    document.getElementById("profileImagePreview").src = `${CONFIG.API_URL}${data.imageUrl}`;
+                    document.getElementById("upload-btn").style.display = "none";
+
+                    // Update user profile in localStorage with new image URL
+                    const storedUserProfile = localStorage.getItem("userProfile");
+                    if (storedUserProfile) {
+                        const userProfile = JSON.parse(storedUserProfile);
+                        userProfile.profileImage = `${CONFIG.API_URL}${data.imageUrl}`;
+                        localStorage.setItem("userProfile", JSON.stringify(userProfile));
+                    }
+
+                    else {
+                        // If no stored profile, fetch updated user data
+                        fetchUserData();
+                    }
+
+                    // Ensure the Personal Details section remains visible
+                    showDetails('profile');
+                } else {
+                    alert("Image upload failed!");
+                }
+            } catch (error) {
+                console.error("Error uploading image:", error);
+                alert("Error uploading image!");
+            }
+        }
+
+        function showDetails(section) {
+            document.getElementById("mainSections").style.display = "none";
+            document.getElementById("profileDetails").style.display = section === "profile" ? "block" : "none";
+            document.getElementById("addressesDetails").style.display = section === "addresses" ? "block" : "none";
+            document.getElementById("ordersDetails").style.display = section === "orders" ? "block" : "none";
+
+            if (section === "addresses") {
+                fetchUserAddresses();
+            } else if (section === "orders") {
+                fetchOrders();
+            }
+        }
+
+        function goBack() {
+            document.getElementById("mainSections").style.display = "flex";
+            document.getElementById("profileDetails").style.display = "none";
+            document.getElementById("addressesDetails").style.display = "none";
+            document.getElementById("ordersDetails").style.display = "none";
+        }
+
+        function getUserEmail() {
+            return localStorage.getItem("userEmail");  // Retrieve the email from localStorage
+        }
+
+        // Fetch user data based on email
+        function fetchUserData() {
+            try {
+                const storedUserProfile = localStorage.getItem("userProfile");
+
+                if (storedUserProfile) {
+                    const user = JSON.parse(storedUserProfile);
+                    if (user._id) localStorage.setItem("_id", user._id); // Store _id separately
+                    populateUserDetails(user);
+                    return;
+                }
+
+                const userEmail = getUserEmail();
+                if (!userEmail) throw new Error("No email found");
+
+                fetch(`${CONFIG.API_URL}/users/email/${userEmail}`)
+                    .then(response => {
+                        if (!response.ok) throw new Error("User not found");
+                        return response.json();
+                    })
+                    .then(user => {
+                        localStorage.setItem("_id", user._id); // Store _id separately
+                        populateUserDetails(user);
+                    })
+                    .catch(error => console.error("Error fetching user details:", error));
+            } catch (error) {
+                console.error("Error fetching user details:", error);
+            }
+        }
+
+        function populateUserDetails(user) {
+            document.getElementById("firstName").value = user.firstName;
+            document.getElementById("lastName").value = user.lastName;
+            document.getElementById("email").value = user.email;
+            document.getElementById("phone").value = user.phone;
+
+            if (user.profileImage) {
+                document.getElementById("profileImagePreview").src = user.profileImage;
+                localStorage.setItem("userProfile", JSON.stringify(user)); // Update localStorage
+            }
+        }
+
+        const storedUserProfile = localStorage.getItem("userProfile");
+
+        if (storedUserProfile) {
+            const user = JSON.parse(storedUserProfile);
+            if (user.profileImage) {
+                document.getElementById("profileImagePreview").src = user.profileImage;
+            }
+        }
+
+        // Edit Profile Function - Make fields editable
+        function editProfile() {
+            // Make input fields editable
+            document.getElementById("firstName").readOnly = false;
+            document.getElementById("lastName").readOnly = false;
+            document.getElementById("phone").readOnly = false;
+
+            // Email should remain readonly as it's often used as an identifier
+            // document.getElementById("email").readOnly = false;
+
+            // Add active class to editable fields
+            document.getElementById("firstName").classList.add("editable");
+            document.getElementById("lastName").classList.add("editable");
+            document.getElementById("phone").classList.add("editable");
+
+            // Show save button and hide edit button
+            document.getElementById("saveProfileBtn").style.display = "inline-block";
+            document.getElementById("editProfileBtn").style.display = "none";
+        }
+
+        // Save Profile Function - Send updated profile to backend
+        async function saveProfile() {
+            const _id = localStorage.getItem("_id");
+            if (!_id) {
+                alert("User ID not found! Please log in again.");
+                return;
+            }
+
+            // Gather updated profile data
+            const updatedProfile = {
+                firstName: document.getElementById("firstName").value,
+                lastName: document.getElementById("lastName").value,
+                phone: document.getElementById("phone").value
+                // Email is typically not changed this way
+            };
+
+            try {
+                const response = await fetch(`${CONFIG.API_URL}/users/${_id}/update`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(updatedProfile)
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    alert("Profile updated successfully!");
+
+                    // Update stored user profile
+                    const storedUserProfile = localStorage.getItem("userProfile");
+                    if (storedUserProfile) {
+                        const userProfile = JSON.parse(storedUserProfile);
+                        userProfile.firstName = updatedProfile.firstName;
+                        userProfile.lastName = updatedProfile.lastName;
+                        userProfile.phone = updatedProfile.phone;
+                        localStorage.setItem("userProfile", JSON.stringify(userProfile));
+                    }
+
+                    // Reset fields to readonly
+                    document.getElementById("firstName").readOnly = true;
+                    document.getElementById("lastName").readOnly = true;
+                    document.getElementById("phone").readOnly = true;
+
+                    // Remove editable class
+                    document.getElementById("firstName").classList.remove("editable");
+                    document.getElementById("lastName").classList.remove("editable");
+                    document.getElementById("phone").classList.remove("editable");
+
+                    // Show edit button and hide save button
+                    document.getElementById("saveProfileBtn").style.display = "none";
+                    document.getElementById("editProfileBtn").style.display = "inline-block";
+                } else {
+                    alert("Failed to update profile!");
+                }
+            } catch (error) {
+                console.error("Error updating profile:", error);
+                alert("Error updating profile!");
+            }
+        }
+
+
+
+        // Fetch and display user orders
+        async function fetchOrders() {
+    const _id = localStorage.getItem("_id");
+    if (!_id) {
+        showErrorMessage("User ID not found! Please log in again.");
+        return;
+    }
+
+    try {
+        const response = await fetch(`${CONFIG.API_URL}/users/${_id}/orders`);
+        if (!response.ok) {
+            showErrorMessage("Failed to fetch orders");
+            return;
+        }
+
+        const data = await response.json();
+        const ordersContainer = document.getElementById("ordersList");
+        ordersContainer.innerHTML = "";
+
+        if (!data.orders || data.orders.length === 0) {
+            ordersContainer.innerHTML = "<p>No orders found.</p>";
+            return;
+        }
+
+        // Store orders in a global variable for easy access
+        window.userOrders = data.orders;
+
+        data.orders.forEach(order => {
+            // Ensure we have order details and required properties
+            if (!order.orderDetails || order.orderDetails.length === 0) {
+                return;
+            }
+
+            // Calculate subtotal
+            const subtotal = order.totalAmount || 
+                order.orderDetails.reduce((total, item) => 
+                    total + ((item.price || 0) * (item.quantity || 1)), 
+                0);
+
+            // Calculate GST (18%)
+            const gstRate = 0.18;
+            const gstAmount = subtotal * gstRate;
+            
+            // Use the shippingPrice from the order
+            const shippingPrice = order.shippingPrice || 0;
+            
+            // Calculate grand total (subtotal + GST + shipping)
+            const grandTotal = subtotal + gstAmount + shippingPrice;
+
+            const orderDate = order.date ? new Date(order.date) : new Date();
+            const deliveryDate = new Date(orderDate);
+            deliveryDate.setDate(orderDate.getDate() + 5);
+
+            const orderWrapper = document.createElement("div");
+            orderWrapper.className = "order-wrapper";
+            orderWrapper.setAttribute("data-order-id", order.orderId || 'N/A');
+            orderWrapper.setAttribute("data-order-index", data.orders.indexOf(order));
+
+            orderWrapper.innerHTML = `
+                <div class="order-header">
+                    <div class="order-date">
+                        <p>ORDER PLACED</p>
+                        <p>${orderDate.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                    </div>
+                    <div class="order-total">
+                        <p>TOTAL</p>
+                        <p>₹${grandTotal.toLocaleString()}</p>
+                    </div>
+                    <div class="order-ship-to">
+                        <p>SHIP TO</p>
+                        <p>${order.deliveryAddress?.fullName || 'N/A'}</p>
+                    </div>
+                    <div class="order-number">
+                        <p>ORDER # ${order.orderId || 'N/A'}</p>
+                        <a href="#" class="view-details">View order details</a>
+                    </div>
+                </div>
+
+                ${order.orderDetails.map(item => `
+                    <div class="order-item">
+                        <div class="order-item-status">
+                            <p>${order.orderStatus || 'Delivered'}</p>
+                            <p>Package was handed to resident</p>
+                        </div>
+                        <div class="order-item-details">
+                            <img src="${item.image || ''}" alt="${item.name || 'Product'}">
+                            <div class="item-info">
+                                <h4>${item.name || 'Unnamed Product'}</h4>
+                                <div class="item-actions">
+                                    <button class="btn-secondary">View your item</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            `;
+
+            ordersContainer.appendChild(orderWrapper);
+        });
+
+        // Add event delegation for order details
+        ordersContainer.addEventListener('click', function (event) {
+            const orderWrapper = event.target.closest('.order-wrapper');
+            if (orderWrapper) {
+                const orderIndex = orderWrapper.getAttribute('data-order-index');
+                if (orderIndex !== null) {
+                    showOrderDetails(window.userOrders[orderIndex]);
+                }
+            }
+        });
+    } catch (error) {
+        console.error("Error fetching orders:", error);
+        showErrorMessage(`Error fetching orders: ${error.message}`);
+    }
+}
+
+function showOrderDetails(order) {
+    try {
+        const orderDetailsContainer = document.getElementById("orderDetails");
+        const ordersListContainer = document.getElementById("ordersDetails");
+
+        if (!orderDetailsContainer || !ordersListContainer) {
+            console.error("Required DOM elements not found!");
+            return;
+        }
+
+        // Calculate subtotal
+        const subtotal = order.totalAmount || 
+            order.orderDetails.reduce((total, item) => 
+                total + ((item.price || 0) * (item.quantity || 1)), 
+            0);
+
+        // Calculate GST (18%)
+        const gstRate = 0.18;
+        const gstAmount = subtotal * gstRate;
+
+        // Use the shippingPrice from the order
+        const shippingPrice = order.shippingPrice || 0;
+
+        // Calculate grand total (subtotal + GST + shipping)
+        const grandTotal = subtotal + gstAmount + shippingPrice;
+
+        const orderDate = new Date(order.date || Date.now());
+        const deliveryDate = new Date(orderDate);
+        deliveryDate.setDate(orderDate.getDate() + 5); // Adjust as needed
+
+        orderDetailsContainer.innerHTML = `
+            <div class="order-details-header">
+                <div class="order-details-summary">
+                    <p>Order placed on ${orderDate.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                    <p>Order # ${order.orderId || 'N/A'}</p>
+                </div>
+                <div class="order-details-actions">
+                    <button class="btn-secondary" onclick="showOrders()">Back to Orders</button>
+                    <button class="btn-secondary">Invoice</button>
+                </div>
+            </div>
+
+            <div class="order-shipping-info">
+                <div class="shipping-details">
+                    <h3>Shipping Details</h3>
+                    <p>${order.deliveryAddress?.fullName || 'N/A'}</p>
+                    <p>${order.deliveryAddress?.phone || 'N/A'}</p>
+                    <p>${order.deliveryAddress?.email || 'N/A'}</p>
+                    <p>${order.deliveryAddress?.street || 'N/A'}</p>
+                    <p>${order.deliveryAddress?.city || 'N/A'}, ${order.deliveryAddress?.state || 'N/A'} ${order.deliveryAddress?.postalCode || ''}</p>
+                    <p>${order.deliveryAddress?.country || 'N/A'}</p>
+                </div>
+            </div>
+
+            ${order.orderDetails.map(item => `
+                <div class="detailed-order-item">
+                  
+                    <div class="item-details">
+                        <img src="${item.image || ''}" alt="${item.name || 'Product'}">
+                        <div class="item-info">
+                            <h3>${item.name || 'Unnamed Product'}</h3>
+                            <p>Sold by: ${item.seller || 'N/A'}</p>
+                            <p>Price: ₹${(item.price || 0).toLocaleString()}</p>
+                            <p>Quantity: ${item.quantity || 1}</p>
+                            <div class="item-actions">
+                                <button class="btn-secondary">Return/Replacement</button>
+                                <button class="btn-secondary">Write a product review</button>
+                                <button class="btn-primary">Buy it again</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('')}
+
+            <div class="order-summary">
+                <h3>Order Summary</h3>
+                <div class="summary-details">
+                    <p>Item(s) Subtotal: ₹${subtotal.toLocaleString()}</p>
+                    <p>GST (18%): ₹${gstAmount.toLocaleString()}</p>
+                    <p>Shipping: ₹${shippingPrice.toLocaleString()}</p>
+                    <p><strong>Grand Total: ₹${grandTotal.toLocaleString()}</strong></p>
+                </div>
+            </div>
+        `;
+
+        // Toggle visibility
+        ordersListContainer.style.display = "none";
+        orderDetailsContainer.style.display = "block";
+
+    } catch (error) {
+        console.error("Error in showOrderDetails:", error);
+        showErrorMessage("Failed to load order details");
+    }
+}
+        // Return to orders list
+        function showOrders() {
+            const orderDetailsContainer = document.getElementById("orderDetails");
+            const ordersListContainer = document.getElementById("ordersDetails");
+
+            if (orderDetailsContainer && ordersListContainer) {
+                orderDetailsContainer.style.display = "none";
+                ordersListContainer.style.display = "block";
+            }
+        }
+
+        // Helper function to show error messages
+        function showErrorMessage(message) {
+            const errorContainer = document.getElementById("errorContainer");
+            if (errorContainer) {
+                errorContainer.innerHTML = `<p class="error-message">${message}</p>`;
+                errorContainer.style.display = "block";
+            } else {
+                alert(message);
+            }
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchOrders();
+        });

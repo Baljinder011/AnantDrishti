@@ -207,3 +207,15 @@ body {
       justify-content: flex-start;
   }
 }
+
+
+#buy-now-btn{
+  background-color:  rgb(175, 82, 222);
+  border:none;
+  transition: 0.3s;
+}
+
+.continue{
+  transition: 0.3s;
+}
+

@@ -219,6 +219,7 @@ const userSchema = new mongoose.Schema({
       orderDetails: Array,
       price: { type: Number, required: true, min: 0 },
       shippingMethod: { type: String, default: "standard" },
+      shippingPrice: { type: Number, default: 0 }, 
       deliveryAddress: {
         fullName: String,
         phone: String,
@@ -245,10 +246,78 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model("users", userSchema);
 
 
+
+const orderSchema = new mongoose.Schema({
+  orderId: { type: String, required: true, unique: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "users", required: true },
+  linkId: String,
+  orderDetails: Array,
+  price: { type: Number, required: true, min: 0 },
+  shippingMethod: { type: String, default: "standard" },
+  shippingPrice:{type:Number, default : 0},
+  deliveryAddress: {
+    fullName: String,
+    phone: String,
+    email: String,
+    street: String,
+    city: String,
+    postalCode: String,
+    state: String,
+    country: String
+  },
+  paymentDetails: {
+    method: String,
+    transactionId: String,
+    status: { type: String, default: "pending" },
+    paid: { type: Boolean, default: false },
+    timestamp: Date,
+  },
+  status: { type: String, default: "pending" },
+  createdAt: { type: Date, default: Date.now },
+});
+
+const Order = mongoose.model("orders", orderSchema);
+
+
+
+
+
+
+
 app.post("/users/:id/orders", async (req, res) => {
   try {
     const { id } = req.params;
-    let { customer_name, customer_email, customer_phone, amount, shippingMethod, deliveryAddress, orderDetails } = req.body;
+    let { 
+      customer_name, 
+      customer_email, 
+      customer_phone, 
+      amount, 
+      shippingMethod, 
+      shippingCharge,  // Explicitly receive this
+      deliveryAddress, 
+      orderDetails 
+    } = req.body;
+
+    // Explicitly define shipping prices
+    const shippingPrices = {
+      standard: 100,
+      express: 300,
+      default: 0  // Added a default price
+    };
+    
+    const shippingPrice = shippingMethod && shippingPrices[shippingMethod] 
+      ? shippingPrices[shippingMethod]
+      : (shippingCharge || shippingPrices.default);
+    
+    console.log("Shipping Method:", shippingMethod);
+    console.log("Shipping Prices:", shippingPrices);
+    console.log("Calculated Shipping Price:", shippingPrice);
+
+    console.log("Shipping Details:", {
+      method: shippingMethod,
+      charge: shippingCharge,
+      calculatedPrice: shippingPrice
+    });
 
     if (!id || !customer_name || !customer_email || !customer_phone || !amount || !deliveryAddress) {
       return res.status(400).json({ error: "Missing required fields" });
@@ -281,7 +350,7 @@ app.post("/users/:id/orders", async (req, res) => {
       link_auto_reminders: true,
       link_expiry_time: new Date(Date.now() + 3600 * 1000).toISOString(),
       link_meta: {
-    // return_url: `http://127.0.0.1:5501/Frontend/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${id}`
+        // return_url: `http://127.0.0.1:5501/Frontend/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${id}`
          return_url: `https://indraq.tech/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${id}`
       },
     };
@@ -307,6 +376,7 @@ app.post("/users/:id/orders", async (req, res) => {
       orderDetails,
       price: amount,
       shippingMethod: shippingMethod || "standard",
+      shippingPrice: shippingPrice, // EXPLICITLY set shipping price
       deliveryAddress,
       paymentDetails: { status: "pending", transactionId: "", paid: false },
       status: "pending",
@@ -327,24 +397,32 @@ app.post("/users/:id/orders", async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    res.json({
-      success: true,
-      userId: id,
-      orderId: newOrderId,
-      linkId,
-      linkUrl: response.data.link_url,
-      message: "Order created successfully, waiting for payment"
-    });
 
-  } catch (error) {
-    console.error("Error:", error.response?.data || error.message);
-    res.status(500).json({ error: "Error processing order", details: error.message });
-  }
-});
+      // :white_tick: Populate User Details for Notification
+      const populatedOrder = await Order.findById(savedOrder._id).populate("userId", "firstName lastName email");
+      // :bell: **Send Real-Time WebSocket Notification**
+      io.emit("newOrder", populatedOrder);
+      console.log(":package: New Order Notification Sent:", populatedOrder);
+      // :white_tick: Send Response
 
 
+      res.json({
+        success: true,
+        userId: id,
+        orderId: newOrderId,
+        linkId,
+        linkUrl: response.data.link_url,
+        message: "Order created successfully, waiting for payment",
+      });
+    } catch (error) {
+      console.error(":x: Error:", error.response?.data || error.message);
+      res.status(500).json({ error: "Error processing order", details: error.message });
+    }
+  });
 
 
+
+// Check Payment Status & Update Order
 // Check Payment Status & Update Order
 app.get("/check-payment-status", async (req, res) => {
   try {
@@ -393,7 +471,7 @@ app.get("/check-payment-status", async (req, res) => {
       paymentStatus = linkStatus.toLowerCase();
     }
 
-    // ✅ Update the order inside the user's `orders` array
+    // Update the order inside the user's `orders` array
     await User.updateOne(
       { _id: userId, "orders.orderId": orderId },
       {
@@ -406,8 +484,20 @@ app.get("/check-payment-status", async (req, res) => {
         },
       }
     );
-    ;
 
+    // ✅ Add this block to update the Order collection
+    await Order.updateOne(
+      { orderId: orderId, linkId: linkId },
+      {
+        $set: {
+          status: orderStatus,
+          'paymentDetails.status': paymentStatus,
+          'paymentDetails.paid': paid,
+          'paymentDetails.transactionId': cashfreeResponse.data.reference_id || "",
+          'paymentDetails.timestamp': new Date(),
+        },
+      }
+    );
 
     res.json({ success: orderStatus === "successful", status: orderStatus });
   } catch (error) {
@@ -490,29 +580,93 @@ app.get("/users/:id", async (req, res) => {
   }
 });
 
-
-
-app.put("/users/:id", async (req, res) => {
+// Fetch Login Sessions of a User
+app.get("/users/:id/loginsessions", async (req, res) => {
   try {
-    const { firstName, lastName, phone, address } = req.body;
-
-    const updatedUser = await User.findByIdAndUpdate(
-      req.params.id,
-      { firstName, lastName, phone, address },
-      { new: true }
-    );
-
-    if (!updatedUser) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    res.json(updatedUser);
+    const user = await User.findById(req.params.id, "loginSessions");
+    res.json(user.loginSessions || []);
   } catch (error) {
-    console.error("Error updating user:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: "Failed to fetch login sessions" });
   }
 });
 
+
+app.put("/users/:id", async (req, res) => {
+  const userId = req.params.id;
+  const updatedUserData = req.body;
+  try {
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $set: updatedUserData },
+      { new: true, runValidators: true }
+    );
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.status(200).json(updatedUser);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to update user", error: error.message });
+  }
+});
+
+
+
+
+// // :white_tick: Update Personal Details
+app.put("/:id/personal", async (req, res) => {
+  try {
+      const { firstName, lastName, email, phone } = req.body;
+      const updatedUser = await User.findByIdAndUpdate(
+          req.params.id,
+          { firstName, lastName, email, phone },
+          { new: true }
+      );
+      if (!updatedUser) return res.status(404).json({ error: "User not found" });
+      res.json(updatedUser);
+  } catch (error) {
+      console.error("Update error:", error);
+      res.status(500).json({ error: "Failed to update personal details." });
+  }
+});
+// // :white_tick: Update Address
+app.put("/:id/address", async (req, res) => {
+  try {
+      const { fullName, phone, email, street, city, postalCode, state, country } = req.body;
+      const user = await User.findById(req.params.id);
+      if (!user) return res.status(404).json({ error: "User not found" });
+      user.address[0] = { fullName, phone, email, street, city, postalCode, state, country };
+      await user.save();
+      res.json(user);
+  } catch (error) {
+      res.status(500).json({ error: "Failed to update address." });
+  }
+});
+// // :white_tick: Update Login Sessions
+app.put("/:id/loginSessions", async (req, res) => {
+  try {
+      const { index, date, time, location } = req.body;
+      const user = await User.findById(req.params.id);
+      if (!user || !user.loginSessions[index]) return res.status(404).json({ error: "Login session not found" });
+      user.loginSessions[index] = { date, time, location };
+      await user.save();
+      res.json(user);
+  } catch (error) {
+      res.status(500).json({ error: "Failed to update login session." });
+  }
+});
+// // :white_tick: Update Orders
+app.put("/:id/orders", async (req, res) => {
+  try {
+      const { index, orderId, price, status } = req.body;
+      const user = await User.findById(req.params.id);
+      if (!user || !user.orders[index]) return res.status(404).json({ error: "Order not found" });
+      user.orders[index] = { ...user.orders[index], orderId, price, status };
+      await user.save();
+      res.json(user);
+  } catch (error) {
+      res.status(500).json({ error: "Failed to update order." });
+  }
+});
 
 app.put("/users/:id/update", async (req, res) => {
   try {
@@ -769,7 +923,15 @@ app.get("/users/:id/addresses", async (req, res) => {
   }
 });
 
-
+// Fetch Address Details of a User
+app.get("/users/:id/address", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id, "address");
+    res.json(user.address || []);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch address details" });
+  }
+});
 
 
 // ✅ Signup Route
@@ -1100,35 +1262,7 @@ app.put('/products/:id/status', async (req, res) => {
 
 
 
-const orderSchema = new mongoose.Schema({
-  orderId: { type: String, required: true, unique: true },
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "users", required: true },
-  linkId: String,
-  orderDetails: Array,
-  price: { type: Number, required: true, min: 0 },
-  shippingMethod: { type: String, default: "standard" },
-  deliveryAddress: {
-    fullName: String,
-    phone: String,
-    email: String,
-    street: String,
-    city: String,
-    postalCode: String,
-    state: String,
-    country: String
-  },
-  paymentDetails: {
-    method: String,
-    transactionId: String,
-    status: { type: String, default: "pending" },
-    paid: { type: Boolean, default: false },
-    timestamp: Date,
-  },
-  status: { type: String, default: "pending" },
-  createdAt: { type: Date, default: Date.now },
-});
 
-const Order = mongoose.model("orders", orderSchema);
 
 
 
