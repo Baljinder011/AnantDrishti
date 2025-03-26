@@ -8,13 +8,12 @@ const bcrypt = require("bcrypt");
 require('dotenv').config();
 const crypto = require("crypto");
 const axios = require("axios");
-const nodemailer = require("nodemailer");
 const fs = require("fs");
 const dotenv = require("dotenv")
 dotenv.config();
 const nodemailer=require("nodemailer")
 const {Server} = require("socket.io")
-
+const http = require("http")
 const https = require("https");
 
 
@@ -55,30 +54,45 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 const PORT = process.env.PORT || 4000
 
 
-// origin: ['https://indraq.tech', 'http://localhost:3001'] ,  // Allow requests from localhost:3001
-// methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-// allowedHeaders: ["Content-Type", "Authorization"], // Add headers if needed
-// credentials: true,  // Allow cookies/credentials
+
+// Check if running on VPS or locally
+const isProduction = process.env.NODE_ENV === "production";
+let server; // Declare the server variable
+if (isProduction) {
+  let options;
+  try {
+    options = {
+      key: fs.readFileSync(path.join(__dirname, "/etc/letsencrypt/live/indraq.tech/privkey.pem")),
+      cert: fs.readFileSync(path.join(__dirname, "/etc/letsencrypt/live/indraq.tech/fullchain.pem")),
+    };
+    server = https.createServer(options, app); // Use the correct options object
+    console.log(":white_tick: Running in PRODUCTION mode with HTTPS");
+  } catch (error) {
+    console.error(":x: Error loading SSL certificates:", error.message);
+    process.exit(1);
+  }
+} else {
+  server = http.createServer(app); // Use HTTP for local development
+  console.log(":white_tick: Running in DEVELOPMENT mode with HTTP");
+}
 
 
-
-
-const options = {
-  key: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/privkey.pem"),
-  cert: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/fullchain.pem"),
-};
+// const options = {
+//   key: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/privkey.pem"),
+//   cert: fs.readFileSync("/etc/letsencrypt/live/indraq.tech/fullchain.pem"),
+// };
 
 
 
 // Enforce HTTPS middleware
 
 
-app.use((req, res, next) => {
-  if (req.protocol !== "https") {
-    return res.redirect("https://" + req.headers.host + req.url);
-  }
-  next();
-});
+// app.use((req, res, next) => {
+//   if (req.protocol !== "https") {
+//     return res.redirect("https://" + req.headers.host + req.url);
+//   }
+//   next();
+// });
 
 
 
@@ -327,259 +341,6 @@ app.post("/users/:id/orders", async (req, res) => {
     res.status(500).json({ error: "Error processing order", details: error.message });
   }
 });
-
-
-
-
-
-
-
-
-//main api and final
-
-
-// app.post("/users/:id/orders", async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     let { customer_name, customer_email, customer_phone, amount, shippingMethod, deliveryAddress, orderDetails } = req.body;
-
-//     if (!id || !customer_name || !customer_email || !customer_phone || !amount || !deliveryAddress) {
-//       return res.status(400).json({ error: "Missing required fields" });
-//     }
-
-//     customer_phone = String(customer_phone);
-
-//     // Fetch user & determine next orderId
-//     const user = await User.findById(id);
-//     let newOrderId = "ORD001";
-
-//     if (user && user.orders.length > 0) {
-//       const lastOrder = user.orders[user.orders.length - 1];
-//       const match = lastOrder.orderId.match(/ORD(\d+)/);
-//       if (match) {
-//         newOrderId = `ORD${String(parseInt(match[1], 10) + 1).padStart(3, "0")}`;
-//       }
-//     }
-
-//     // Generate a unique link ID
-//     const linkId = `CF_${crypto.randomBytes(8).toString("hex")}`;
-    
-//     // Prepare Cashfree payment link request
-//     const payload = {
-//       order_id: newOrderId,
-//       link_id: linkId,
-//       customer_details: { customer_name, customer_email, customer_phone },
-//       link_amount: amount,
-//       link_currency: "INR",
-//       link_purpose: "E-commerce Purchase",
-//       link_notify: { send_email: true, send_sms: true },
-//       link_auto_reminders: true,
-//       link_expiry_time: new Date(Date.now() + 3600 * 1000).toISOString(),
-//       link_meta: {
-//         return_url: `http://127.0.0.1:5501/Frontend/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${id}`
-//       },
-//     };
-
-//     // Call Cashfree API to generate payment link
-//     const response = await axios.post("https://sandbox.cashfree.com/pg/links", payload, {
-//       headers: {
-//         "x-api-version": "2022-09-01",
-//         "x-client-id": APP_ID,
-//         "x-client-secret": SECRET_KEY,
-//       },
-//     });
-
-//     if (!response.data || !response.data.link_url) {
-//       return res.status(500).json({ error: "Failed to generate payment link" });
-//     }
-
-//     // Store order with pending payment status
-//     const newOrder = {
-//       orderId: newOrderId,
-//       linkId,
-//       orderDetails,
-//       price: amount,
-//       shippingMethod: shippingMethod || "standard",
-//       deliveryAddress: {
-//         fullName: deliveryAddress.fullName,
-//         phone: deliveryAddress.phone,
-//         email: deliveryAddress.email,
-//         street: deliveryAddress.street,
-//         city: deliveryAddress.city,
-//         postalCode: deliveryAddress.postalCode,
-//         state: deliveryAddress.state,
-//         country: deliveryAddress.country,
-//       },
-//       paymentDetails: { status: "pending", transactionId: "", paid: false },
-//       status: "pending",
-//       createdAt: new Date(),
-//     };
-
-//     const updatedUser = await User.findByIdAndUpdate(
-//       id,
-//       { $push: { orders: newOrder } },
-//       { new: true }
-//     );
-
-//     if (!updatedUser) {
-//       return res.status(404).json({ error: "User not found" });
-//     }
-
-//     res.json({
-//       success: true,
-//       userId: id,
-//       orderId: newOrderId,
-//       linkId,
-//       linkUrl: response.data.link_url,
-//       message: "Order created successfully, waiting for payment"
-//     });
-
-//   } catch (error) {
-//     console.error("Error:", error.response?.data || error.message);
-//     res.status(500).json({ error: "Error processing order", details: error.message });
-//   }
-// });
-
-
-
-// app.post("/create-payment-link", async (req, res) => {
-//   try {
-//     let {
-//       userId,
-//       customer_name,
-//       customer_email,
-//       customer_phone,
-//       amount,
-//       shippingMethod,
-//       deliveryAddress // Added delivery address
-//     } = req.body;
-
-//     if (!userId || !customer_name || !customer_email || !customer_phone || !amount || !deliveryAddress) {
-//       return res.status(400).json({ error: "Missing required fields" });
-//     }
-
-//     customer_phone = String(customer_phone);
-
-//     // Fetch the user's last order to determine the next orderId
-//     const user = await User.findById(userId);
-//     let newOrderId = "ORD001";
-
-//     if (user && user.orders.length > 0) {
-//       // Extract the last orderId and increment it
-//       const lastOrder = user.orders[user.orders.length - 1];
-//       const lastOrderId = lastOrder.orderId;
-
-//       const match = lastOrderId.match(/ORD(\d+)/);
-//       if (match) {
-//         const orderNumber = parseInt(match[1], 10) + 1;
-//         newOrderId = `ORD${String(orderNumber).padStart(3, "0")}`;
-//       }
-//     }
-
-//     const linkId = `CF_${crypto.randomBytes(8).toString("hex")}`;
-//     const payload = {
-//       order_id: newOrderId,
-//       link_id: linkId,
-//       customer_details: { customer_name, customer_email, customer_phone },
-//       link_amount: amount,
-//       link_currency: "INR",
-//       link_purpose: "E-commerce Purchase",
-//       link_notify: { send_email: true, send_sms: true },
-//       link_auto_reminders: true,
-//       link_expiry_time: new Date(Date.now() + 3600 * 1000).toISOString(),
-//       link_meta: {
-//         return_url: `http://127.0.0.1:5501/Frontend/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${userId}`
-//         // return_url: `https://indraq.tech/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${userId}`
-
-//       },
-//     };
-
-//     const response = await axios.post("https://sandbox.cashfree.com/pg/links", payload, {
-//       headers: {
-//         "x-api-version": "2022-09-01",
-//         "x-client-id": APP_ID,
-//         "x-client-secret": SECRET_KEY,
-//       },
-//     });
-
-//     // Save Order to MongoDB with delivery address
-//     const newOrder = {
-//       orderId: newOrderId,
-//       linkId,
-//       orderDetails: [],
-//       price: amount,
-//       shippingMethod: shippingMethod || "standard",
-//       deliveryAddress: {
-//         fullName: deliveryAddress.fullName,
-//         phone: deliveryAddress.phone,
-//         email: deliveryAddress.email,
-//         street: deliveryAddress.street,
-//         city: deliveryAddress.city,
-//         postalCode: deliveryAddress.postalCode,
-//         state: deliveryAddress.state,
-//         country: deliveryAddress.country,
-//       },
-//       paymentDetails: { status: "pending" },
-//       status: "pending",
-//       createdAt: new Date(),
-//     };
-
-//     const updatedUser = await User.findByIdAndUpdate(
-//       userId,
-//       { $push: { orders: newOrder } },
-//       { new: true }
-//     );
-
-//     if (!updatedUser) {
-//       return res.status(404).json({ error: "User not found" });
-//     }
-
-//     res.json({ success: true, userId, orderId: newOrderId, linkId, linkUrl: response.data.link_url });
-
-//   } catch (error) {
-//     console.error("Cashfree Error:", error.response?.data || error.message);
-//     res.status(500).json({ error: "Failed to create payment link" });
-//   }
-// });
-
-
-
-// app.post("/users/:id/orders", async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const newOrder = req.body;
-
-//     // ❌ Remove `_id` if it exists (MongoDB will generate it automatically)
-//     if (newOrder._id) delete newOrder._id;
-
-//     console.log("Received User ID:", id);
-//     console.log("Processed Order:", JSON.stringify(newOrder, null, 2));
-
-//     // Ensure delivery address is present
-//     if (!newOrder.deliveryAddress) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Missing delivery address information"
-//       });
-//     }
-
-//     const updatedUser = await User.findByIdAndUpdate(
-//       id,
-//       { $push: { orders: newOrder } },
-//       { new: true }
-//     );
-
-//     if (!updatedUser) {
-//       return res.status(404).json({ success: false, message: "User not found" });
-//     }
-
-//     console.log("Order saved successfully for user:", id);
-//     res.status(200).json({ success: true, message: "Order saved", order: newOrder });
-//   } catch (error) {
-//     console.error("Error saving order:", error);
-//     res.status(500).json({ success: false, message: "Error saving order", error: error.message });
-//   }
-// });
 
 
 
@@ -966,55 +727,6 @@ app.put("/users/:id", uploadProfile.single("profileImage"), async (req, res) => 
 
 
 
-
-
-
-
-
-
-
-// Order Schema
-// const orderSchema = new mongoose.Schema({
-//   orderId: { type: String, unique: true }, // Custom Order ID
-//   linkId: String,
-//   customerName: String,
-//   customerEmail: String,
-//   customerPhone: String,
-//   orderDetails: Array,
-//   Price: Number,
-//   paymentDetails: {
-//     method: String,
-//     transactionId: String,
-//     status: { type: String, default: 'pending' }, // Payment status
-//     paid: { type: Boolean, default: false }, // New field indicating if payment is made
-//     timestamp: Date
-//   },
-//   status: { type: String, default: 'pending' },  // New field for order status
-//   createdAt: { type: Date, default: Date.now }
-// });
-
-// const Order = mongoose.model("Order", orderSchema);
-
-
-
-// app.get('/get-orders', async (req, res) => {
-//   try {
-//     // Fetch all orders from the database
-//     const orders = await Order.find({});
-
-//     // Return the orders
-//     res.json({ success: true, orders });
-//   } catch (error) {
-//     console.error("Error fetching orders:", error);
-//     res.status(500).json({ success: false, message: 'Failed to fetch orders' });
-//   }
-// });
-
-
-
-
-
-
 app.get("/users/email/:email", async (req, res) => {
   const user = await User.findOne({ email: req.params.email });
   if (!user) return res.status(404).send("User not found");
@@ -1056,29 +768,6 @@ app.get("/users/:id/addresses", async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
-
-
-
-
-
-
-
-
-// app.get('/getUser', async (req, res) => {
-//   const { email } = req.query;
-//   try {
-//     const user = await User.findOne({ email }).select("-password"); // Exclude password
-//     if (!user) return res.status(404).json({ message: "User not found" });
-//     res.json(user);
-//   } catch (error) {
-//     res.status(500).json({ message: "Server error" });
-//   }
-// });
-
-
-
-
-
 
 
 
@@ -1266,55 +955,6 @@ app.get("/products/search", async (req, res) => {
   }
 });
 
-
-
-
-
-// // Product Schema & Model
-// const productSchema = new mongoose.Schema({
-//   name: String,
-//   description: String,
-//   image: String,
-//   price: Number,
-//   stock: Number,
-//   status: { type: String, enum: ['available', 'out of stock'], default: 'available' },
-//   category: String,
-//   discount: Number,
-//   size: String,
-//   color: String,
-// });
-// const Product = mongoose.model('products', productSchema);
-
-
-
-
-// // Configure multer for file uploads
-// const storage = multer.diskStorage({
-//   destination: function (req, file, cb) {
-//     cb(null, 'uploads/Products/');
-//   },
-//   filename: function (req, file, cb) {
-//     cb(null, file.originalname);
-//   }
-// });
-
-// const upload = multer({ storage: storage });
-
-
-
-
-
-// app.get('/products', async (req, res) => {
-//   try {
-//     let query = {};
-//     let limit = parseInt(req.query.limit) || 0; // Convert limit to a number, default 0 (no limit)
-
-//     const products = await Product.find(query).limit(limit);
-//     res.json(products);
-//   } catch (error) {
-//     res.status(500).json({ error: 'Failed to fetch products' });
-//   }
-// });
 
 
 
@@ -1596,6 +1236,15 @@ app.delete('/:id', async (req, res) => {
 });
 
 
+
+
+server.listen(PORT, () => {
+  console.log(`:rocket: Server running on ${isProduction ? "HTTPS" : "HTTP"} at port ${PORT}`);
+});
+
+
+
+
 // Start Server
 
 // app.listen(PORT, () => {
@@ -1606,6 +1255,6 @@ app.delete('/:id', async (req, res) => {
 
 // Start HTTPS server
 
-https.createServer(options, app).listen(PORT, () => {
-  console.log(`Secure server running on HTTPS at port ${PORT}`);
-});
+// https.createServer(options, app).listen(PORT, () => {
+//   console.log(`Secure server running on HTTPS at port ${PORT}`);
+// });
