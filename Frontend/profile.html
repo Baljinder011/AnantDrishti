@@ -619,38 +619,44 @@ function showOrders() {
 
 
 // Fetch only order status periodically
-    async function fetchOrderStatus() {
-    const _id = localStorage.getItem("_id");
-    if (!_id) return;
+async function fetchOrderStatus() {
+    const orders = document.querySelectorAll(".order-wrapper");
+    
+    if (!orders.length) return;
 
-    try {
-        const response = await fetch(`${CONFIG.API_URL}/users/${_id}/orders`);
-        if (!response.ok) {
-            console.error("Failed to fetch order status");
-            return;
+    orders.forEach(async (orderElement) => {
+        const orderId = orderElement.getAttribute("data-order-id");
+        if (!orderId) return;
+
+        try {
+            const response = await fetch(`${CONFIG.API_URL}/order-status/${orderId}`);
+            if (!response.ok) {
+                console.error(`Failed to fetch status for order ${orderId}`);
+                return;
+            }
+
+            const data = await response.json();
+            if (!data.deliveryStatus) return;
+
+            const statusBadge = orderElement.querySelector(".status-badge");
+            const statusLabel = orderElement.querySelector(".status-label");
+
+            if (statusBadge) {
+                statusBadge.className = `status-badge ${data.deliveryStatus.toLowerCase()}`;
+                statusBadge.textContent = data.deliveryStatus;
+            }
+
+            if (statusLabel) {
+                statusLabel.className = `status-label ${data.deliveryStatus.toLowerCase()}`;
+                statusLabel.textContent = data.deliveryStatus;
+            }
+
+        } catch (error) {
+            console.error(`Error updating order status for ${orderId}:`, error);
         }
+    });
+}
 
-        const data = await response.json();
-        if (!data.orders) return;
-
-        data.orders.forEach(order => {
-            const orderElement = document.querySelector(`[data-order-id="${order.orderId}"] .status-badge`);
-            const orderItemStatus = document.querySelector(`[data-order-id="${order.orderId}"] .status-label`);
-            
-            if (orderElement) {
-                orderElement.className = `status-badge ${order.deliveryStatus.toLowerCase()}`;
-                orderElement.textContent = order.deliveryStatus;
-            }
-
-            if (orderItemStatus) {
-                orderItemStatus.className = `status-label ${order.deliveryStatus.toLowerCase()}`;
-                orderItemStatus.textContent = order.deliveryStatus;
-            }
-        });
-    } catch (error) {
-        console.error("Error updating order statuses:", error);
-    }
-    }
 
 
 // Helper function to show error messages
