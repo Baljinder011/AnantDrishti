@@ -1313,19 +1313,39 @@ app.patch('/orders/:id/status', async (req, res) => {
   }
 });
 
-app.get('/orders/:id/status', async (req, res) => {
+// app.get('/orders/:id/status', async (req, res) => {
+//   try {
+//     const order = await Order.findById(req.params.id, 'status');
+//     if (!order) {
+//       return res.status(404).json({ message: 'Order not found' });
+//     }
+//     res.json({ orderId: req.params.id, status: order.status });
+//   } catch (error) {
+//     console.error('Error fetching order status:', error);
+//     res.status(500).json({
+//       message: 'Internal server error',
+//       error: error.message
+//     });
+//   }
+// });
+
+
+
+app.get("/users/:id/order-status", async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id, 'status');
-    if (!order) {
-      return res.status(404).json({ message: 'Order not found' });
-    }
-    res.json({ orderId: req.params.id, status: order.status });
+      const { userId } = req.params;
+
+      // Fetch only orderId and deliveryStatus for the user's orders
+      const orders = await Order.find({ userId }, "orderId deliveryStatus");
+
+      if (!orders.length) {
+          return res.status(404).json({ message: "No orders found for this user." });
+      }
+
+      res.json({ orders });
   } catch (error) {
-    console.error('Error fetching order status:', error);
-    res.status(500).json({
-      message: 'Internal server error',
-      error: error.message
-    });
+      console.error("Error fetching order statuses:", error);
+      res.status(500).json({ message: "Internal server error" });
   }
 });
 
