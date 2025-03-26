@@ -373,6 +373,35 @@
         const ordersContainer = document.getElementById("ordersList");
         ordersContainer.innerHTML = "";
 
+        // Add status color styles
+        const styleTag = document.createElement('style');
+        styleTag.textContent = `
+            .status-badge, .status-label {
+                padding: 5px 10px;
+                border-radius: 4px;
+                font-weight: bold;
+                display: inline-block;
+                margin-top: 5px;
+            }
+            .status-badge.processing, .status-label.processing {
+                background-color: #FFA500;
+                color: white;
+            }
+            .status-badge.shipped, .status-label.shipped {
+                background-color: #4CAF50;
+                color: white;
+            }
+            .status-badge.delivered, .status-label.delivered {
+                background-color: #2196F3;
+                color: white;
+            }
+            .status-badge.cancelled, .status-label.cancelled {
+                background-color: #F44336;
+                color: white;
+            }
+        `;
+        document.head.appendChild(styleTag);
+
         if (!data.orders || data.orders.length === 0) {
             ordersContainer.innerHTML = "<p>No orders found.</p>";
             return;
@@ -430,13 +459,21 @@
                         <p>ORDER # ${order.orderId || 'N/A'}</p>
                         <a href="#" class="view-details">View order details</a>
                     </div>
+                    <div class="order-status">
+                        <p>DELIVERY STATUS</p>
+                        <p class="status-badge ${(order.deliveryStatus || 'processing').toLowerCase()}">
+                            ${order.deliveryStatus || 'Processing'}
+                        </p>
+                    </div>
                 </div>
 
                 ${order.orderDetails.map(item => `
                     <div class="order-item">
                         <div class="order-item-status">
-                            <p>${order.orderStatus || 'Delivered'}</p>
-                            <p>Package was handed to resident</p>
+                            <p class="status-label ${(order.deliveryStatus || 'processing').toLowerCase()}">
+                                ${order.deliveryStatus || 'Processing'}
+                            </p>
+                            <p>Current status of your order</p>
                         </div>
                         <div class="order-item-details">
                             <img src="${item.image || ''}" alt="${item.name || 'Product'}">
@@ -456,8 +493,9 @@
 
         // Add event delegation for order details
         ordersContainer.addEventListener('click', function (event) {
-            const orderWrapper = event.target.closest('.order-wrapper');
-            if (orderWrapper) {
+            const viewDetailsLink = event.target.closest('.view-details');
+            if (viewDetailsLink) {
+                const orderWrapper = viewDetailsLink.closest('.order-wrapper');
                 const orderIndex = orderWrapper.getAttribute('data-order-index');
                 if (orderIndex !== null) {
                     showOrderDetails(window.userOrders[orderIndex]);
@@ -505,6 +543,9 @@ function showOrderDetails(order) {
                 <div class="order-details-summary">
                     <p>Order placed on ${orderDate.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                     <p>Order # ${order.orderId || 'N/A'}</p>
+                    <p class="status-badge ${(order.deliveryStatus || 'processing').toLowerCase()}">
+                        Delivery Status: ${order.deliveryStatus || 'Processing'}
+                    </p>
                 </div>
                 <div class="order-details-actions">
                     <button class="btn-secondary" onclick="showOrders()">Back to Orders</button>
@@ -526,7 +567,6 @@ function showOrderDetails(order) {
 
             ${order.orderDetails.map(item => `
                 <div class="detailed-order-item">
-                  
                     <div class="item-details">
                         <img src="${item.image || ''}" alt="${item.name || 'Product'}">
                         <div class="item-info">
@@ -564,32 +604,33 @@ function showOrderDetails(order) {
         showErrorMessage("Failed to load order details");
     }
 }
-        // Return to orders list
-        function showOrders() {
-            const orderDetailsContainer = document.getElementById("orderDetails");
-            const ordersListContainer = document.getElementById("ordersDetails");
 
-            if (orderDetailsContainer && ordersListContainer) {
-                orderDetailsContainer.style.display = "none";
-                ordersListContainer.style.display = "block";
-            }
-        }
+// Return to orders list
+function showOrders() {
+    const orderDetailsContainer = document.getElementById("orderDetails");
+    const ordersListContainer = document.getElementById("ordersDetails");
 
-        // Helper function to show error messages
-        function showErrorMessage(message) {
-            const errorContainer = document.getElementById("errorContainer");
-            if (errorContainer) {
-                errorContainer.innerHTML = `<p class="error-message">${message}</p>`;
-                errorContainer.style.display = "block";
-            } else {
-                alert(message);
-            }
-        }
+    if (orderDetailsContainer && ordersListContainer) {
+        orderDetailsContainer.style.display = "none";
+        ordersListContainer.style.display = "block";
+    }
+}
 
-        // Initialize page
-        document.addEventListener('DOMContentLoaded', () => {
-            fetchOrders();
-        });
+// Helper function to show error messages
+function showErrorMessage(message) {
+    const errorContainer = document.getElementById("errorContainer");
+    if (errorContainer) {
+        errorContainer.innerHTML = `<p class="error-message">${message}</p>`;
+        errorContainer.style.display = "block";
+    } else {
+        alert(message);
+    }
+}
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', () => {
+    fetchOrders();
+});
 
 
 

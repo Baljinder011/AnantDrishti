@@ -237,7 +237,7 @@ const userSchema = new mongoose.Schema({
         paid: { type: Boolean, default: false },
         timestamp: Date,
       },
-      status: { type: String, default: "pending" },
+      deliveryStatus :{ type: String, default: "processing" },
       createdAt: { type: Date, default: Date.now },
     },
   ],
@@ -272,7 +272,7 @@ const orderSchema = new mongoose.Schema({
     paid: { type: Boolean, default: false },
     timestamp: Date,
   },
-  status: { type: String, default: "pending" },
+  deliveryStatus :{ type: String, default: "processing" },
   createdAt: { type: Date, default: Date.now },
 });
 
@@ -1313,6 +1313,21 @@ app.patch('/orders/:id/status', async (req, res) => {
   }
 });
 
+app.get('/orders/:id/status', async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id, 'status');
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    res.json({ orderId: req.params.id, status: order.status });
+  } catch (error) {
+    console.error('Error fetching order status:', error);
+    res.status(500).json({
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
+});
 
 
 // Update Order Details
