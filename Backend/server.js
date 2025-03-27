@@ -1352,57 +1352,57 @@ app.get("/orders", async (req, res) => {
 
 
 // Update Order Status
-// app.patch('/orders/:id/status', async (req, res) => {
-//   try {
-//     const { status } = req.body;
-//     console.log('Received status update:', {
-//       orderId: req.params.id,
-//       newStatus: status
-//     });
-//     // Validate that the status is one of the allowed values
-//     const allowedStatuses = ['Pending', 'Completed', 'Shipped', 'Canceled', 'Processing'];
-//     if (!allowedStatuses.includes(status)) {
-//       return res.status(400).json({ message: 'Invalid status' });
-//     }
-//     const order = await Order.findByIdAndUpdate(
-//       req.params.id,
-//       { deliveryStatus: status },
-//       {
-//         new: true,
-//         runValidators: true
-//       }
-//     );
-//     if (!order) {
-//       return res.status(404).json({ message: 'Order not found' });
-//     }
-//     console.log('Updated order:', order);
-//     res.json(order);
-//   } catch (error) {
-//     console.error('Error updating order status:', error);
-//     res.status(500).json({
-//       message: 'Internal server error',
-//       error: error.message
-//     });
-//   }
-// });
+app.patch('/orders/:id/status', async (req, res) => {
+  try {
+    const { status } = req.body;
+    console.log('Received status update:', {
+      orderId: req.params.id,
+      newStatus: status
+    });
+    // Validate that the status is one of the allowed values
+    const allowedStatuses = ['Pending', 'Completed', 'Shipped', 'Canceled', 'Processing'];
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({ message: 'Invalid status' });
+    }
+    const order = await Order.findByIdAndUpdate(
+      req.params.id,
+      { deliveryStatus: status },
+      {
+        new: true,
+        runValidators: true
+      }
+    );
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    console.log('Updated order:', order);
+    res.json(order);
+  } catch (error) {
+    console.error('Error updating order status:', error);
+    res.status(500).json({
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
+});
 
-// app.get("/order-status/:orderId", async (req, res) => {
-//   try {
-//       const { orderId } = req.params;
+app.get("/order-status/:orderId", async (req, res) => {
+  try {
+      const { orderId } = req.params;
 
-//       // Fetch order from the database
-//       const order = await Order.findOne({ orderId });
+      // Fetch order from the database
+      const order = await Order.findOne({ orderId });
 
-//       if (!order) {
-//           return res.status(404).json({ message: "Order not found" });
-//       }
+      if (!order) {
+          return res.status(404).json({ message: "Order not found" });
+      }
 
-//       res.json({ deliveryStatus: order.deliveryStatus });
-//   } catch (error) {
-//       console.error("Error fetching delivery status:", error);
-//       res.status(500).json({ message: "Internal server error" });
-//   }
-// });
+      res.json({ deliveryStatus: order.deliveryStatus });
+  } catch (error) {
+      console.error("Error fetching delivery status:", error);
+      res.status(500).json({ message: "Internal server error" });
+  }
+});
 
 
 
@@ -1411,43 +1411,43 @@ app.get("/orders", async (req, res) => {
 
 
 // Update Order Details
-// app.put('/orders/:id', async (req, res) => {
-//   try {
-//     const { address } = req.body;
-//     console.log('Received order update:', {
-//       orderId: req.params.id,
-//       address
-//     });
-//     // Validate the update
-//     if (!address) {
-//       return res.status(400).json({ message: 'Address is required' });
-//     }
-//     const order = await Order.findByIdAndUpdate(
-//       req.params.id,
-//       {
-//         deliveryAddress: {
-//           ...address,
-//           street: address.street // Explicitly update street
-//         }
-//       },
-//       {
-//         new: true,
-//         runValidators: true
-//       }
-//     );
-//     if (!order) {
-//       return res.status(404).json({ message: 'Order not found' });
-//     }
-//     console.log('Updated order:', order);
-//     res.json(order);
-//   } catch (error) {
-//     console.error('Error updating order details:', error);
-//     res.status(500).json({
-//       message: 'Internal server error',
-//       error: error.message
-//     });
-//   }
-// });
+app.put('/orders/:id', async (req, res) => {
+  try {
+    const { address } = req.body;
+    console.log('Received order update:', {
+      orderId: req.params.id,
+      address
+    });
+    // Validate the update
+    if (!address) {
+      return res.status(400).json({ message: 'Address is required' });
+    }
+    const order = await Order.findByIdAndUpdate(
+      req.params.id,
+      {
+        deliveryAddress: {
+          ...address,
+          street: address.street // Explicitly update street
+        }
+      },
+      {
+        new: true,
+        runValidators: true
+      }
+    );
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    console.log('Updated order:', order);
+    res.json(order);
+  } catch (error) {
+    console.error('Error updating order details:', error);
+    res.status(500).json({
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
+});
 
 
 // Delete Order
