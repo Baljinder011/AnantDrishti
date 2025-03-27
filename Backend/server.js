@@ -180,8 +180,9 @@ const APP_ID = process.env.CASHFREE_APP_ID || "YOUR_APP_ID";
 const SECRET_KEY = process.env.CASHFREE_SECRET_KEY || "YOUR_SECRET_KEY";
 
 
-//User Schema
 
+
+// User Schema
 const userSchema = new mongoose.Schema({
   profileImage: { type: String, default: "" },
   firstName: { type: String, required: true },
@@ -214,7 +215,7 @@ const userSchema = new mongoose.Schema({
 
   orders: [
     {
-      orderId: { type: String, required: true, unique: true }, // Custom Order ID
+      orderId: { type: String, required: true, unique: true },
       linkId: String,
       orderDetails: Array,
       price: { type: Number, required: true, min: 0 },
@@ -246,7 +247,7 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model("users", userSchema);
 
 
-
+// Order Schema
 const orderSchema = new mongoose.Schema({
   orderId: { type: String, required: true, unique: true },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "users", required: true },
@@ -280,6 +281,13 @@ const Order = mongoose.model("orders", orderSchema);
 
 
 
+
+
+
+
+
+
+// Update Order Status from Orders Collection
 app.put("/orders/update-status", async (req, res) => {
   const { orderId, newStatus } = req.body;
 
@@ -288,72 +296,103 @@ app.put("/orders/update-status", async (req, res) => {
   }
 
   try {
-      // Update in Orders collection
-      const orderUpdate = await Order.findOneAndUpdate(
+      // Update the order in the orders collection
+      const updatedOrder = await Order.findOneAndUpdate(
           { orderId },
           { deliveryStatus: newStatus },
           { new: true }
       );
 
-      if (!orderUpdate) {
+      if (!updatedOrder) {
           return res.status(404).json({ error: "Order not found" });
       }
 
-      // Update in Users collection
-      const userUpdate = await User.findOneAndUpdate(
-          { "orders.orderId": orderId },
+      // Update the order in the user's embedded orders array
+      const updatedUser = await User.findOneAndUpdate(
+          { _id: updatedOrder.userId, "orders.orderId": orderId },
           { $set: { "orders.$.deliveryStatus": newStatus } },
           { new: true }
       );
 
-      if (!userUpdate) {
+      if (!updatedUser) {
           return res.status(404).json({ error: "User order not found" });
       }
 
-      res.json({ message: "Order status updated successfully!" });
+      res.json({ message: "Order status updated successfully!", updatedOrder });
+
   } catch (error) {
       console.error("Error updating order status:", error);
       res.status(500).json({ error: "Internal server error" });
   }
 });
 
-app.get("/orders/update-status", async (req, res) => {
-  const { orderId, newStatus } = req.query; // Using GET with query parameters
 
-  if (!orderId || !newStatus) {
-      return res.status(400).json({ error: "Missing required fields" });
+// Update Order Status from Users Collection
+app.put("/users/:userId/orders/:orderId/status", async (req, res) => {
+  const { userId, orderId } = req.params;
+  const { newStatus } = req.body;
+
+  if (!newStatus) {
+    return res.status(400).json({ error: "New status is required" });
   }
 
   try {
-      // Update in Orders collection
-      const orderUpdate = await Order.findOneAndUpdate(
-          { orderId },
-          { deliveryStatus: newStatus },
-          { new: true }
-      );
+    // Update in Users collection
+    const userUpdate = await User.findOneAndUpdate(
+      { 
+        _id: userId, 
+        "orders.orderId": orderId 
+      },
+      { 
+        $set: { "orders.$.deliveryStatus": newStatus } 
+      },
+      { new: true }
+    );
 
-      if (!orderUpdate) {
-          return res.status(404).json({ error: "Order not found" });
-      }
+    if (!userUpdate) {
+      return res.status(404).json({ error: "User or Order not found" });
+    }
 
-      // Update in Users collection
-      const userUpdate = await User.findOneAndUpdate(
-          { "orders.orderId": orderId },
-          { $set: { "orders.$.deliveryStatus": newStatus } },
-          { new: true }
-      );
+    // Sync with Orders collection
+    await Order.findOneAndUpdate(
+      { orderId: orderId },
+      { deliveryStatus: newStatus },
+      { new: true }
+    );
 
-      if (!userUpdate) {
-          return res.status(404).json({ error: "User order not found" });
-      }
+    res.json({ 
+      message: "Order status updated successfully", 
+      updatedOrder: userUpdate.orders.find(order => order.orderId === orderId)
+    });
 
-      res.json({ message: "Order status updated successfully!", updatedOrder: orderUpdate });
   } catch (error) {
-      console.error("Error updating order status:", error);
-      res.status(500).json({ error: "Internal server error" });
+    console.error("Error updating order status:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
+// Fetch Order Statuses for a User
+app.get("/users/:userId/orders/status", async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    // Find the user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Fetch latest statuses from Orders collection
+    const updatedOrders = await Order.find({
+      userId: userId
+    }).select('orderId deliveryStatus');
+
+    res.json(updatedOrders);
+  } catch (error) {
+    console.error("Error fetching order status updates:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 
 app.post("/users/:id/orders", async (req, res) => {
@@ -423,8 +462,8 @@ app.post("/users/:id/orders", async (req, res) => {
       link_auto_reminders: true,
       link_expiry_time: new Date(Date.now() + 3600 * 1000).toISOString(),
       link_meta: {
-        // return_url: `http://127.0.0.1:5501/Frontend/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${id}`
-        return_url: `https://indraq.tech/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${id}`
+        return_url: `http://127.0.0.1:5501/Frontend/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${id}`
+        // return_url: `https://indraq.tech/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${id}`
       },
     };
 
@@ -495,7 +534,6 @@ app.post("/users/:id/orders", async (req, res) => {
 
 
 
-// Check Payment Status & Update Order
 // Check Payment Status & Update Order
 app.get("/check-payment-status", async (req, res) => {
   try {

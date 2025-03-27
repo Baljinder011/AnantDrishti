@@ -385,17 +385,6 @@
                 return;
             }
 
-            const subtotal = order.totalAmount || 
-                order.orderDetails.reduce((total, item) => 
-                    total + ((item.price || 0) * (item.quantity || 1)), 
-                0);
-
-            const gstRate = 0.18;
-            const gstAmount = subtotal * gstRate;
-            const shippingPrice = order.shippingPrice || 0;
-            const grandTotal = subtotal + gstAmount + shippingPrice;
-
-            const orderDate = order.date ? new Date(order.date) : new Date();
             const orderWrapper = document.createElement("div");
             orderWrapper.className = "order-wrapper";
             orderWrapper.setAttribute("data-order-id", order.orderId || 'N/A');
@@ -403,30 +392,13 @@
 
             orderWrapper.innerHTML = `
                 <div class="order-header">
-                    <div class="order-date">
-                        <p>ORDER PLACED</p>
-                        <p>${orderDate.toLocaleDateString('en-US')}</p>
-                    </div>
-                    <div class="order-total">
-                        <p>TOTAL</p>
-                        <p>₹${grandTotal.toLocaleString()}</p>
-                    </div>
-                    <div class="order-ship-to">
-                        <p>SHIP TO</p>
-                        <p>${order.deliveryAddress?.fullName || 'N/A'}</p>
-                    </div>
                     <div class="order-number">
                         <p>ORDER # ${order.orderId || 'N/A'}</p>
-                        <a href="#" class="view-details">View order details</a>
+                        <a href="#" class="view-details" data-order-index="${index}">View order details</a>
                     </div>
                     <div class="order-status">
                         <p>DELIVERY STATUS</p>
-                        <select class="status-dropdown" data-order-id="${order.orderId}">
-                            <option value="processing" ${order.deliveryStatus === "processing" ? "selected" : ""}>Processing</option>
-                            <option value="shipped" ${order.deliveryStatus === "shipped" ? "selected" : ""}>Shipped</option>
-                            <option value="delivered" ${order.deliveryStatus === "delivered" ? "selected" : ""}>Delivered</option>
-                            <option value="cancelled" ${order.deliveryStatus === "cancelled" ? "selected" : ""}>Cancelled</option>
-                        </select>
+                        <p class="status-text">${order.deliveryStatus || 'Processing'}</p>
                     </div>
                 </div>
             `;
@@ -434,41 +406,19 @@
             ordersContainer.appendChild(orderWrapper);
         });
 
-        // Event listener for status dropdown
-        document.querySelectorAll(".status-dropdown").forEach(select => {
-            select.addEventListener("change", async function () {
-                const orderId = this.getAttribute("data-order-id");
-                const newStatus = this.value;
-                const updatedOrder = await updateOrderStatus(orderId, newStatus);
-                
-                // Update the order in window.userOrders
-                const orderIndex = window.userOrders.findIndex(order => order.orderId === orderId);
-                if (orderIndex !== -1) {
-                    window.userOrders[orderIndex].deliveryStatus = newStatus;
-                }
-
-                // Update order details if currently displayed
-                const orderDetailsContainer = document.getElementById("orderDetails");
-                if (orderDetailsContainer && orderDetailsContainer.style.display !== "none") {
-                    const currentOrderId = orderDetailsContainer.querySelector('.order-details-summary p:nth-child(2)').textContent.replace('Order # ', '').trim();
-                    if (currentOrderId === orderId) {
-                        updateOrderDetailsStatus(newStatus);
-                    }
-                }
-            });
-        });
-
         // Event delegation for order details
         ordersContainer.addEventListener('click', function (event) {
             const viewDetailsLink = event.target.closest('.view-details');
             if (viewDetailsLink) {
-                const orderWrapper = viewDetailsLink.closest('.order-wrapper');
-                const orderIndex = orderWrapper.getAttribute('data-order-index');
+                event.preventDefault();
+                const orderIndex = viewDetailsLink.getAttribute('data-order-index');
                 if (orderIndex !== null) {
                     showOrderDetails(window.userOrders[orderIndex]);
                 }
             }
         });
+
+        startOrderStatusPolling();
 
     } catch (error) {
         console.error("Error fetching orders:", error);
@@ -476,28 +426,53 @@
     }
 }
 
-// Update order status function
-async function updateOrderStatus(orderId, newStatus) {
-    try {
-        const response = await fetch(`${CONFIG.API_URL}/orders/update-status`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ orderId, newStatus })
-        });
+// Polling function to check for order status updates
+function startOrderStatusPolling() {
+    const pollingInterval = 30000; // 30 seconds
 
-        if (response.ok) {
-            showSuccessMessage("Order status updated successfully!");
-            return { orderId, deliveryStatus: newStatus };
-        } else {
-            showErrorMessage("Failed to update order status.");
-            return null;
+    async function checkOrderStatusUpdates() {
+        try {
+            const _id = localStorage.getItem("_id");
+            const response = await fetch(`${CONFIG.API_URL}/users/${_id}/orders/status`);
+            if (!response.ok) {
+                console.error("Failed to fetch order status updates");
+                return;
+            }
+
+            const updatedOrders = await response.json();
+            
+            updatedOrders.forEach(updatedOrder => {
+                const orderWrapper = document.querySelector(`.order-wrapper[data-order-id="${updatedOrder.orderId}"]`);
+                
+                if (orderWrapper) {
+                    const statusText = orderWrapper.querySelector('.status-text');
+                    if (statusText) {
+                        statusText.textContent = updatedOrder.deliveryStatus || 'Processing';
+                    }
+
+                    const orderIndex = window.userOrders.findIndex(order => order.orderId === updatedOrder.orderId);
+                    if (orderIndex !== -1) {
+                        window.userOrders[orderIndex].deliveryStatus = updatedOrder.deliveryStatus;
+                    }
+
+                    const orderDetailsContainer = document.getElementById("orderDetails");
+                    if (orderDetailsContainer && orderDetailsContainer.style.display !== "none") {
+                        const currentOrderId = orderDetailsContainer.querySelector('.order-details-summary p:nth-child(2)').textContent.replace('Order # ', '').trim();
+                        if (currentOrderId === updatedOrder.orderId) {
+                            updateOrderDetailsStatus(updatedOrder.deliveryStatus);
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error("Error in order status polling:", error);
         }
-    } catch (error) {
-        console.error("Error updating order status:", error);
-        showErrorMessage("Error updating order status.");
-        return null;
     }
+
+    checkOrderStatusUpdates();
+    setInterval(checkOrderStatusUpdates, pollingInterval);
 }
+
 
 // Function to update status badge in order details
 function updateOrderDetailsStatus(newStatus) {
@@ -508,7 +483,7 @@ function updateOrderDetailsStatus(newStatus) {
     }
 }
 
-// Helper functions remain the same as in the previous implementation
+// Helper functions remain the same
 function showSuccessMessage(message) {
     alert(message);
 }
