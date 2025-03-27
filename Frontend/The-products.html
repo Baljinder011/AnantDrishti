@@ -172,14 +172,6 @@
                 <p id="product-description"></p>
                 <p class="product-price">Price: Rs.<span id="product-price"></span></p>
                 <div class="form-group">
-                    <label for="color">Color:</label>
-                    <select id="color" name="color" class="form-select" aria-label="Select color">
-                        <option value="Red">Red</option>
-                        <option value="Blue">Blue</option>
-                        <option value="Green">Green</option>
-                    </select>
-                </div>
-                <div class="form-group">
                     <label for="size">Size:</label>
                     <select id="size" name="size" class="form-select" aria-label="Select size">
                         <option value="S">S</option>
@@ -335,7 +327,7 @@
     <script>
        
 
-        document.addEventListener('DOMContentLoaded', () => {
+       document.addEventListener('DOMContentLoaded', () => {
             // Get product data from URL parameters
             const params = new URLSearchParams(window.location.search);
             const product = Object.fromEntries(params.entries());
@@ -531,7 +523,6 @@
             const productImage = document.getElementById('main-product-image').src;
             const productName = document.getElementById('product-name').innerText;
             const productPrice = parseFloat(document.getElementById('product-price').innerText.replace('Rs.', '').trim());
-            const productColor = document.getElementById('color').value;
             const productSize = document.getElementById('size').value;
             const productQuantity = parseInt(document.getElementById('quantity').value);
             
@@ -540,7 +531,6 @@
             // Check if the same product is already in the cart
             const existingProduct = cart.find(item =>
                 item.id === productId &&
-                item.color === productColor &&
                 item.size === productSize
             );
             
@@ -551,7 +541,6 @@
                     id: productId,
                     name: productName,
                     price: productPrice,
-                    color: productColor,
                     size: productSize,
                     quantity: productQuantity,
                     image: productImage
@@ -560,22 +549,18 @@
             
             localStorage.setItem('cart', JSON.stringify(cart));
             updateCartCounter();
-            
-     
         }
         
         function addToWishlist(productId) {
             const productImage = document.getElementById('main-product-image').src;
             const productName = document.getElementById('product-name').innerText;
             const productPrice = parseFloat(document.getElementById('product-price').innerText.replace('Rs.', '').trim());
-            const productColor = document.getElementById('color').value;
             const productSize = document.getElementById('size').value;
             
             const wishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
             
             const existingProduct = wishlist.find(item =>
                 item.id === productId &&
-                item.color === productColor &&
                 item.size === productSize
             );
             
@@ -584,7 +569,6 @@
                     id: productId,
                     name: productName,
                     price: productPrice,
-                    color: productColor,
                     size: productSize,
                     image: productImage
                 });

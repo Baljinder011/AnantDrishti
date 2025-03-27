@@ -51,7 +51,11 @@
 
     <!-- Profile Section -->
     <div class="detail-container" id="profileDetails">
+        <div class="addresses-header">
+
         <h2>Personal Details</h2>
+        <div class="back-btn" onclick="goBack()">Back</div>
+        </div>
 
         <!-- Profile Image Preview -->
         <img id="profileImagePreview" src="" alt="Profile Image"
@@ -73,18 +77,21 @@
         <button class="save-btn" id="saveProfileBtn" onclick="saveProfile()" style="display: none;">Save
             Profile</button>
 
-        <div class="back-btn" onclick="goBack()">Back</div>
     </div>
 
     <!-- Address Section -->
     <div class="detail-container" id="addressesDetails">
-        <h2>Saved Addresses</h2>
-        <div id="addressesList">Loading...</div>
-        <button class="edit-btn" onclick="openAddressPopup()">Add New Address</button>
-        <!-- <button class="save-btn" onclick="fetchUserAddresses()">Refresh Addresses</button> -->
-        <div class="back-btn" onclick="goBack()">Back</div>
+        <div class="addresses-header">
+            <h2>Saved Addresses</h2>
+            <div class="back-btn" onclick="goBack()">Back</div>
+        </div>
+        <div class="addressesListr" id="   addressesList">
+            <div id="addressesList">Loading...</div>
+            <button class="edit-btn" onclick="openAddressPopup()">Add New Address</button>
+        </div>
+        
     </div>
-
+ 
     <!-- Add Address Popup -->
     <div id="addressPopup" class="popup-overlay" style="display: none;">
         <div class="popup-content">
@@ -116,11 +123,13 @@
 
     <!-- Orders Section -->
     <div class="detail-container" id="ordersDetails">
+        <div class="orders-header">
         <h2>My Orders</h2>
+        <div class="back-btn" onclick="goBack()">Back</div>
+        </div>
         <div id="ordersList" class="orders-container">
             <!-- Orders will be dynamically populated here -->
         </div>
-        <div class="back-btn" onclick="goBack()">Back</div>
     </div>
 
     <!-- Order Details Section -->
@@ -390,16 +399,31 @@
             orderWrapper.setAttribute("data-order-id", order.orderId || 'N/A');
             orderWrapper.setAttribute("data-order-index", index);
 
+            // Generate product images and names HTML
+            const productItemsHtml = order.orderDetails.map(item => `
+                <div class="product-item">
+                    <div class="product-thumbnail">
+                        <img src="${item.image || ''}" alt="${item.name || 'Product'}">
+                    </div>
+                    <div class="product-name">
+                        ${item.name || 'Unnamed Product'}
+                    </div>
+                </div>
+            `).join('');
+
             orderWrapper.innerHTML = `
                 <div class="order-header">
                     <div class="order-number">
-                        <p>ORDER # ${order.orderId || 'N/A'}</p>
+                        <p>orderId # ${order.orderId || 'N/A'}</p>
                         <a href="#" class="view-details" data-order-index="${index}">View order details</a>
                     </div>
                     <div class="order-status">
                         <p>DELIVERY STATUS</p>
                         <p class="status-text">${order.deliveryStatus || 'Processing'}</p>
                     </div>
+                </div>
+                <div class="order-products">
+                    ${productItemsHtml}
                 </div>
             `;
 
@@ -425,6 +449,54 @@
         showErrorMessage(`Error fetching orders: ${error.message}`);
     }
 }
+
+// Additional CSS to support product names
+const additionalStyles = `
+.order-products {
+    display: flex;
+    gap: 15px;
+    padding: 15px 20px;
+    background-color: var(--secondary-color);
+    overflow-x: auto;
+}
+
+.product-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    width: 100px;
+}
+
+.product-thumbnail {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.product-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.product-name {
+    font-size: 0.8rem;
+    color: var(--text-color);
+    max-width: 100px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+`;
+
+// Add styles to document
+const styleElement = document.createElement('style');
+styleElement.textContent = additionalStyles;
+document.head.appendChild(styleElement);
 
 // Polling function to check for order status updates
 function startOrderStatusPolling() {
@@ -539,7 +611,7 @@ function showOrderDetails(order) {
                 </div>
                 <div class="order-details-actions">
                     <button class="btn-secondary" onclick="showOrders()">Back to Orders</button>
-                    <button class="btn-secondary">Invoice</button>
+                
                 </div>
             </div>
 
@@ -564,11 +636,7 @@ function showOrderDetails(order) {
                             <p>Sold by: ${item.seller || 'N/A'}</p>
                             <p>Price: ₹${(item.price || 0).toLocaleString()}</p>
                             <p>Quantity: ${item.quantity || 1}</p>
-                            <div class="item-actions">
-                                <button class="btn-secondary">Return/Replacement</button>
-                                <button class="btn-secondary">Write a product review</button>
-                                <button class="btn-primary">Buy it again</button>
-                            </div>
+                        
                         </div>
                     </div>
                 </div>

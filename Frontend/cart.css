@@ -68,7 +68,7 @@ body {
 
 .cart-item:hover {
   background-color: #f1f3f5;
-  transform: translateX(10px);
+  /* transform: translateX(10px); */
 }
 
 .cart-item-image {

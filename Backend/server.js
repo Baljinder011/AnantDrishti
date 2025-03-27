@@ -394,42 +394,58 @@ app.get("/users/:userId/orders/status", async (req, res) => {
   }
 });
 
-
 app.post("/users/:id/orders", async (req, res) => {
+  const session = await mongoose.startSession();
+  
   try {
+    // Start a database transaction
+    session.startTransaction();
+
     const { id } = req.params;
-    let {
+    const {
       customer_name,
       customer_email,
       customer_phone,
       amount,
-      shippingMethod,
-      shippingCharge,  // Explicitly receive this
+      shippingMethod = "standard",
+      shippingCharge,
       deliveryAddress,
-      deliveryStatus,
       orderDetails
     } = req.body;
+
+    // Comprehensive Validation
+    const validationRules = [
+      { field: 'customer_name', validate: (val) => val && val.length >= 2 },
+      { field: 'customer_email', validate: (val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) },
+      { field: 'customer_phone', validate: (val) => /^\d{10}$/.test(String(val).replace(/\D/g, '')) },
+      { field: 'amount', validate: (val) => val > 0 },
+      { field: 'deliveryAddress', validate: (val) => val && val.length > 10 }
+    ];
+
+    const validationErrors = validationRules
+      .filter(rule => !rule.validate(req.body[rule.field]))
+      .map(rule => `Invalid ${rule.field}`);
+
+    if (validationErrors.length > 0) {
+      return res.status(400).json({ 
+        error: "Validation Failed", 
+        details: validationErrors 
+      });
+    }
 
     // Explicitly define shipping prices
     const shippingPrices = {
       standard: 100,
       express: 300,
-      default: 0  // Added a default price
+      priority: 500,
+      default: 0
     };
 
-    const shippingPrice = shippingMethod && shippingPrices[shippingMethod]
-      ? shippingPrices[shippingMethod]
-      : (shippingCharge || shippingPrices.default);
+    const shippingPrice = (() => {
+      if (shippingCharge && shippingCharge > 0) return shippingCharge;
+      return shippingPrices[shippingMethod] || shippingPrices.default;
+    })();
 
-    console.log("Shipping Method:", shippingMethod);
-    console.log("Shipping Prices:", shippingPrices);
-    console.log("Calculated Shipping Price:", shippingPrice);
-
-    console.log("Shipping Details:", {
-      method: shippingMethod,
-      charge: shippingCharge,
-      calculatedPrice: shippingPrice
-    });
 
     if (!id || !customer_name || !customer_email || !customer_phone || !amount || !deliveryAddress) {
       return res.status(400).json({ error: "Missing required fields" });

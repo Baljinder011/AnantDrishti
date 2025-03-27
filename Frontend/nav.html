@@ -12,7 +12,7 @@
     <nav class="navbar">
         <div class="navbar-brand">
             <a href="./index.html">
-            <img src="../Photos/logo.png" alt="Logo">
+                <img src="../Photos/logo.png" alt="Logo">
             </a>
         </div>
 
@@ -20,8 +20,8 @@
         <div class="new-nav">
             <!-- Profile Section (Hidden if not logged in) -->
 
-               <!-- Login Button -->
-               <a id="loginButtonSidebar">
+            <!-- Login Button -->
+            <a id="loginButtonSidebar">
                 <button class="the-btn" type="button">Login</button>
             </a>
 
@@ -31,7 +31,9 @@
                     <i class="fa-solid fa-user-circle fa-xl"></i>
                 </a>
                 <div id="profileDropdownSidebar" class="dropdown hidden">
-                    <p><a href="./profile.html">Profile</a></p>
+                    <a href="./profile.html">
+                        <p>Profile</p>
+                    </a>
                     <p id="logoutButtonSidebar">Sign Out</p> <!-- Sign Out Button -->
                 </div>
                 <a href="./cart.html">
@@ -39,35 +41,35 @@
                     <span id="cart-counter">0</span>
                 </a>
 
-              
+
             </div>
-            
+
         </div>
-<div class="searchInput">
-        <input type="text" id="searchInput" placeholder="Search for products..." />
-        <!-- <i class="fa-solid fa-magnifying-glass the-search"></i> -->
-             <i class="fa-solid fa-magnifying-glass the-search" id="searchIcon"></i>
-
-        <ul id="suggestionBox" class="list-group"></ul>
-</div>
-    <!-- Magnifying glass icon -->
-
-    <!-- Popup Search Box -->
-    <div id="searchPopup" class="popup">
-        <div class="popup-content">
-            <span class="close-btn" id="closeBtn1">&times;</span>
+        <div class="searchInput">
             <input type="text" id="searchInput" placeholder="Search for products..." />
-            <ul id="suggestionBox" class="list-group"></ul>
+            <!-- <i class="fa-solid fa-magnifying-glass the-search"></i> -->
+            <i class="fa-solid fa-magnifying-glass the-search" id="searchIcon"></i>
 
-            <button id="searchButton">Search</button>
+            <ul id="suggestionBox" class="list-group"></ul>
         </div>
-    </div>
+        <!-- Magnifying glass icon -->
+
+        <!-- Popup Search Box -->
+        <div id="searchPopup" class="popup">
+            <div class="popup-content">
+                <span class="close-btn" id="closeBtn1">&times;</span>
+                <input type="text" id="searchInput" placeholder="Search for products..." />
+                <ul id="suggestionBox" class="list-group"></ul>
+
+                <button id="searchButton">Search</button>
+            </div>
+        </div>
 
 
         <div class="nav-open">
             <button class="navbar-toggler" id="navbar-toggler">☰</button>
-            
-            
+
+
         </div>
         <div class="navbar-menu" id="navbar-menu">
             <a href="./index.html" class="nav-link">Home</a>
@@ -75,7 +77,7 @@
             <a href="./services.html" class="nav-link">Services</a>
             <a href="./products.html" class="nav-link">Products</a>
             <a href="./calculator.html" class="nav-link">Calculator</a>
-          
+
 
             <a href="./wishlist.html">
                 <button class="the-btn" type="submit">My Wishlist</button>
@@ -87,7 +89,7 @@
                     <i class="fa-solid fa-user-circle fa-xl"></i>
                 </a>
                 <ul id="profileDropdown" class="dropdown hidden">
-                    <li><a href="./profile.html">Profile</a></li>
+                    <a href="./profile.html">  <li>Profile</li></a>
                     <li id="logoutButton" class="logout-btn">Sign Out</li><!-- Sign Out Button -->
                 </ul>
             </div>
@@ -112,7 +114,8 @@
                 <img src="../aboutPhotos/footer.png" alt="Logo">
             </div>
             <br>
-            <p>Celebrating AnantDrristi Digital Era: Your Journey, Our Celebration A Legacy of Trust & Excellence with People</p>
+            <p>Celebrating AnantDrristi Digital Era: Your Journey, Our Celebration A Legacy of Trust & Excellence with
+                People</p>
 
             <a href="./index.html" class="nav-link"> <i class="fa-solid fa-house"></i>
                 <li>Home</li>
@@ -129,10 +132,10 @@
             <a href="./calculator.html" class="nav-link"><i class="fa-solid fa-calculator"></i>
                 <li>Calculator</li>
             </a>
-         
+
         </ul>
         <div class="side-btn">
-         
+
             <a href="./wishlist.html">
                 <button class="the-btn" type="button">My Wishlist</button>
             </a>
@@ -145,131 +148,131 @@
 
 
 
-// Fetch products and enable search suggestions
-async function fetchAndEnableSearch() {
-    try {
-        const response = await fetch(`${CONFIG.API_URL}/products`); // Fetch products from the API
-        const products = await response.json();
+        // Fetch products and enable search suggestions
+        async function fetchAndEnableSearch() {
+            try {
+                const response = await fetch(`${CONFIG.API_URL}/products`); // Fetch products from the API
+                const products = await response.json();
 
-        const searchInput = document.getElementById('searchInput');
-        const suggestionBox = document.getElementById('suggestionBox');
+                const searchInput = document.getElementById('searchInput');
+                const suggestionBox = document.getElementById('suggestionBox');
 
-        // Show suggestions based on input
-        searchInput.addEventListener('input', function () {
-            const query = searchInput.value.toLowerCase();
-            if (query.trim() === '') {
-                suggestionBox.style.display = 'none';
-                return;
-            }
+                // Show suggestions based on input
+                searchInput.addEventListener('input', function () {
+                    const query = searchInput.value.toLowerCase();
+                    if (query.trim() === '') {
+                        suggestionBox.style.display = 'none';
+                        return;
+                    }
 
-            const filteredProducts = products.filter(product =>
-                product.name.toLowerCase().includes(query)
-            );
+                    const filteredProducts = products.filter(product =>
+                        product.name.toLowerCase().includes(query)
+                    );
 
-            // Render suggestions
-            suggestionBox.innerHTML = '';
-            filteredProducts.forEach(product => {
-                const suggestionItem = document.createElement('li');
-                suggestionItem.className = 'list-group-item suggestion-item';
+                    // Render suggestions
+                    suggestionBox.innerHTML = '';
+                    filteredProducts.forEach(product => {
+                        const suggestionItem = document.createElement('li');
+                        suggestionItem.className = 'list-group-item suggestion-item';
 
-                // Add image and name
-                const productImage = document.createElement('img');
-                productImage.src = product.image; // Ensure 'image' is a key in your product data
-                productImage.alt = product.name;
-                productImage.className = 'product-image';
+                        // Add image and name
+                        const productImage = document.createElement('img');
+                        productImage.src = product.image; // Ensure 'image' is a key in your product data
+                        productImage.alt = product.name;
+                        productImage.className = 'product-image';
 
-                const productName = document.createElement('span');
-                productName.textContent = product.name;
-                productName.className = 'product-name';
+                        const productName = document.createElement('span');
+                        productName.textContent = product.name;
+                        productName.className = 'product-name';
 
-                suggestionItem.appendChild(productImage);
-                suggestionItem.appendChild(productName);
+                        suggestionItem.appendChild(productImage);
+                        suggestionItem.appendChild(productName);
 
-                suggestionItem.addEventListener('click', function () {
-                    searchInput.value = product.name;
-                    suggestionBox.style.display = 'none';
-                    // Navigate to product details if needed
-                    const queryString = new URLSearchParams(product).toString();
-                    window.location.href = `./The-products.html?${queryString}`;
+                        suggestionItem.addEventListener('click', function () {
+                            searchInput.value = product.name;
+                            suggestionBox.style.display = 'none';
+                            // Navigate to product details if needed
+                            const queryString = new URLSearchParams(product).toString();
+                            window.location.href = `./The-products.html?${queryString}`;
+                        });
+
+                        suggestionBox.appendChild(suggestionItem);
+                    });
+
+                    suggestionBox.style.display = 'block';
                 });
 
-                suggestionBox.appendChild(suggestionItem);
-            });
+                // Trigger search when Enter key is pressed
+                searchInput.addEventListener('keydown', function (event) {
+                    if (event.key === 'Enter') {
+                        const query = searchInput.value.toLowerCase();
+                        const filteredProducts = products.filter(product =>
+                            product.name.toLowerCase().includes(query)
+                        );
 
-            suggestionBox.style.display = 'block';
-        });
+                        if (filteredProducts.length > 0) {
+                            // Navigate to the products page with filtered query
+                            const queryString = new URLSearchParams({ search: query }).toString();
+                            window.location.href = `./products.html?${queryString}`;
+                        } else {
+                            alert('No products found');
+                        }
+                    }
+                });
 
-        // Trigger search when Enter key is pressed
-        searchInput.addEventListener('keydown', function (event) {
-            if (event.key === 'Enter') {
-                const query = searchInput.value.toLowerCase();
-                const filteredProducts = products.filter(product =>
-                    product.name.toLowerCase().includes(query)
-                );
-
-                if (filteredProducts.length > 0) {
-                    // Navigate to the products page with filtered query
-                    const queryString = new URLSearchParams({ search: query }).toString();
-                    window.location.href = `./products.html?${queryString}`;
-                } else {
-                    alert('No products found');
-                }
+                // Hide suggestions when clicking outside
+                document.addEventListener('click', function (event) {
+                    if (!searchInput.contains(event.target) && !suggestionBox.contains(event.target)) {
+                        suggestionBox.style.display = 'none';
+                    }
+                });
+            } catch (error) {
+                console.error('Error fetching products for search:', error);
             }
-        });
+        }
 
-        // Hide suggestions when clicking outside
-        document.addEventListener('click', function (event) {
-            if (!searchInput.contains(event.target) && !suggestionBox.contains(event.target)) {
-                suggestionBox.style.display = 'none';
+        // Call the function to enable search functionality
+        fetchAndEnableSearch();
+
+
+
+
+
+
+        // Simulating a login state (replace this with your real authentication check)
+        const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+
+        // DOM Elements
+        const loginButton = document.getElementById('loginButton');
+        const profileMenuContainer = document.getElementById('profileMenuContainer');
+        const profileDropdown = document.getElementById('profileDropdown');
+        const profileIcon = document.getElementById('profileIcon');
+        const logoutButton = document.getElementById('logoutButton');
+        const logoutButtonSidebar = document.getElementById('logoutButtonSidebar');
+        const loginButtonSidebar = document.getElementById('loginButtonSidebar');
+        const profileMenuContainerSidebar = document.getElementById('profileMenuContainerSidebar');
+
+        // Toggle visibility based on login status
+        function updateUIBasedOnLoginStatus() {
+            if (isLoggedIn) {
+                // Show profile icon and hide login button in navbar and sidebar
+                profileMenuContainer.style.display = 'block';
+                profileMenuContainerSidebar.style.display = 'block';
+                loginButton.style.display = 'none';
+                loginButtonSidebar.style.display = 'none';
+            } else {
+                // Show login button and hide profile icon in navbar and sidebar
+                profileMenuContainer.style.display = 'none';
+                profileMenuContainerSidebar.style.display = 'none';
+                loginButton.style.display = 'block';
+                loginButtonSidebar.style.display = 'block';
             }
-        });
-    } catch (error) {
-        console.error('Error fetching products for search:', error);
-    }
-}
+        }
 
-// Call the function to enable search functionality
-fetchAndEnableSearch();
+        updateUIBasedOnLoginStatus();
 
-
-
-
-
-
-       // Simulating a login state (replace this with your real authentication check)
-       const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-
-// DOM Elements
-const loginButton = document.getElementById('loginButton');
-const profileMenuContainer = document.getElementById('profileMenuContainer');
-const profileDropdown = document.getElementById('profileDropdown');
-const profileIcon = document.getElementById('profileIcon');
-const logoutButton = document.getElementById('logoutButton');
-const logoutButtonSidebar = document.getElementById('logoutButtonSidebar');
-const loginButtonSidebar = document.getElementById('loginButtonSidebar');
-const profileMenuContainerSidebar = document.getElementById('profileMenuContainerSidebar');
-
-// Toggle visibility based on login status
-function updateUIBasedOnLoginStatus() {
-    if (isLoggedIn) {
-        // Show profile icon and hide login button in navbar and sidebar
-        profileMenuContainer.style.display = 'block';
-        profileMenuContainerSidebar.style.display = 'block';
-        loginButton.style.display = 'none';
-        loginButtonSidebar.style.display = 'none';
-    } else {
-        // Show login button and hide profile icon in navbar and sidebar
-        profileMenuContainer.style.display = 'none';
-        profileMenuContainerSidebar.style.display = 'none';
-        loginButton.style.display = 'block';
-        loginButtonSidebar.style.display = 'block';
-    }
-}
-
-updateUIBasedOnLoginStatus();
-
-// Logout functionality
-const logoutHandler = () => {
+        // Logout functionality
+        const logoutHandler = () => {
             // Clear login state and profile info from local storage
             localStorage.removeItem('isLoggedIn');
             localStorage.removeItem('token');
@@ -292,80 +295,80 @@ const logoutHandler = () => {
             logoutButtonSidebar.addEventListener('click', logoutHandler);
         }
 
-// Toggle dropdown visibility when clicking the profile icon
-const toggleDropdown = (e, dropdown) => {
-    e.preventDefault();
-    dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
-};
+        // Toggle dropdown visibility when clicking the profile icon
+        const toggleDropdown = (e, dropdown) => {
+            e.preventDefault();
+            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        };
 
-profileIcon.addEventListener('click', (e) => toggleDropdown(e, profileDropdown));
-profileIconSidebar.addEventListener('click', (e) => toggleDropdown(e, profileDropdownSidebar));
+        profileIcon.addEventListener('click', (e) => toggleDropdown(e, profileDropdown));
+        profileIconSidebar.addEventListener('click', (e) => toggleDropdown(e, profileDropdownSidebar));
 
-// Redirect to login page when the login button is clicked
-loginButton.addEventListener('click', function (event) {
-    event.preventDefault();
-    window.location.href = './loginRegister.html'; // Navigate to login page
-});
+        // Redirect to login page when the login button is clicked
+        loginButton.addEventListener('click', function (event) {
+            event.preventDefault();
+            window.location.href = './loginRegister.html'; // Navigate to login page
+        });
 
-loginButtonSidebar.addEventListener('click', function (event) {
-    event.preventDefault();
-    window.location.href = './loginRegister.html'; // Navigate to login page
-});
-
-
-
-// Navbar toggle functionality
-const navbarToggler = document.getElementById('navbar-toggler');
-const navbarMenu = document.getElementById('navbar-menu');
-const overlay = document.getElementById('overlay');
-
-navbarToggler.addEventListener('click', function () {
-    navbarMenu.classList.toggle('active'); // Toggle the navbar visibility
-    overlay.classList.toggle('active'); // Show or hide the overlay
-});
-
-// Sidebar toggle functionality
-const sidebar = document.getElementById('sidebar');
-const closeBtn = document.getElementById('close-btn');
-
-// Toggle sidebar visibility
-navbarToggler.addEventListener('click', () => {
-    sidebar.classList.toggle('active');
-    overlay.classList.toggle('active');
-});
-
-// Close sidebar when close button is clicked
-closeBtn.addEventListener('click', () => {
-    sidebar.classList.remove('active');
-    overlay.classList.remove('active');
-});
-
-// Close sidebar if overlay is clicked
-overlay.addEventListener('click', () => {
-    sidebar.classList.remove('active');
-    overlay.classList.remove('active');
-});
+        loginButtonSidebar.addEventListener('click', function (event) {
+            event.preventDefault();
+            window.location.href = './loginRegister.html'; // Navigate to login page
+        });
 
 
 
-function updateCartCounter() {
-    const cart = JSON.parse(localStorage.getItem('cart')) || [];
-    const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
-    const cartCounters = document.querySelectorAll('#cart-counter');
+        // Navbar toggle functionality
+        const navbarToggler = document.getElementById('navbar-toggler');
+        const navbarMenu = document.getElementById('navbar-menu');
+        const overlay = document.getElementById('overlay');
 
-    cartCounters.forEach(counter => {
-        if (totalQuantity > 0) {
-            counter.textContent = totalQuantity;
-            counter.style.display = 'inline-block'; // Show when there are items
-        } else {
-            counter.style.display = 'none'; // Hide when cart is empty
+        navbarToggler.addEventListener('click', function () {
+            navbarMenu.classList.toggle('active'); // Toggle the navbar visibility
+            overlay.classList.toggle('active'); // Show or hide the overlay
+        });
+
+        // Sidebar toggle functionality
+        const sidebar = document.getElementById('sidebar');
+        const closeBtn = document.getElementById('close-btn');
+
+        // Toggle sidebar visibility
+        navbarToggler.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        });
+
+        // Close sidebar when close button is clicked
+        closeBtn.addEventListener('click', () => {
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        });
+
+        // Close sidebar if overlay is clicked
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        });
+
+
+
+        function updateCartCounter() {
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
+            const cartCounters = document.querySelectorAll('#cart-counter');
+
+            cartCounters.forEach(counter => {
+                if (totalQuantity > 0) {
+                    counter.textContent = totalQuantity;
+                    counter.style.display = 'inline-block'; // Show when there are items
+                } else {
+                    counter.style.display = 'none'; // Hide when cart is empty
+                }
+            });
         }
-    });
-}
 
-// Run on page load and when cart updates
-document.addEventListener("DOMContentLoaded", updateCartCounter);
-window.addEventListener('storage', updateCartCounter);
+        // Run on page load and when cart updates
+        document.addEventListener("DOMContentLoaded", updateCartCounter);
+        window.addEventListener('storage', updateCartCounter);
 
 
 
@@ -373,87 +376,87 @@ window.addEventListener('storage', updateCartCounter);
 
 
 
-function updateUIBasedOnLoginStatus() {
-    const searchInputContainer = document.querySelector('.searchInput');
+        function updateUIBasedOnLoginStatus() {
+            const searchInputContainer = document.querySelector('.searchInput');
 
-    if (isLoggedIn) {
-        profileMenuContainer.style.display = 'block';
-        profileMenuContainerSidebar.style.display = 'block';
-        loginButton.style.display = 'none';
-        loginButtonSidebar.style.display = 'none';
+            if (isLoggedIn) {
+                profileMenuContainer.style.display = 'block';
+                profileMenuContainerSidebar.style.display = 'block';
+                loginButton.style.display = 'none';
+                loginButtonSidebar.style.display = 'none';
 
-        // Apply the logged-in style
-        searchInputContainer.classList.add('logged-in');
-    } else {
-        profileMenuContainer.style.display = 'none';
-        profileMenuContainerSidebar.style.display = 'none';
-        loginButton.style.display = 'block';
-        loginButtonSidebar.style.display = 'block';
+                // Apply the logged-in style
+                searchInputContainer.classList.add('logged-in');
+            } else {
+                profileMenuContainer.style.display = 'none';
+                profileMenuContainerSidebar.style.display = 'none';
+                loginButton.style.display = 'block';
+                loginButtonSidebar.style.display = 'block';
 
-        // Remove the logged-in style
-        searchInputContainer.classList.remove('logged-in');
-    }
-}
+                // Remove the logged-in style
+                searchInputContainer.classList.remove('logged-in');
+            }
+        }
 
-updateUIBasedOnLoginStatus();
+        updateUIBasedOnLoginStatus();
 
 
-function updateSearchIconStyle() {
-    const searchIcon = document.querySelector('.the-search');
+        function updateSearchIconStyle() {
+            const searchIcon = document.querySelector('.the-search');
 
-    if (isLoggedIn) {
-        searchIcon.classList.add('logged-in-search');
-    } else {
-        searchIcon.classList.remove('logged-in-search');
-    }
-}
+            if (isLoggedIn) {
+                searchIcon.classList.add('logged-in-search');
+            } else {
+                searchIcon.classList.remove('logged-in-search');
+            }
+        }
 
-// Call this function after checking login status
-updateSearchIconStyle();
+        // Call this function after checking login status
+        updateSearchIconStyle();
     </script>
 
 
-<script>
-    // Get references to the elements
-    const searchIcon = document.getElementById('searchIcon');
-    const searchPopup = document.getElementById('searchPopup');
-    const closeBtn1 = document.getElementById('closeBtn1');
-    const searchInput = document.getElementById('searchInput');
-    const searchButton = document.getElementById('searchButton');
+    <script>
+        // Get references to the elements
+        const searchIcon = document.getElementById('searchIcon');
+        const searchPopup = document.getElementById('searchPopup');
+        const closeBtn1 = document.getElementById('closeBtn1');
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.getElementById('searchButton');
 
-    // Function to handle search icon click (only for screens below 500px)
-    function handleSearchClick() {
-        if (window.innerWidth < 500) { // Check screen width
-            searchPopup.style.display = 'flex';
+        // Function to handle search icon click (only for screens below 500px)
+        function handleSearchClick() {
+            if (window.innerWidth < 500) { // Check screen width
+                searchPopup.style.display = 'flex';
+            }
         }
-    }
 
-    // Attach event listener to search icon
-    searchIcon.addEventListener('click', handleSearchClick);
+        // Attach event listener to search icon
+        searchIcon.addEventListener('click', handleSearchClick);
 
-    // Hide the popup when the close button is clicked
-    closeBtn1.addEventListener('click', () => {
-        searchPopup.style.display = 'none';
-    });
-
-    // Hide the popup when clicking outside of it
-    window.addEventListener('click', (event) => {
-        if (event.target === searchPopup) {
+        // Hide the popup when the close button is clicked
+        closeBtn1.addEventListener('click', () => {
             searchPopup.style.display = 'none';
-        }
-    });
+        });
 
-    // Handle the search button click
-    searchButton.addEventListener('click', () => {
-        const query = searchInput.value.trim();
-        if (query) {
-            alert(`You searched for: ${query}`);
-            searchPopup.style.display = 'none'; // Close the popup after search
-        } else {
-            alert('Please enter a search term.');
-        }
-    });
-</script>
+        // Hide the popup when clicking outside of it
+        window.addEventListener('click', (event) => {
+            if (event.target === searchPopup) {
+                searchPopup.style.display = 'none';
+            }
+        });
+
+        // Handle the search button click
+        searchButton.addEventListener('click', () => {
+            const query = searchInput.value.trim();
+            if (query) {
+                alert(`You searched for: ${query}`);
+                searchPopup.style.display = 'none'; // Close the popup after search
+            } else {
+                alert('Please enter a search term.');
+            }
+        });
+    </script>
 
 
 
