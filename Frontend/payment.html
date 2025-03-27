@@ -10,7 +10,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="./index.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.css">
-    <link rel="stylesheet" href="payment.css">
+<link rel="stylesheet" href="payment.css">
     <script src="config.js"></script>
 
     <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
@@ -30,187 +30,204 @@
     </script>
 
 
-    <div class="payment-container">
-        <div class="payment-details">
-            <div class="container">
-                <h3>Selected Address:</h3>
-                <div id="addressDetails">
-                    <!-- Address will be shown here -->
-                </div>
-            </div>
-
-            <a href="./address.html">
-                <button class="btn btn-outline-secondary mt-3">Change Address</button>
-            </a>
-
-            <div class="line my-4"></div>
-
-            <div class="method">
-                <h3>Select Shipping Method</h3>
-                <div class="form-check mt-3">
-                    <input class="form-check-input" type="radio" name="shippingMethod" id="standard" value="standard"
-                        checked>
-                    <label class="form-check-label" for="standard">
-                        Standard Delivery
-                    </label>
-                </div>
-                <div class="form-check mt-3">
-                    <input class="form-check-input" type="radio" name="shippingMethod" id="express" value="express">
-                    <label class="form-check-label" for="express">
-                        Express Delivery
-                    </label>
-                </div>
-
-                <div class="payment mt-4">
-                    <h3>Select Payment Method</h3>
-                    <div class="payment-methods mt-3 razor-icons">
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="paymentMethod" id="cashfree"
-                                value="cashfree" checked>
-                            <label class="form-check-label" for="cashfree">
-                                Cashfree
-                            </label>
-                        </div>
-                        <div class="payment-icons">
-                            <i class="fa-brands fa-cc-mastercard mastercard-icon me-2"></i>
-                            <i class="fa-brands fa-cc-visa visa-icon"></i>
-                        </div>
-                    </div>
-
-                    <div class="payment-btn">
-                        <button type="button" id="payButton" class="btn btn-primary w-100 mt-3">Pay Now</button>
-                    </div>
-                </div>
+<div class="payment-container">
+    <div class="payment-details">
+        <div class="container">
+            <h3>Selected Address:</h3>
+            <div id="addressDetails">
+                <!-- Address will be shown here -->
             </div>
         </div>
+        
+        <a href="./address.html">
+            <button class="btn btn-outline-secondary mt-3">Change Address</button>
+        </a>
 
-        <div class="order-summary">
-            <h2 class="text-center mb-4">Order Summary</h2>
-            <div class="cart-items">
-                <!-- Cart items will be dynamically inserted here -->
+        <div class="line my-4"></div>
+
+        <div class="method">
+            <h3>Select Shipping Method</h3>
+            <div class="form-check mt-3">
+                <input class="form-check-input" type="radio" name="shippingMethod" id="standard" value="standard" checked>
+                <label class="form-check-label" for="standard">
+                    Standard Delivery
+                </label>
             </div>
-            <div id="cart-summary" class="mt-4">
-                <p class="d-flex justify-content-between">
-                    <span>Subtotal:</span>
-                    <span>Rs. <span id="subtotal-price">0</span></span>
-                </p>
-                <p class="d-flex justify-content-between">
-                    <span>GST (18%):</span>
-                    <span>Rs. <span id="gst-price">0</span></span>
-                </p>
-                <p class="d-flex justify-content-between">
-                    <span>Shipping Charge:</span>
-                    <span>Rs. <span id="shipping-charge">0</span></span>
-                </p>
-                <hr />
-                <h2 class="d-flex justify-content-between">
-                    <span>Total:</span>
-                    <span>Rs. <span id="total-price">0</span></span>
-                </h2>
+            <div class="form-check mt-3">
+                <input class="form-check-input" type="radio" name="shippingMethod" id="express" value="express">
+                <label class="form-check-label" for="express">
+                    Express Delivery
+                </label>
+            </div>
+
+            <div class="payment mt-4">
+                <h3>Select Payment Method</h3>
+                <div class="payment-methods mt-3 razor-icons">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="paymentMethod" id="cashfree" value="cashfree" checked>
+                        <label class="form-check-label" for="cashfree">
+                            Cashfree
+                        </label>
+                    </div>
+                    <div class="payment-icons">
+                        <i class="fa-brands fa-cc-mastercard mastercard-icon me-2"></i>
+                        <i class="fa-brands fa-cc-visa visa-icon"></i>
+                    </div>
+                </div>
+
+                <div class="payment-btn">
+                    <button type="button" id="payButton" class="btn btn-primary w-100 mt-3">Pay Now</button>
+                </div>
             </div>
         </div>
     </div>
+
+    <div class="order-summary">
+        <h2 class="text-center mb-4">Order Summary</h2>
+        <div class="cart-items">
+            <!-- Cart items will be dynamically inserted here -->
+        </div>
+        <div id="cart-summary" class="mt-4">
+            <p class="d-flex justify-content-between">
+                <span>Subtotal:</span>
+                <span>Rs. <span id="subtotal-price">0</span></span>
+            </p>
+            <p class="d-flex justify-content-between">
+                <span>GST (18%):</span>
+                <span>Rs. <span id="gst-price">0</span></span>
+            </p>
+            <p class="d-flex justify-content-between">
+                <span>Shipping Charge:</span>
+                <span>Rs. <span id="shipping-charge">0</span></span>
+            </p>
+            <hr />
+            <h2 class="d-flex justify-content-between">
+                <span>Total:</span>
+                <span>Rs. <span id="total-price">0</span></span>
+            </h2>
+        </div>
+    </div>
+</div>
 
 
     <script>
 
 
 
+document.getElementById("payButton").addEventListener("click", async function () {
+    const userId = localStorage.getItem("_id");
+    if (!userId) {
+        alert("User not logged in. Please log in to continue.");
+        return;
+    }
 
+    const selectedAddress = JSON.parse(localStorage.getItem("selectedAddress"));
+    if (!selectedAddress) {
+        alert("Please select an address before proceeding.");
+        return;
+    }
 
-        document.getElementById("payButton").addEventListener("click", async function () {
-            const userId = localStorage.getItem("_id");
-            if (!userId) {
-                alert("User not logged in. Please log in to continue.");
-                return;
-            }
+    const customerName = selectedAddress.fullName;
+    const customerEmail = selectedAddress.email;
+    const customerPhone = selectedAddress.phone;
+    
+    // Get total price and shipping details
+    const subtotalPrice = parseFloat(document.getElementById("subtotal-price").innerText);
+    const gstPrice = parseFloat(document.getElementById("gst-price").innerText);
+    
+    // Explicitly get shipping method and calculate charge
+    const shippingMethodElement = document.querySelector('input[name="shippingMethod"]:checked');
+    const shippingMethod = shippingMethodElement ? shippingMethodElement.value : "standard";
+    const shippingCharge = shippingMethod === "express" ? 300 : 100;
+    
+    const amount = parseFloat(document.getElementById("total-price").innerText.trim());
 
-            const selectedAddress = JSON.parse(localStorage.getItem("selectedAddress"));
-            if (!selectedAddress) {
-                alert("Please select an address before proceeding.");
-                return;
-            }
+    console.log("Detailed Payment Request:", {
+        userId,
+        customerName,
+        customerEmail,
+        customerPhone,
+        subtotalPrice,
+        gstPrice,
+        shippingMethod,
+        shippingCharge,
+        amount,
+        selectedAddress: JSON.stringify(selectedAddress)
+    });
 
-            const customerName = selectedAddress.fullName;
-            const customerEmail = selectedAddress.email;
-            const customerPhone = selectedAddress.phone;
+    if (!customerName || !customerEmail || !customerPhone) {
+        alert("Missing customer details. Please select an address.");
+        return;
+    }
 
-            // Get total price and shipping details
-            const subtotalPrice = parseFloat(document.getElementById("subtotal-price").innerText);
-            const gstPrice = parseFloat(document.getElementById("gst-price").innerText);
+    if (!amount || isNaN(amount) || amount <= 0) {
+        alert("Invalid total amount: " + amount);
+        return;
+    }
 
-            // Explicitly get shipping method and calculate charge
-            const shippingMethodElement = document.querySelector('input[name="shippingMethod"]:checked');
-            const shippingMethod = shippingMethodElement ? shippingMethodElement.value : "standard";
-            const shippingCharge = shippingMethod === "express" ? 300 : 100;
+    const orderDetails = JSON.parse(localStorage.getItem("cart")) || [];
+    if (orderDetails.length === 0) {
+        alert("Your cart is empty. Please add items before proceeding.");
+        return;
+    }
 
-            const amount = parseFloat(document.getElementById("total-price").innerText.trim());
-
-            console.log("Payment Details:", {
+    try {
+        const response = await fetch(`${CONFIG.API_URL}/users/${userId}/orders`, {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json" 
+            },
+            body: JSON.stringify({
+                customer_name: customerName,
+                customer_email: customerEmail,
+                customer_phone: customerPhone,
                 subtotalPrice,
                 gstPrice,
+                amount,
                 shippingMethod,
                 shippingCharge,
-                totalAmount: amount
-            });
-
-            if (!customerName || !customerEmail || !customerPhone) {
-                alert("Missing customer details. Please select an address.");
-                return;
-            }
-
-            if (!amount || isNaN(amount) || amount <= 0) {
-                alert("Invalid total amount: " + amount);
-                return;
-            }
-
-            const orderDetails = JSON.parse(localStorage.getItem("cart")) || [];
-            if (orderDetails.length === 0) {
-                alert("Your cart is empty. Please add items before proceeding.");
-                return;
-            }
-
-            try {
-                const orderResponse = await fetch(`${CONFIG.API_URL}/users/${userId}/orders`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        customer_name: customerName,
-                        customer_email: customerEmail,
-                        customer_phone: customerPhone,
-                        subtotalPrice,
-                        gstPrice,
-                        shippingMethod,
-                        shippingCharge, // Explicitly pass shipping charge
-                        amount,
-                        deliveryAddress: selectedAddress,
-                        orderDetails
-                    })
-                });
-
-                if (!orderResponse.ok) {
-                    const errorText = await orderResponse.text();
-                    throw new Error(`Failed to create order: ${errorText}`);
-                }
-
-                const orderResult = await orderResponse.json();
-
-                if (!orderResult.success || !orderResult.linkUrl || !orderResult.orderId) {
-                    alert("Order creation and payment failed!");
-                    return;
-                }
-
-                localStorage.setItem("latestOrderId", orderResult.orderId);
-                localStorage.setItem("linkId", orderResult.linkId);
-
-                // Redirect to Payment Page
-                window.location.href = orderResult.linkUrl;
-            } catch (error) {
-                console.error("Error:", error);
-                alert("Error in payment process: " + error.message);
-            }
+                deliveryAddress: selectedAddress,
+                orderDetails
+            })
         });
 
+        // Log full response for debugging
+        const responseText = await response.text();
+        console.log("Full Response Status:", response.status);
+        console.log("Full Response Text:", responseText);
+
+        // Try to parse the response as JSON
+        let orderResult;
+        try {
+            orderResult = JSON.parse(responseText);
+        } catch (parseError) {
+            console.error("Failed to parse response:", parseError);
+            throw new Error("Invalid server response: " + responseText);
+        }
+
+        // Check response
+        if (response.status !== 200 || !orderResult.success) {
+            throw new Error(orderResult.error || "Order creation failed");
+        }
+
+        if (!orderResult.linkUrl || !orderResult.orderId) {
+            throw new Error("Missing payment link or order ID");
+        }
+
+        localStorage.setItem("latestOrderId", orderResult.orderId);
+        localStorage.setItem("linkId", orderResult.linkId);
+
+        // Redirect to Payment Page
+        window.location.href = orderResult.linkUrl;
+    } catch (error) {
+        console.error("Complete Error Object:", error);
+        alert("Error in payment process: " + error.message);
+    }
+});
+
+
+
+     
 
 
 
@@ -219,28 +236,24 @@
 
 
 
+      // Function to display items in the cart
+function displayCartItems() {
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+    const cartItemsContainer = document.querySelector('.cart-items');
+    cartItemsContainer.innerHTML = '';
+    let subtotalPrice = 0;
 
+    if (cart.length === 0) {
+        cartItemsContainer.innerHTML = '<p class="text-center">Your cart is empty.</p>';
+        document.getElementById('subtotal-price').textContent = '0';
+        document.getElementById('gst-price').textContent = '0';
+        document.getElementById('total-price').textContent = '0';
+    } else {
+        cart.forEach(item => {
+            const { id, name, price, color, size, quantity, image } = item;
+            subtotalPrice += price * quantity;
 
-
-
-        // Function to display items in the cart
-        function displayCartItems() {
-            let cart = JSON.parse(localStorage.getItem('cart')) || [];
-            const cartItemsContainer = document.querySelector('.cart-items');
-            cartItemsContainer.innerHTML = '';
-            let subtotalPrice = 0;
-
-            if (cart.length === 0) {
-                cartItemsContainer.innerHTML = '<p class="text-center">Your cart is empty.</p>';
-                document.getElementById('subtotal-price').textContent = '0';
-                document.getElementById('gst-price').textContent = '0';
-                document.getElementById('total-price').textContent = '0';
-            } else {
-                cart.forEach(item => {
-                    const { id, name, price, color, size, quantity, image } = item;
-                    subtotalPrice += price * quantity;
-
-                    cartItemsContainer.innerHTML += ` 
+            cartItemsContainer.innerHTML += ` 
                 <div class="cart-item row mb-3 summary">
                     <div class="col-md-4">
                         <img src="${image}" alt="${name}" class="img-fluid mb-2" style="width: 100px; height: 100px; object-fit: cover;">
@@ -252,72 +265,72 @@
                     </div>
                 </div>
             `;
-                });
-
-                const gstPrice = (subtotalPrice * 0.18).toFixed(2);
-                const totalPrice = (subtotalPrice + parseFloat(gstPrice)).toFixed(2);
-
-                document.getElementById('subtotal-price').textContent = subtotalPrice.toFixed(2);
-                document.getElementById('gst-price').textContent = gstPrice;
-                document.getElementById('total-price').textContent = totalPrice;
-            }
-        }
-
-        // Function to update cart counter in the navbar
-        function updateCartCounter() {
-            const cart = JSON.parse(localStorage.getItem('cart')) || [];
-            const cartCounter = document.getElementById('cart-count');
-            if (cartCounter) cartCounter.textContent = cart.length;
-        }
-
-        // Function to update total price including shipping charge
-        function updateTotalPrice() {
-            const standardDeliveryCharge = 100;
-            const expressDeliveryCharge = 300;
-            let shippingCharge = 0;
-
-            // Get selected shipping method
-            const shippingRadios = document.querySelectorAll('input[name="shippingMethod"]');
-            shippingRadios.forEach(radio => {
-                if (radio.checked) {
-                    if (radio.value === 'express') {
-                        shippingCharge = expressDeliveryCharge;
-                    } else {
-                        shippingCharge = standardDeliveryCharge;
-                    }
-                }
-            });
-
-            let subtotalPrice = parseFloat(document.getElementById('subtotal-price').textContent);
-            let gstPrice = (subtotalPrice * 0.18).toFixed(2);
-            let totalPrice = (subtotalPrice + parseFloat(gstPrice) + shippingCharge).toFixed(2);
-
-            // Update the prices in the UI
-            document.getElementById('shipping-charge').textContent = shippingCharge;
-            document.getElementById('gst-price').textContent = gstPrice;
-            document.getElementById('total-price').textContent = totalPrice;
-        }
-
-        // Add event listeners for shipping method changes
-        document.querySelectorAll('input[name="shippingMethod"]').forEach(radio => {
-            radio.addEventListener('change', updateTotalPrice);
         });
 
-        // Call functions to load the cart and initialize prices
-        displayCartItems();
-        updateTotalPrice();
+        const gstPrice = (subtotalPrice * 0.18).toFixed(2);
+        const totalPrice = (subtotalPrice + parseFloat(gstPrice)).toFixed(2);
+
+        document.getElementById('subtotal-price').textContent = subtotalPrice.toFixed(2);
+        document.getElementById('gst-price').textContent = gstPrice;
+        document.getElementById('total-price').textContent = totalPrice;
+    }
+}
+
+// Function to update cart counter in the navbar
+function updateCartCounter() {
+    const cart = JSON.parse(localStorage.getItem('cart')) || [];
+    const cartCounter = document.getElementById('cart-count');
+    if (cartCounter) cartCounter.textContent = cart.length;
+}
+
+// Function to update total price including shipping charge
+function updateTotalPrice() {
+    const standardDeliveryCharge = 100;
+    const expressDeliveryCharge = 300;
+    let shippingCharge = 0;
+
+    // Get selected shipping method
+    const shippingRadios = document.querySelectorAll('input[name="shippingMethod"]');
+    shippingRadios.forEach(radio => {
+        if (radio.checked) {
+            if (radio.value === 'express') {
+                shippingCharge = expressDeliveryCharge;
+            } else {
+                shippingCharge = standardDeliveryCharge;
+            }
+        }
+    });
+
+    let subtotalPrice = parseFloat(document.getElementById('subtotal-price').textContent);
+    let gstPrice = (subtotalPrice * 0.18).toFixed(2);
+    let totalPrice = (subtotalPrice + parseFloat(gstPrice) + shippingCharge).toFixed(2);
+
+    // Update the prices in the UI
+    document.getElementById('shipping-charge').textContent = shippingCharge;
+    document.getElementById('gst-price').textContent = gstPrice;
+    document.getElementById('total-price').textContent = totalPrice;
+}
+
+// Add event listeners for shipping method changes
+document.querySelectorAll('input[name="shippingMethod"]').forEach(radio => {
+    radio.addEventListener('change', updateTotalPrice);
+});
+
+// Call functions to load the cart and initialize prices
+displayCartItems();
+updateTotalPrice();
     </script>
 
 
 
 
     <script>
+      
+      function displaySelectedAddress() {
+    const selectedAddress = JSON.parse(localStorage.getItem("selectedAddress"));
 
-        function displaySelectedAddress() {
-            const selectedAddress = JSON.parse(localStorage.getItem("selectedAddress"));
-
-            if (selectedAddress) {
-                document.getElementById("addressDetails").innerHTML = `
+    if (selectedAddress) {
+        document.getElementById("addressDetails").innerHTML = `
             <strong>${selectedAddress.fullName || "N/A"}</strong><br>
             ${selectedAddress.street || "Street not available"}, 
             ${selectedAddress.city || "City not available"}, 
@@ -326,13 +339,13 @@
             <strong>Phone:</strong> ${selectedAddress.phone || "Phone not available"}<br>
             <strong>Email:</strong> ${selectedAddress.email || "Email not available"}
         `;
-            } else {
-                document.getElementById("addressDetails").innerHTML = "Please select an address to proceed.";
-            }
-        }
+    } else {
+        document.getElementById("addressDetails").innerHTML = "Please select an address to proceed.";
+    }
+}
 
-        // Call the function when the page loads
-        displaySelectedAddress();
+// Call the function when the page loads
+displaySelectedAddress();
 
 
 
@@ -370,3 +383,8 @@
 </body>
 
 </html>
+
+
+
+
+

@@ -247,6 +247,130 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model("users", userSchema);
 
 
+
+app.post("/users/:id/orders", async (req, res) => {
+  try {
+    const { id } = req.params;
+    let {
+      customer_name,
+      customer_email,
+      customer_phone,
+      amount,
+      shippingMethod,
+      shippingCharge,  // Explicitly receive this
+      deliveryAddress,
+      deliveryStatus,
+      orderDetails
+    } = req.body;
+    // Explicitly define shipping prices
+    const shippingPrices = {
+      standard: 100,
+      express: 300,
+      default: 0  // Added a default price
+    };
+    const shippingPrice = shippingMethod && shippingPrices[shippingMethod]
+      ? shippingPrices[shippingMethod]
+      : (shippingCharge || shippingPrices.default);
+    console.log("Shipping Method:", shippingMethod);
+    console.log("Shipping Prices:", shippingPrices);
+    console.log("Calculated Shipping Price:", shippingPrice);
+    console.log("Shipping Details:", {
+      method: shippingMethod,
+      charge: shippingCharge,
+      calculatedPrice: shippingPrice
+    });
+
+    if (!id || !customer_name || !customer_email || !customer_phone || !amount || !deliveryAddress) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+    customer_phone = String(customer_phone);
+    // Generate orderId
+    const lastOrder = await Order.findOne().sort({ createdAt: -1 });
+    let newOrderId = "ORD001";
+    if (lastOrder) {
+      const match = lastOrder.orderId.match(/ORD(\d+)/);
+      if (match) {
+        newOrderId = `ORD${String(parseInt(match[1], 10) + 1).padStart(3, "0")}`;
+      }
+    }
+    // Generate payment link ID
+    const linkId = `CF_${crypto.randomBytes(8).toString("hex")}`;
+    // Cashfree payment link payload
+    const payload = {
+      order_id: newOrderId,
+      link_id: linkId,
+      customer_details: { customer_name, customer_email, customer_phone },
+      link_amount: amount,
+      link_currency: "INR",
+      link_purpose: "E-commerce Purchase",
+      link_notify: { send_email: true, send_sms: true },
+      link_auto_reminders: true,
+      link_expiry_time: new Date(Date.now() + 3600 * 1000).toISOString(),
+      link_meta: {
+        // return_url: `http://127.0.0.1:5501/Frontend/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${id}`
+        return_url: `https://indraq.tech/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${id}`
+      },
+    };
+    // Call Cashfree API to generate payment link
+    const response = await axios.post("https://sandbox.cashfree.com/pg/links", payload, {
+      headers: {
+        "x-api-version": "2022-09-01",
+        "x-client-id": APP_ID,
+        "x-client-secret": SECRET_KEY,
+      },
+    });
+    if (!response.data || !response.data.link_url) {
+      return res.status(500).json({ error: "Failed to generate payment link" });
+    }
+    // Create new order object
+    const newOrder = {
+      orderId: newOrderId,
+      userId: id,
+      linkId,
+      orderDetails,
+      price: amount,
+      shippingMethod: shippingMethod || "standard",
+      shippingPrice: shippingPrice, // EXPLICITLY set shipping price
+      deliveryAddress,
+      paymentDetails: { status: "pending", transactionId: "", paid: false },
+      deliveryStatus: "processing",
+      createdAt: new Date(),
+    };
+    // Save order to `orders` collection
+    const savedOrder = await Order.create(newOrder);
+    // Save order reference in user's orders array
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      { $push: { orders: savedOrder } },
+      { new: true }
+    );
+    if (!updatedUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    // :white_tick: Populate User Details for Notification
+    const populatedOrder = await Order.findById(savedOrder._id).populate("userId", "firstName lastName email");
+    // :bell: **Send Real-Time WebSocket Notification**
+    io.emit("newOrder", populatedOrder);
+    console.log(":package: New Order Notification Sent:", populatedOrder);
+    // :white_tick: Send Response
+    res.json({
+      success: true,
+      userId: id,
+      orderId: newOrderId,
+      linkId,
+      linkUrl: response.data.link_url,
+      message: "Order created successfully, waiting for payment",
+    });
+  } catch (error) {
+    console.error(":x: Error:", error.response?.data || error.message);
+    res.status(500).json({ error: "Error processing order", details: error.message?.data || error.message });
+  }
+});
+
+
+
+
+
 // Order Schema
 const orderSchema = new mongoose.Schema({
   orderId: { type: String, required: true, unique: true },
@@ -391,160 +515,6 @@ app.get("/users/:userId/orders/status", async (req, res) => {
   } catch (error) {
     console.error("Error fetching order status updates:", error);
     res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-app.post("/users/:id/orders", async (req, res) => {
-  const session = await mongoose.startSession();
-  
-  try {
-    // Start a database transaction
-    session.startTransaction();
-
-    const { id } = req.params;
-    const {
-      customer_name,
-      customer_email,
-      customer_phone,
-      amount,
-      shippingMethod = "standard",
-      shippingCharge,
-      deliveryAddress,
-      orderDetails
-    } = req.body;
-
-    // Comprehensive Validation
-    const validationRules = [
-      { field: 'customer_name', validate: (val) => val && val.length >= 2 },
-      { field: 'customer_email', validate: (val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) },
-      { field: 'customer_phone', validate: (val) => /^\d{10}$/.test(String(val).replace(/\D/g, '')) },
-      { field: 'amount', validate: (val) => val > 0 },
-      { field: 'deliveryAddress', validate: (val) => val && val.length > 10 }
-    ];
-
-    const validationErrors = validationRules
-      .filter(rule => !rule.validate(req.body[rule.field]))
-      .map(rule => `Invalid ${rule.field}`);
-
-    if (validationErrors.length > 0) {
-      return res.status(400).json({ 
-        error: "Validation Failed", 
-        details: validationErrors 
-      });
-    }
-
-    // Explicitly define shipping prices
-    const shippingPrices = {
-      standard: 100,
-      express: 300,
-      priority: 500,
-      default: 0
-    };
-
-    const shippingPrice = (() => {
-      if (shippingCharge && shippingCharge > 0) return shippingCharge;
-      return shippingPrices[shippingMethod] || shippingPrices.default;
-    })();
-
-
-    if (!id || !customer_name || !customer_email || !customer_phone || !amount || !deliveryAddress) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
-
-    customer_phone = String(customer_phone);
-
-    // Generate orderId
-    const lastOrder = await Order.findOne().sort({ createdAt: -1 });
-    let newOrderId = "ORD001";
-    if (lastOrder) {
-      const match = lastOrder.orderId.match(/ORD(\d+)/);
-      if (match) {
-        newOrderId = `ORD${String(parseInt(match[1], 10) + 1).padStart(3, "0")}`;
-      }
-    }
-
-    // Generate payment link ID
-    const linkId = `CF_${crypto.randomBytes(8).toString("hex")}`;
-
-    // Cashfree payment link payload
-    const payload = {
-      order_id: newOrderId,
-      link_id: linkId,
-      customer_details: { customer_name, customer_email, customer_phone },
-      link_amount: amount,
-      link_currency: "INR",
-      link_purpose: "E-commerce Purchase",
-      link_notify: { send_email: true, send_sms: true },
-      link_auto_reminders: true,
-      link_expiry_time: new Date(Date.now() + 3600 * 1000).toISOString(),
-      link_meta: {
-        // return_url: `http://127.0.0.1:5501/Frontend/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${id}`
-        return_url: `https://indraq.tech/redirect.html?orderId=${newOrderId}&linkId=${linkId}&userId=${id}`
-      },
-    };
-
-    // Call Cashfree API to generate payment link
-    const response = await axios.post("https://sandbox.cashfree.com/pg/links", payload, {
-      headers: {
-        "x-api-version": "2022-09-01",
-        "x-client-id": APP_ID,
-        "x-client-secret": SECRET_KEY,
-      },
-    });
-
-    if (!response.data || !response.data.link_url) {
-      return res.status(500).json({ error: "Failed to generate payment link" });
-    }
-
-    // Create new order object
-    const newOrder = {
-      orderId: newOrderId,
-      userId: id,
-      linkId,
-      orderDetails,
-      price: amount,
-      shippingMethod: shippingMethod || "standard",
-      shippingPrice: shippingPrice, // EXPLICITLY set shipping price
-      deliveryAddress,
-      paymentDetails: { status: "pending", transactionId: "", paid: false },
-      deliveryStatus: "processing",
-      createdAt: new Date(),
-    };
-
-    // Save order to `orders` collection
-    const savedOrder = await Order.create(newOrder);
-
-    // Save order reference in user's orders array
-    const updatedUser = await User.findByIdAndUpdate(
-      id,
-      { $push: { orders: savedOrder } },
-      { new: true }
-    );
-
-    if (!updatedUser) {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-
-    // :white_tick: Populate User Details for Notification
-    const populatedOrder = await Order.findById(savedOrder._id).populate("userId", "firstName lastName email");
-    // :bell: **Send Real-Time WebSocket Notification**
-    io.emit("newOrder", populatedOrder);
-    console.log(":package: New Order Notification Sent:", populatedOrder);
-    // :white_tick: Send Response
-
-
-    res.json({
-      success: true,
-      userId: id,
-      orderId: newOrderId,
-      linkId,
-      linkUrl: response.data.link_url,
-      message: "Order created successfully, waiting for payment",
-    });
-  } catch (error) {
-    console.error(":x: Error:", error.response?.data || error.message);
-    res.status(500).json({ error: "Error processing order", details: error.message });
   }
 });
 
