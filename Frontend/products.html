@@ -15,6 +15,12 @@
 
     <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
 
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        AOS.init();
+      </script>
+
 </head>
 
 <body>
@@ -107,35 +113,15 @@
 
     <br><br>
 
-    <div class="the-products">
-        <h1>Our Team</h1>
-        <img src="../Photos/Line 1.png"><br>
-        <img class="purple" src="../Photos/Ellipse 1.png"><br>
+    <div id="team"></div>    </div>  
 
-        <p>Proin gravida nibh vel velit auctor aliquet. Aenean sollicitudin, lorem quis bibendumauctor,<br> nisi elit
-            consequat hello Aenean world.</p>
-        <div class="three-products">
-            <div class="three-products-1">
-                <img src="../Photos/Rectangle 8.png">
-                <h5>Blue Sunstone Bracelet<br> For Spiritual Protection</h5>
-                <a href="./lucky.html"> <button>Connect Now</button></a>
-            </div>
-            <div class="three-products-1">
-                <img src="../Photos/Rectangle 9.png">
-                <h5>Blue Sunstone Bracelet<br> For Spiritual Protection</h5>
-                <a href="./lucky.html"> <button>Connect Now</button></a>
-
-            </div>
-            <div class="three-products-1">
-                <img src="../Photos/Rectangle 10.png">
-                <h5>Blue Sunstone Bracelet<br> For Spiritual Protection</h5>
-                <a href="./lucky.html"> <button>Connect Now</button></a>
-
-
-            </div>
-        </div>
-
-    </div>
+    <script>
+        $(function () {
+            $("#team").load("slider.html", function () {
+                updateCartCounter(); // Ensure counter updates after loading nav
+            });
+        });
+    </script> 
 
     <br><br><br><br>
 
@@ -189,7 +175,7 @@
             com=nsequat hello Aenean world.</p>
         <div class="creative-director">
 
-            <div class="director">
+            <div data-aos="fade-right" data-aos-duration="2000"  data-aos-offset="-300" class="director">
                 <center>
                     <img class="client-photo"
                         src="https://images.unsplash.com/photo-1589696709173-2bf10335574a?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OTZ8fHdvbWVufGVufDB8fDB8fHww">
@@ -201,7 +187,7 @@
                 Lorem ipsum is simply dummpy text of the printing and typesetting <br>industry. Lorem ipsum has been the
                 industry's standard dummy text <br>ever since the 1500s, when an unknown printer gallery of type.
             </div>
-            <div class="director">
+            <div data-aos="fade-left" data-aos-offset="-300" data-aos-duration="2000" class="director">
                 <center>
                     <img class="client-photo"
                         src="https://images.unsplash.com/photo-1496345875659-11f7dd282d1d?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MjZ8fG1lbnxlbnwwfHwwfHx8MA%3D%3D">
@@ -399,9 +385,49 @@
         
 
     </script>
+
+
+
+<!-- Swiper JS -->
+<script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
+<script>
+   var swiper = new Swiper(".mySwiper", {
+slidesPerView: 1, // Default for small screens
+spaceBetween: 10,
+loop: true,
+speed: 800,
+grabCursor: true,
+autoplay: {
+    delay: 3000,
+    disableOnInteraction: false,
+    pauseOnMouseEnter: true,
+},
+pagination: {
+    el: ".swiper-pagination",
+    clickable: true,
+    dynamicBullets: true,
+},
+navigation: {
+    nextEl: ".swiper-button-next",
+    prevEl: ".swiper-button-prev",
+},
+breakpoints: {
+    360: { slidesPerView: 1, spaceBetween: 10 },  // Very small screens
+    480: { slidesPerView: 1, spaceBetween: 15 },  // Small phones
+    640: { slidesPerView: 2, spaceBetween: 20 },  // Phones
+    768: { slidesPerView: 2, spaceBetween: 25 },  // Tablets
+    1024: { slidesPerView: 3, spaceBetween: 30 }, // Small laptops
+    1280: { slidesPerView: 4, spaceBetween: 35 }, // Desktops
+    1440: { slidesPerView: 5, spaceBetween: 40 }  // Large screens
+}
+});
+
+
+</script>
+
     
     <!-- ✅ WhatsApp Floating Button -->
-    <a href="https://wa.me/919876543210" class="whatsapp-float" target="_blank">
+    <a href="https://wa.me/+919718375146" class="whatsapp-float" target="_blank">
         <i class="fab fa-whatsapp"></i>
     </a>
 
